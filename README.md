@@ -1,9 +1,9 @@
 # Portable XDG dotfiles
 
-Configuration-only chezmoi repository for macOS and Linux. Audited against 29
+Configuration-only chezmoi repository for macOS and Linux. Covers 28 tools from
 `brew leaves` on 2026-09-29. Existing supported configs were retained; missing
 configs use defaults. No installation scripts, binaries, credentials, history,
-plugin checkouts, or caches are managed. Mole is intentionally unmanaged.
+plugin checkouts, or caches are managed.
 Only LazyVim's `autocmds.lua`, `keymaps.lua`, and `options.lua` are managed for
 Neovim; the upstream starter and remaining defaults are installed separately.
 Tracked files and directories use ordinary chezmoi permissions, with no
@@ -125,7 +125,6 @@ created; chezmoi does not automatically track future files.
 | hyperfine | No supported global config file; benchmark flags and export destinations are command arguments. | No init. Benchmark recipes belong with projects. [Usage](https://github.com/sharkdp/hyperfine#usage). |
 | lazydocker | `lazydocker/config.yml` (`{}` preserves defaults). | `.zshrc` defines a command wrapper that scopes supported `CONFIG_DIR` to this command. Avoid exporting this generic name globally. Direct invocations outside the shell wrapper must pass that override if their defaults resolve elsewhere. [Discovery source](https://github.com/jesseduffield/lazydocker/blob/master/pkg/config/app_config.go), [config](https://github.com/jesseduffield/lazydocker/blob/master/docs/Config.md). |
 | lazygit | `lazygit/config.yml`, retaining the existing delta diff renderer. | No init; explicit XDG_CONFIG_HOME selects the XDG path on macOS. Requires delta for the configured renderer. `state.yml` is runtime state; repository overrides belong to projects. [Config](https://github.com/jesseduffield/lazygit/blob/master/docs/Config.md). |
-| mole | Intentionally unmanaged; no Mole files are tracked. | Optional macOS-only app, with no shell init. Local settings are left alone. |
 | neovim | Only `nvim/lua/config/autocmds.lua`, `nvim/lua/config/keymaps.lua`, and `nvim/lua/config/options.lua`. | No shell init; `EDITOR`/`VISUAL` are set in `.zshenv`. Install the default LazyVim starter separately before applying these files; remaining Neovim files and plugins are unmanaged. [LazyVim](https://www.lazyvim.org/installation). |
 | ripgrep | `ripgrep/config` (comment-only), selected with `RIPGREP_CONFIG_PATH`; project `.rgignore` files remain project-owned. | Export the path in `.zshenv`; ripgrep does not discover an arbitrary dotfile itself. Keep defaults to avoid changing LazyVim's searches. [Configuration](https://github.com/BurntSushi/ripgrep/blob/master/GUIDE.md#configuration-file). |
 | starship | `starship.toml` (comment-only); custom prompt palettes belong inside it. | `STARSHIP_CONFIG` in `.zshenv`; `starship init zsh` in `.zshrc` after navigation/history widgets and before the final plugins. No second prompt framework. [Config](https://starship.rs/config/). |
@@ -185,9 +184,8 @@ were retired to a local backup, including aliases for tools not in the inventory
   using tree-sitter grammars; it does not automatically adopt Neovim's parsers.
   The tree-sitter CLI and Neovim's parser plugins have distinct configs and builds.
 - duf reports filesystem free space; dust shows which directories consume space;
-  btop monitors processes/resources; Mole changes/removes macOS data. Cleaning
-  caches with Mole may require rebuilding bat caches, parsers or other tool assets.
-  These generated assets should stay outside chezmoi.
+  btop monitors processes/resources. Generated caches, parser binaries and other
+  tool assets should stay outside chezmoi.
 - Installed font/terminal support affects icons, prompt glyphs and theme colors.
   Built-in themes are represented by config choices or application defaults;
   copying every built-in theme is unnecessary. Add custom theme source files only
@@ -206,8 +204,8 @@ were retired to a local backup, including aliases for tools not in the inventory
 After editing a managed config, run `chezmoi add <path>` to update its source copy,
 then `chezmoi diff`, review, commit, and push from `chezmoi cd`. After a deliberate
 LazyVim change, re-add only the selected `autocmds.lua`, `keymaps.lua`, and
-`options.lua` files. The ignore rules exclude the rest of Neovim and all Mole
-files; avoid overriding those rules. After adding a custom theme for another
+`options.lua` files. The ignore rules exclude the rest of Neovim; avoid
+overriding those rules. After adding a custom theme for another
 managed tool, explicitly add that asset and its selecting config.
 Use `chezmoi update` on other machines to pull and apply the committed config.
 The same tool versions may still be needed to reproduce behavior exactly.
@@ -219,7 +217,7 @@ The same tool versions may still be needed to reproduce behavior exactly.
   supported XDG config overrides resolve correctly; lazydocker parses its config.
 - Linux target rendered with chezmoi's OS data override, then actual zsh startup
   tested in a disposable Debian-based Docker container with tools absent. Confirmed
-  XDG paths, ZDOTDIR, state/cache locations and missing-tool guards. Mole is now unmanaged on every OS.
+  XDG paths, ZDOTDIR, state/cache locations and missing-tool guards.
 - bat, eza, dust, ripgrep, Glow, Starship, tree-sitter config loading on macOS;
   superfile v1.6.0 opened successfully with minimal config/hotkeys and exited cleanly.
 - JSON/TOML/YAML syntax and Neovim Lua syntax checked before publishing.
@@ -232,5 +230,5 @@ including names with spaces, quotes and backslashes, and repeated initialization
 was checked to preserve the saved machine-local identity without prompting.
 
 Following the tracking-scope change, macOS and Linux target layouts were checked
-to contain only the three selected Neovim files, no Mole files, and no private
-source attributes. Existing local Mole and default LazyVim files are preserved.
+to contain only the three selected Neovim files and no private source attributes.
+Existing local default LazyVim files are preserved.
