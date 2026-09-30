@@ -1,0 +1,22 @@
+[user]
+	name = seven7thirty3five5
+	email = seven7thirty3five5@gmail.com
+[core]
+    pager = delta
+
+[interactive]
+    diffFilter = delta --color-only
+
+[delta]
+    navigate = true  # use n and N to move between diff sections
+    dark = true      # or `light = true`, or omit for auto-detection
+
+[merge]
+    conflictStyle = zdiff3
+
+
+# Structural diffs are opt-in; regular git diff remains a text diff via delta.
+[difftool "difftastic"]
+	cmd = difft \"$LOCAL\" \"$REMOTE\"
+[difftool]
+    prompt = false

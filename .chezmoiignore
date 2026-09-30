@@ -1,0 +1,20 @@
+# Repository documentation is not a home-directory dotfile.
+README.md
+# Mole is a macOS-only tool.
+{{ if ne .chezmoi.os "darwin" }}
+.config/mole
+{{ end }}
+# Defense in depth: these files must never be applied as plain dotfiles.
+.config/gh/hosts.yml
+.config/atuin/key
+.config/atuin/session
+.config/atuin/*.db*
+.config/chezmoi/*.boltdb
+.config/herdr/session.json
+.config/herdr/sessions
+.config/herdr/*.log
+.config/herdr/.plugins.lock
+.config/mole/clean-list.txt
+.config/lazygit/state.yml
+.config/lazydocker/state.yml
+.config/zsh/.zcompdump*
