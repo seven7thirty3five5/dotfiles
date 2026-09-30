@@ -1,9 +1,15 @@
 # Repository documentation is not a home-directory dotfile.
 README.md
-# Mole is a macOS-only tool.
-{{ if ne .chezmoi.os "darwin" }}
+# Mole is intentionally unmanaged on every platform.
 .config/mole
-{{ end }}
+# Manage only the three LazyVim user config files, keeping ancestor directories.
+.config/nvim/**
+!.config/nvim
+!.config/nvim/lua
+!.config/nvim/lua/config
+!.config/nvim/lua/config/autocmds.lua
+!.config/nvim/lua/config/keymaps.lua
+!.config/nvim/lua/config/options.lua
 # Defense in depth: these files must never be applied as plain dotfiles.
 .config/gh/hosts.yml
 .config/atuin/key
@@ -14,7 +20,6 @@ README.md
 .config/herdr/sessions
 .config/herdr/*.log
 .config/herdr/.plugins.lock
-.config/mole/clean-list.txt
 .config/lazygit/state.yml
 .config/lazydocker/state.yml
 .config/zsh/.zcompdump*
