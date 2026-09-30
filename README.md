@@ -11,15 +11,23 @@ plugin checkouts, or caches are managed. Mole is macOS-only and excluded on Linu
    manager or official releases. Use current versions; `fzf --zsh` requires fzf
    0.48 or newer. Linux package names can differ (`fd-find`, `batcat`, `git-delta`);
    ensure the commands `fd`, `bat`, and `delta` are available under those names.
-2. Apply this private repository after authenticating to GitHub:
+2. Apply this public repository over HTTPS; no GitHub login is needed:
 
    ```sh
-   chezmoi init --apply git@github.com:seven7thirty3five5/dotfiles.git
+   chezmoi init --apply https://github.com/seven7thirty3five5/dotfiles.git
    ```
 
-   HTTPS cloning works too when Git credentials are configured. The config
-   template generates `~/.config/chezmoi/chezmoi.toml`; it is not recursively
+   First initialization asks for your Git author name and email. On your work
+   machine, enter your work email. Answers are saved under `[data]` as `gitName`
+   and `gitEmail` in `~/.config/chezmoi/chezmoi.toml`, outside this repository.
+   `dot_config/git/config.tmpl` uses them to render `~/.config/git/config`.
+   Repeated initialization keeps the saved answers; updates reuse them without
+   asking again. Change them with `chezmoi edit-config`, then `chezmoi apply`, or
+   run `chezmoi init --prompt --apply` to answer both questions again.
+   The config template generates the local chezmoi config; it is not recursively
    managed as an ordinary dotfile.
+   [Machine-specific data](https://www.chezmoi.io/user-guide/manage-machine-to-machine-differences/),
+   [initialization prompts](https://www.chezmoi.io/reference/templates/init-functions/promptStringOnce/).
 3. Start a new zsh (login or non-login). If desired, make zsh the default shell
    using your OS's supported procedure. No default-shell change is automated.
 4. Authenticate gh separately, then recreate the installed extension:
@@ -90,7 +98,7 @@ created; chezmoi does not automatically track future files.
 | fd | `fd/ignore` (comment-only global ignore patterns). Project `.fdignore` files belong with their projects. | No init. No native global options config; it supplies fzf candidates. [Manual](https://github.com/sharkdp/fd/blob/master/doc/fd.1). |
 | fzf | No automatically read config file created. `FZF_*` variables live in `.zshrc`; `FZF_DEFAULT_OPTS_FILE` is supported if an options file is wanted later. | `source <(fzf --zsh)` after compinit. Disable its Ctrl-R during sourcing; retain Ctrl-T and Alt-C. [Shell integration](https://github.com/junegunn/fzf#setting-up-shell-integration). |
 | gh | `gh/config.yml` only; aliases/settings included. Never add `gh/hosts.yml`. | No required init. gh-dash also has its own `gh-dash/config.yml`, retained here. Extension binaries under data storage are excluded. [gh config](https://cli.github.com/manual/gh_config), [gh-dash](https://github.com/dlvhdr/gh-dash). |
-| git | `git/config` and `git/ignore`; identity, delta settings and opt-in difftastic retained. | No init. XDG config/ignore paths are natively supported. Project `.gitconfig` includes, signing keys and credential stores require separate consideration if added. [Git config](https://git-scm.com/docs/git-config). |
+| git | `git/config` rendered from `dot_config/git/config.tmpl`, plus `git/ignore`; per-machine identity, delta settings and opt-in difftastic. | No init. XDG config/ignore paths are natively supported. Project `.gitconfig` includes, signing keys and credential stores require separate consideration if added. [Git config](https://git-scm.com/docs/git-config). |
 | git-delta | Settings in `git/config`, no invented standalone config. Optional custom themes can be a separate Git include file. | No init. `core.pager` and `interactive.diffFilter` enable delta. lazygit also explicitly uses delta; built-in delta themes require no copied assets. [Configuration](https://dandavison.github.io/delta/configuration.html). |
 | glow | `glow/glow.yml` (`{}` preserves defaults); optional custom renderer style JSON, referenced through `style`. | No init. Explicit XDG_CONFIG_HOME is recognized on macOS. [Config discovery source](https://github.com/charmbracelet/glow/blob/master/main.go). |
 | herdr | `herdr/config.toml`; existing built-in catppuccin theme and onboarding setting retained. No installed custom plugins found (empty `.plugins.lock`). | No required shell init. Do not track session JSON, sockets, logs or release metadata, even where they live under `.config`. [Configuration](https://herdr.dev/docs/configuration/). |
@@ -166,7 +174,9 @@ were retired to a local backup, including aliases for tools not in the inventory
 - Previously configured required Git LFS filters were removed because `git-lfs`
   was absent. If an LFS repository needs it, install git-lfs separately and run
   `git lfs install`; then explicitly track the generated filter config if desired.
-- The private repo contains Git author identity. gh authentication, Atuin keys,
+- The public repository reads Git identity from machine-local chezmoi data;
+  work email is never committed by this setup. Earlier history and commit metadata
+  contain the original personal Git identity. gh authentication, Atuin keys,
   signing keys and other credentials remain machine-local. Do not run
   `chezmoi add ~/.config` indiscriminately; add only reviewed config/asset paths.
 
@@ -193,3 +203,7 @@ The same tool versions may still be needed to reproduce behavior exactly.
 
 Linux validation covers shell startup and target layout, not full interactive
 execution of every application or LazyVim language-tool installation on Linux.
+
+The Git identity template was additionally checked with a separate work identity,
+including names with spaces, quotes and backslashes, and repeated initialization
+was checked to preserve the saved machine-local identity without prompting.
