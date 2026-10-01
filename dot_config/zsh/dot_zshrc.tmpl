@@ -1,7 +1,15 @@
+{{- $brewPrefix := includeTemplate "brew-prefix" . | trim -}}
+{{- $pluginPrefix := default "/usr" $brewPrefix -}}
 # Interactive setup only. Startup order is documented in the chezmoi README.
 [[ -o interactive ]] || return
 
+{{ if and (eq .chezmoi.os "linux") $brewPrefix -}}
+# Homebrew shell initialization belongs to interactive shells on Linux.
+eval "$({{ joinPath $brewPrefix "bin" "brew" | shellQuote }} shellenv zsh)"
+
+{{ end -}}
 # Shells that inherit ZDOTDIR skip the home bootstrap; reusing env.zsh is safe.
+# Refresh editor selection after Homebrew setup as well.
 [[ -f "$ZDOTDIR/env.zsh" ]] && source "$ZDOTDIR/env.zsh"
 
 HISTFILE="$XDG_STATE_HOME/zsh/history"
@@ -12,20 +20,8 @@ setopt EXTENDED_HISTORY
 setopt SHARE_HISTORY
 setopt HIST_IGNORE_DUPS
 
-{{ if eq .chezmoi.os "linux" -}}
-# Homebrew shell initialization belongs to interactive shells on Linux.
-if [[ -n $_zsh_brew_prefix ]]; then
-  # shellenv skips leading bin/sbin paths; seed metadata on a fresh installation.
-  if [[ ${HOMEBREW_PREFIX:-} != $_zsh_brew_prefix ]]; then
-    eval "$(PATH=/usr/bin:/bin "$_zsh_brew_prefix/bin/brew" shellenv zsh)"
-  else
-    eval "$("$_zsh_brew_prefix/bin/brew" shellenv zsh)"
-  fi
-fi
-{{ end -}}
-# Package-manager completions must be discoverable before compinit.
+# Homebrew shellenv supplies its completions; add Docker's before compinit.
 typeset -U fpath
-[[ -d "$_zsh_brew_prefix/share/zsh/site-functions" ]] && fpath=("$_zsh_brew_prefix/share/zsh/site-functions" $fpath)
 [[ -d "$HOME/.docker/completions" ]] && fpath=("$HOME/.docker/completions" $fpath)
 autoload -Uz compinit
 compinit -d "$XDG_CACHE_HOME/zsh/zcompdump-$ZSH_VERSION"
@@ -37,11 +33,9 @@ compinit -d "$XDG_CACHE_HOME/zsh/zcompdump-$ZSH_VERSION"
 (( $+commands[starship] )) && eval "$(starship init zsh)"
 
 # Scope lazydocker's generic CONFIG_DIR variable to this one command.
-if (( $+commands[lazydocker] )); then
-  lazydocker() { CONFIG_DIR="$XDG_CONFIG_HOME/lazydocker" command lazydocker "$@"; }
-fi
+(( $+commands[lazydocker] )) && lazydocker() { CONFIG_DIR="$XDG_CONFIG_HOME/lazydocker" command lazydocker "$@"; }
 
 # Homebrew on either OS, or standard Linux packages under /usr/share.
 # Autosuggestions wraps widgets created above. Syntax highlighting goes last.
-source "${_zsh_brew_prefix:-/usr}/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
-source "${_zsh_brew_prefix:-/usr}/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+source {{ joinPath $pluginPrefix "share/zsh-autosuggestions/zsh-autosuggestions.zsh" | shellQuote }}
+source {{ joinPath $pluginPrefix "share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" | shellQuote }}

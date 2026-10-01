@@ -1,0 +1,10 @@
+{{- $prefixes := list "/home/linuxbrew/.linuxbrew" (joinPath .chezmoi.homeDir ".linuxbrew") (joinPath .chezmoi.homeDir ".homebrew") -}}
+{{- if eq .chezmoi.os "darwin" -}}
+{{- $prefixes = list "/opt/homebrew" (joinPath .chezmoi.homeDir ".homebrew") (joinPath .chezmoi.homeDir ".linuxbrew") -}}
+{{- end -}}
+{{- range $prefix := $prefixes -}}
+{{- if isExecutable (joinPath $prefix "bin" "brew") -}}
+{{- $prefix -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}

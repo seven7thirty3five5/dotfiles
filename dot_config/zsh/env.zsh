@@ -1,31 +1,14 @@
 # .zshenv and env.zsh should NEVER output anything: they run in scripts and
 # SSH commands too, where startup output can corrupt data or transfer protocols.
-# Keep this file idempotent so macOS .zprofile can restore PATH after path_helper.
+# Keep this file idempotent so macOS .zprofile can source it after path_helper.
 export XDG_CONFIG_DIRS="${XDG_CONFIG_DIRS:-/etc/xdg}"
 export XDG_DATA_DIRS="${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
 # XDG_RUNTIME_DIR belongs to the OS/session; do not invent a persistent path.
-
-# Supported Homebrew locations: system installation first, then user installs.
-_zsh_brew_prefix=""
-{{ if eq .chezmoi.os "darwin" -}}
-for _zsh_brew_candidate in /opt/homebrew "$HOME/.homebrew" "$HOME/.linuxbrew"; do
-{{ else -}}
-for _zsh_brew_candidate in /home/linuxbrew/.linuxbrew "$HOME/.linuxbrew" "$HOME/.homebrew"; do
-{{ end }}
-  if [[ -x "$_zsh_brew_candidate/bin/brew" ]]; then
-    _zsh_brew_prefix="$_zsh_brew_candidate"
-    break
-  fi
-done
-unset _zsh_brew_candidate
 
 # Unique entries make repeated sourcing safe; restore the same PATH priorities.
 typeset -U path
 path=("$HOME/.local/bin" $path)
 [[ -d "$HOME/.docker/bin" ]] && path+=("$HOME/.docker/bin")
-if [[ -n $_zsh_brew_prefix ]]; then
-  path=("$_zsh_brew_prefix/bin" "$_zsh_brew_prefix/sbin" $path)
-fi
 export PATH
 
 # Explicit overrides for tools whose defaults may bypass XDG on macOS.
@@ -35,10 +18,5 @@ export RIPGREP_CONFIG_PATH="$XDG_CONFIG_HOME/ripgrep/config"
 export STARSHIP_CONFIG="$XDG_CONFIG_HOME/starship.toml"
 export _ZO_DATA_DIR="$XDG_DATA_HOME/zoxide"
 export PAGER="less"
-if (( $+commands[nvim] )); then
-  export EDITOR="nvim"
-  export VISUAL="nvim"
-else
-  export EDITOR="vim"
-  export VISUAL="vim"
-fi
+(( $+commands[nvim] )) && export EDITOR="nvim" || export EDITOR="vim"
+(( $+commands[nvim] )) && export VISUAL="nvim" || export VISUAL="vim"

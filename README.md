@@ -43,8 +43,11 @@ repository visibility. [Source attributes](https://www.chezmoi.io/reference/sour
    managed as an ordinary dotfile.
    [Machine-specific data](https://www.chezmoi.io/user-guide/manage-machine-to-machine-differences/),
    [initialization prompts](https://www.chezmoi.io/reference/templates/init-functions/promptStringOnce/).
-3. Start a new zsh (login or non-login). If desired, make zsh the default shell
-   using your OS's supported procedure. No default-shell change is automated.
+3. Start a new zsh. On macOS, use a login shell (`exec zsh -l`) for a fresh
+   session so `.zprofile` initializes Homebrew; subsequent non-login shells
+   inherit that environment. Linux initializes Homebrew in interactive `.zshrc`.
+   If desired, make zsh the default shell using your OS's supported procedure.
+   No default-shell change is automated.
 4. Authenticate gh separately, then recreate the installed extension:
 
    ```sh
@@ -147,23 +150,27 @@ old checkouts away from that former path.
    XDG config-path overrides, `PAGER=less`, and editor selection live here.
    `EDITOR` and `VISUAL` use nvim when available on the resulting PATH, falling
    back to vim. `XDG_RUNTIME_DIR` remains the OS/session's responsibility.
-2. Homebrew discovery is rendered by chezmoi's OS templates. On macOS, check
+2. Chezmoi selects the Homebrew prefix when rendering the startup files, using
+   the shared `.chezmoitemplates/brew-prefix` template. On macOS, check
    `/opt/homebrew`, then `$HOME/.homebrew`, then `$HOME/.linuxbrew`. On Linux,
    check `/home/linuxbrew/.linuxbrew`, then `$HOME/.linuxbrew`, then
    `$HOME/.homebrew`. Only executable `bin/brew` files count as installations;
    system installs always win. Intel macOS Homebrew under `/usr/local` is not
-   supported. Homebrew's bin/sbin lead PATH, followed by `~/.local/bin`; existing
-   Docker CLI paths are retained when present. PATH entries are deduplicated,
-   so sourcing `env.zsh` repeatedly is safe. No runtime OS tests are needed.
-3. macOS `.zprofile`: source `env.zsh` again after `/etc/zprofile` runs
-   `path_helper`, restoring our PATH order, then evaluate `brew shellenv zsh`
-   from the selected installation. Its first initialization explicitly seeds
-   Homebrew metadata even when bin/sbin already lead PATH; later initialization
-   can use Homebrew's built-in no-op behavior. Linux `.zprofile` has no Homebrew
+   supported. `brew shellenv zsh` supplies Homebrew's PATH entries, metadata,
+   and completion path; no runtime prefix variable or discovery loop is needed.
+   `env.zsh` puts `~/.local/bin` first and retains existing Docker CLI paths
+   when present. PATH entries are deduplicated, so repeated sourcing is safe.
+   Run `chezmoi apply` after installing or moving Homebrew to render the new
+   location. [Chezmoi executable check](https://www.chezmoi.io/reference/templates/functions/isExecutable/).
+3. macOS `.zprofile`: after `/etc/zprofile` runs `path_helper`, evaluate
+   `brew shellenv zsh` from the selected installation, then source `env.zsh`
+   again to restore the shared environment and select the editor with Homebrew
+   tools now on PATH. Linux `.zprofile` has no Homebrew
    initialization. [Homebrew shellenv](https://docs.brew.sh/Manpage#shellenv-shell-).
-4. `.zshrc`: interactive shells source `env.zsh` again to support inherited
-   ZDOTDIR, initialize history/state/cache directories, and, on Linux only,
-   evaluate `brew shellenv zsh`. Add package/Docker completion paths before
+4. `.zshrc`: on Linux only, first evaluate `brew shellenv zsh`. Interactive
+   shells then source `env.zsh` again to support inherited ZDOTDIR and refresh
+   editor selection, and initialize history/state/cache directories. Add
+   Docker completion paths alongside Homebrew's supplied completions before
    running `compinit` once with its dump under `~/.cache/zsh`. Each `setopt`
    occupies its own line.
 5. Initialize fzf on one line with Ctrl-R disabled and its default candidates,
@@ -238,11 +245,13 @@ The same tool versions may still be needed to reproduce behavior exactly.
   state/cache locations, plugin loading and missing-tool guards.
 - Interactive login shells run the clear command in `.zlogout`; noninteractive
   login shells leave the terminal alone. `PAGER=less` is available in both.
-- The environment split was checked with real Homebrew on macOS and temporary
-  Homebrew fixtures in a Linux container. Verified silent/idempotent sourcing,
-  fresh metadata initialization, macOS path_helper recovery, system-before-local
-  discovery, both local installation fallbacks, inherited ZDOTDIR, existing XDG
-  overrides, nvim/vim selection, regular-file migration and the empty `.zlogin`.
+- The simplified environment was checked with real Homebrew on macOS and both
+  OS templates rendered by chezmoi in a Linux container using temporary Homebrew
+  fixtures. Verified silent/idempotent sourcing, fresh metadata initialization,
+  macOS path_helper recovery, render-time system-before-local selection, both
+  local fallbacks, executable checks, paths with spaces, reapplying after moves,
+  inherited ZDOTDIR, XDG overrides, and nvim/vim selection. Regular-file migration
+  and the empty `.zlogin` were checked when the environment split was introduced.
 - bat, eza, dust, ripgrep, Glow, Starship, tree-sitter config loading on macOS;
   superfile v1.6.0 opened successfully with minimal config/hotkeys and exited cleanly.
 - JSON/TOML/YAML syntax and Neovim Lua syntax checked before publishing.
