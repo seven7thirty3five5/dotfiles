@@ -115,8 +115,8 @@ created; chezmoi does not automatically track future files.
 | duf | No supported user config file found; CLI flags select display/filtering. | No init. Do not invent a duf config. [Usage](https://github.com/muesli/duf#usage). |
 | dust | `dust/config.toml` (comment-only); legacy `~/.dust.toml` is unnecessary. | No init. Reports per-directory usage, complementing duf's filesystem capacity view. [Config](https://github.com/bootandy/dust#config-file). |
 | eza | `eza/theme.yml` (`{}` preserves built-in colors). | `EZA_CONFIG_DIR` in `.zshenv` avoids macOS's Application Support default. No init. Icons require a suitable font. [Themes](https://github.com/eza-community/eza-themes#installation). |
-| fd | `fd/ignore` (comment-only global ignore patterns). Project `.fdignore` files belong with their projects. | No init. No native global options config; it supplies fzf candidates. [Manual](https://github.com/sharkdp/fd/blob/master/doc/fd.1). |
-| fzf | No automatically read config file created. `FZF_*` variables live in `.zshrc`; `FZF_DEFAULT_OPTS_FILE` is supported if an options file is wanted later. | `source <(fzf --zsh)` after compinit. Disable its Ctrl-R during sourcing; retain Ctrl-T and Alt-C. [Shell integration](https://github.com/junegunn/fzf#setting-up-shell-integration). |
+| fd | `fd/ignore` (comment-only global ignore patterns). Project `.fdignore` files belong with their projects. | No init. No native global options config; also useful to editor file pickers. [Manual](https://github.com/sharkdp/fd/blob/master/doc/fd.1). |
+| fzf | No automatically read config file created. `FZF_CTRL_R_COMMAND` is cleared during initialization in `.zshrc`; candidate selection uses fzf defaults. `FZF_DEFAULT_OPTS_FILE` is supported if an options file is wanted later. | `source <(fzf --zsh)` after compinit. Disable its Ctrl-R during sourcing; retain Ctrl-T and Alt-C. [Shell integration](https://github.com/junegunn/fzf#setting-up-shell-integration). |
 | gh | `gh/config.yml` only; aliases/settings included. Never add `gh/hosts.yml`. | No required init. gh-dash also has its own `gh-dash/config.yml`, retained here. Extension binaries under data storage are excluded. [gh config](https://cli.github.com/manual/gh_config), [gh-dash](https://github.com/dlvhdr/gh-dash). |
 | git | `git/config` rendered from `dot_config/git/config.tmpl`, plus `git/ignore`; per-machine identity, delta settings and opt-in difftastic. | No init. XDG config/ignore paths are natively supported. Project `.gitconfig` includes, signing keys and credential stores require separate consideration if added. [Git config](https://git-scm.com/docs/git-config). |
 | git-delta | Settings in `git/config`, no invented standalone config. Optional custom themes can be a separate Git include file. | No init. `core.pager` and `interactive.diffFilter` enable delta. lazygit also explicitly uses delta; built-in delta themes require no copied assets. [Configuration](https://dandavison.github.io/delta/configuration.html). |
@@ -143,7 +143,7 @@ created; chezmoi does not automatically track future files.
 home-directory substitute would violate its lifetime/ownership requirements.
 
 1. `.zshenv`: XDG paths, ZDOTDIR, supported tool config-path overrides, editor,
-   and static PATH entries. No external commands, output, prompt hooks or widgets.
+   `PAGER=less`, and static PATH entries. No external commands, output, prompt hooks or widgets.
    This file runs in scripts too. Known Homebrew locations support Apple Silicon,
    Intel macOS and Linuxbrew. User binaries and existing pnpm/Docker paths are
    portable and deduplicated.
@@ -152,22 +152,25 @@ home-directory substitute would violate its lifetime/ownership requirements.
 3. `.zshrc`: interactive shells only; initialize history and XDG cache directories,
    add package/Docker completion paths, then run `compinit` once with its dump
    under `~/.cache/zsh`.
-4. Initialize fzf with Ctrl-R disabled, then Atuin, then zoxide replacing `cd`,
-   then Starship. Define the lazydocker scoped-config wrapper.
-5. Source zsh-autosuggestions, then zsh-syntax-highlighting last. Plugin discovery
-   supports Homebrew, common Linux distro locations, or manual checkouts under
-   `~/.local/share/zsh/plugins/<plugin>/`. These checkouts are installations and
-   are not tracked. There is no plugin manager to initialize.
+4. Initialize fzf on one line with Ctrl-R disabled and its default candidates,
+   then Atuin, then zoxide replacing `cd`, then Starship. Define the lazydocker scoped-config wrapper.
+5. Load zsh-autosuggestions and zsh-syntax-highlighting with two direct source
+   lines, highlighting last. They use `<Homebrew prefix>/share/<plugin>/` on
+   either OS, or `/usr/share/<plugin>/` for standard Linux packages. Install both
+   plugins at those locations before starting the shell. No plugin manager or
+   search helper is initialized.
+6. The tracked `.zlogout` runs `[[ -o interactive ]] && clear` when a login shell
+   exits, clearing the terminal only for interactive shells.
 
-No tool needs `.zlogin` or `.zlogout`; no empty files were created for them.
+No tool needs `.zlogin`; no file was created for it.
 No miscellaneous aliases or navigation functions are included. Prior aliases
 were retired to a local backup, including aliases for tools not in the inventory.
 
 ## Interactions and limits
 
 - Atuin and fzf compete for Ctrl-R; Atuin now owns it. fzf retains Ctrl-T/Alt-C,
-  also powers zoxide's `cdi`, and uses fd for candidates. Atuin's Up binding can
-  be disabled later with `atuin init zsh --disable-up-arrow` if desired.
+  also powers zoxide's `cdi`, and uses its default candidate selection. Atuin's Up
+  binding can be disabled later with `atuin init zsh --disable-up-arrow` if desired.
 - Atuin and native zsh history are separate stores. Autosuggestions still uses
   native history; it does not automatically query Atuin's database. Native history
   lives under `~/.local/state/zsh/history`. Neither history store is versioned.
@@ -216,8 +219,11 @@ The same tool versions may still be needed to reproduce behavior exactly.
 - Fresh macOS login/interactive zsh: Atuin owns Ctrl-R; cd/cdi are zoxide functions;
   supported XDG config overrides resolve correctly; lazydocker parses its config.
 - Linux target rendered with chezmoi's OS data override, then actual zsh startup
-  tested in a disposable Debian-based Docker container with tools absent. Confirmed
-  XDG paths, ZDOTDIR, state/cache locations and missing-tool guards.
+  tested in a disposable Debian-based Docker container with required zsh plugins
+  installed and optional CLI tools absent. Confirmed XDG paths, ZDOTDIR,
+  state/cache locations, plugin loading and missing-tool guards.
+- Interactive login shells run the clear command in `.zlogout`; noninteractive
+  login shells leave the terminal alone. `PAGER=less` is available in both.
 - bat, eza, dust, ripgrep, Glow, Starship, tree-sitter config loading on macOS;
   superfile v1.6.0 opened successfully with minimal config/hotkeys and exited cleanly.
 - JSON/TOML/YAML syntax and Neovim Lua syntax checked before publishing.

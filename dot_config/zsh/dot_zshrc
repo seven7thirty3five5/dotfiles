@@ -5,7 +5,9 @@ HISTFILE="$XDG_STATE_HOME/zsh/history"
 HISTSIZE=10000
 SAVEHIST=10000
 mkdir -p -- "$XDG_STATE_HOME/zsh" "$XDG_CACHE_HOME/zsh"
-setopt EXTENDED_HISTORY SHARE_HISTORY HIST_IGNORE_DUPS
+setopt EXTENDED_HISTORY
+setopt SHARE_HISTORY
+setopt HIST_IGNORE_DUPS
 
 # Package-manager completions must be discoverable before compinit.
 _zsh_brew_prefix="${HOMEBREW_PREFIX:-}"
@@ -17,15 +19,8 @@ fi
 autoload -Uz compinit
 compinit -d "$XDG_CACHE_HOME/zsh/zcompdump-$ZSH_VERSION"
 
-# fd supplies fzf candidates. Atuin owns Ctrl-R; fzf keeps Ctrl-T and Alt-C.
-if (( $+commands[fd] )); then
-  export FZF_DEFAULT_COMMAND='fd --type f --hidden --exclude .git'
-  export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
-  export FZF_ALT_C_COMMAND='fd --type d --hidden --exclude .git'
-fi
-if (( $+commands[fzf] )); then
-  FZF_CTRL_R_COMMAND= source <(fzf --zsh)
-fi
+# Atuin owns Ctrl-R; fzf keeps its default file/directory selection.
+(( $+commands[fzf] )) && FZF_CTRL_R_COMMAND= source <(fzf --zsh)
 (( $+commands[atuin] )) && eval "$(atuin init zsh)"
 (( $+commands[zoxide] )) && eval "$(zoxide init zsh --cmd cd)"
 (( $+commands[starship] )) && eval "$(starship init zsh)"
@@ -35,18 +30,8 @@ if (( $+commands[lazydocker] )); then
   lazydocker() { CONFIG_DIR="$XDG_CONFIG_HOME/lazydocker" command lazydocker "$@"; }
 fi
 
-# Support Homebrew, common Linux package layouts, and manual plugin installs.
-_zsh_source_plugin() {
-  local plugin="$1" candidate
-  for candidate in     "$_zsh_brew_prefix/share/$plugin/$plugin.zsh"     "/usr/share/$plugin/$plugin.zsh"     "/usr/share/zsh/plugins/$plugin/$plugin.zsh"     "/usr/share/zsh-$plugin/$plugin.zsh"     "$XDG_DATA_HOME/zsh/plugins/$plugin/$plugin.zsh"; do
-    if [[ -r $candidate ]]; then
-      source "$candidate"
-      return
-    fi
-  done
-}
+# Homebrew on either OS, or standard Linux packages under /usr/share.
 # Autosuggestions wraps widgets created above. Syntax highlighting goes last.
-_zsh_source_plugin zsh-autosuggestions
-_zsh_source_plugin zsh-syntax-highlighting
-unfunction _zsh_source_plugin
+source "${_zsh_brew_prefix:-/usr}/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+source "${_zsh_brew_prefix:-/usr}/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 unset _zsh_brew_prefix
