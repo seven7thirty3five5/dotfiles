@@ -74,10 +74,7 @@ repository visibility. [Source attributes](https://www.chezmoi.io/reference/sour
    Language servers, formatters, parser builds, and Mason packages are separate
    installations. Install the dependencies reported by health checks; they can
    vary by OS and selected language. Neither plugin versions nor system
-   packages or downloaded language tools are pinned by this repository. For Node, keep using standalone
-   pnpm-managed runtimes or a project version manager; do not install Node or
-   pnpm globally. The existing pnpm directory is added to PATH but never installed
-   or managed by this repo.
+   packages or downloaded language tools are pinned by this repository.
 6. Configure Docker separately if using lazydocker. Docker credentials, contexts,
    plugins, and daemon installations are not included. Atuin sync/login is also
    separate; this repo neither exports nor imports history or account keys.
@@ -108,13 +105,13 @@ created; chezmoi does not automatically track future files.
 | --- | --- | --- |
 | ast-grep | No user-global file created. `sgconfig.yml`, rule YAML, tests and custom grammar references belong to each project. | No init. Use `ast-grep`; `sg` can collide with the Linux group-switching utility. [Project config](https://ast-grep.github.io/guide/project/project-config.html). |
 | atuin | `atuin/config.toml`; existing `enter_accept = true` retained. | `atuin init zsh` in `.zshrc`, after fzf; owns Ctrl-R and Up. Do not track databases, `key`, or `session`. [Config](https://docs.atuin.sh/configuration/config/), [init](https://docs.atuin.sh/main/reference/init/). |
-| bat | `bat/config` (comment-only). Optional custom `bat/themes/*.tmTheme` and `bat/syntaxes/*.sublime-syntax`. | `BAT_CONFIG_DIR` in `.zshenv` ensures the same directory on both OSes. Rebuild generated caches with `bat cache --build` after adding assets; do not track caches. [Config and assets](https://github.com/sharkdp/bat#configuration-file). |
+| bat | `bat/config` (comment-only). Optional custom `bat/themes/*.tmTheme` and `bat/syntaxes/*.sublime-syntax`. | `BAT_CONFIG_DIR` in `zsh/env.zsh` ensures the same directory on both OSes. Rebuild generated caches with `bat cache --build` after adding assets; do not track caches. [Config and assets](https://github.com/sharkdp/bat#configuration-file). |
 | btop | `btop/btop.conf`; optional custom `btop/themes/*.theme`. | No init. Existing built-in Default theme retained. GUI changes may rewrite the config: re-add deliberate changes. Hardware-specific metrics differ between macOS and Linux. [Config](https://github.com/aristocratos/btop#configurability). |
 | chezmoi | `.chezmoi.toml.tmpl` in the repository generates `chezmoi/chezmoi.toml`. Repository `.chezmoiignore` controls platform exclusions. | No init in zsh. Source repo defaults to `~/.local/share/chezmoi`; state databases stay local. [Setup](https://www.chezmoi.io/user-guide/setup/). |
 | difftastic | No native config file. Optional environment variables go in zsh; current opt-in Git difftool definition is in `git/config`. | No init. Run `git difftool --tool=difftastic`. Keep ordinary textual diffs for patches and staging. [Git integration](https://difftastic.wilfred.me.uk/git.html). |
 | duf | No supported user config file found; CLI flags select display/filtering. | No init. Do not invent a duf config. [Usage](https://github.com/muesli/duf#usage). |
 | dust | `dust/config.toml` (comment-only); legacy `~/.dust.toml` is unnecessary. | No init. Reports per-directory usage, complementing duf's filesystem capacity view. [Config](https://github.com/bootandy/dust#config-file). |
-| eza | `eza/theme.yml` (`{}` preserves built-in colors). | `EZA_CONFIG_DIR` in `.zshenv` avoids macOS's Application Support default. No init. Icons require a suitable font. [Themes](https://github.com/eza-community/eza-themes#installation). |
+| eza | `eza/theme.yml` (`{}` preserves built-in colors). | `EZA_CONFIG_DIR` in `zsh/env.zsh` avoids macOS's Application Support default. No init. Icons require a suitable font. [Themes](https://github.com/eza-community/eza-themes#installation). |
 | fd | `fd/ignore` (comment-only global ignore patterns). Project `.fdignore` files belong with their projects. | No init. No native global options config; also useful to editor file pickers. [Manual](https://github.com/sharkdp/fd/blob/master/doc/fd.1). |
 | fzf | No automatically read config file created. `FZF_CTRL_R_COMMAND` is cleared during initialization in `.zshrc`; candidate selection uses fzf defaults. `FZF_DEFAULT_OPTS_FILE` is supported if an options file is wanted later. | `source <(fzf --zsh)` after compinit. Disable its Ctrl-R during sourcing; retain Ctrl-T and Alt-C. [Shell integration](https://github.com/junegunn/fzf#setting-up-shell-integration). |
 | gh | `gh/config.yml` only; aliases/settings included. Never add `gh/hosts.yml`. | No required init. gh-dash also has its own `gh-dash/config.yml`, retained here. Extension binaries under data storage are excluded. [gh config](https://cli.github.com/manual/gh_config), [gh-dash](https://github.com/dlvhdr/gh-dash). |
@@ -125,9 +122,9 @@ created; chezmoi does not automatically track future files.
 | hyperfine | No supported global config file; benchmark flags and export destinations are command arguments. | No init. Benchmark recipes belong with projects. [Usage](https://github.com/sharkdp/hyperfine#usage). |
 | lazydocker | `lazydocker/config.yml` (`{}` preserves defaults). | `.zshrc` defines a command wrapper that scopes supported `CONFIG_DIR` to this command. Avoid exporting this generic name globally. Direct invocations outside the shell wrapper must pass that override if their defaults resolve elsewhere. [Discovery source](https://github.com/jesseduffield/lazydocker/blob/master/pkg/config/app_config.go), [config](https://github.com/jesseduffield/lazydocker/blob/master/docs/Config.md). |
 | lazygit | `lazygit/config.yml`, retaining the existing delta diff renderer. | No init; explicit XDG_CONFIG_HOME selects the XDG path on macOS. Requires delta for the configured renderer. `state.yml` is runtime state; repository overrides belong to projects. [Config](https://github.com/jesseduffield/lazygit/blob/master/docs/Config.md). |
-| neovim | Only `nvim/lua/config/autocmds.lua`, `nvim/lua/config/keymaps.lua`, and `nvim/lua/config/options.lua`. | No shell init; `EDITOR`/`VISUAL` are set in `.zshenv`. Install the default LazyVim starter separately before applying these files; remaining Neovim files and plugins are unmanaged. [LazyVim](https://www.lazyvim.org/installation). |
-| ripgrep | `ripgrep/config` (comment-only), selected with `RIPGREP_CONFIG_PATH`; project `.rgignore` files remain project-owned. | Export the path in `.zshenv`; ripgrep does not discover an arbitrary dotfile itself. Keep defaults to avoid changing LazyVim's searches. [Configuration](https://github.com/BurntSushi/ripgrep/blob/master/GUIDE.md#configuration-file). |
-| starship | `starship.toml` (comment-only); custom prompt palettes belong inside it. | `STARSHIP_CONFIG` in `.zshenv`; `starship init zsh` in `.zshrc` after navigation/history widgets and before the final plugins. No second prompt framework. [Config](https://starship.rs/config/). |
+| neovim | Only `nvim/lua/config/autocmds.lua`, `nvim/lua/config/keymaps.lua`, and `nvim/lua/config/options.lua`. | No shell init; `EDITOR`/`VISUAL` in `zsh/env.zsh` select nvim when available and vim otherwise. Install the default LazyVim starter separately before applying these files; remaining Neovim files and plugins are unmanaged. [LazyVim](https://www.lazyvim.org/installation). |
+| ripgrep | `ripgrep/config` (comment-only), selected with `RIPGREP_CONFIG_PATH`; project `.rgignore` files remain project-owned. | Export the path in `zsh/env.zsh`; ripgrep does not discover an arbitrary dotfile itself. Keep defaults to avoid changing LazyVim's searches. [Configuration](https://github.com/BurntSushi/ripgrep/blob/master/GUIDE.md#configuration-file). |
+| starship | `starship.toml` (comment-only); custom prompt palettes belong inside it. | `STARSHIP_CONFIG` in `zsh/env.zsh`; `starship init zsh` in `.zshrc` after navigation/history widgets and before the final plugins. No second prompt framework. [Config](https://starship.rs/config/). |
 | superfile | `superfile/config.toml`, `superfile/hotkeys.toml`; custom `superfile/theme/*.toml` if added. | No required init. Installed v1.6.0 honors explicit XDG config/data/state variables. Minimal main config uses supported `ignore_missing_fields = true` to inherit built-in settings and keybindings without warnings. Built-in themes are generated by spf, not tracked as custom themes. Optional cd-on-quit needs a shell wrapper; left disabled. [Config](https://superfile.dev/configure/superfile-config/), [installed path source](https://github.com/yorukot/superfile/blob/v1.6.0/src/config/fixed_variable.go). |
 | tree-sitter-cli | `tree-sitter/config.json` with empty parser-directory list and theme map. | No init. Add actual grammar source directories when using CLI parse/highlight; an empty list may warn for grammar discovery and is intentional. Project `tree-sitter.json` and grammars belong in their repos, not dotfiles. [CLI config](https://tree-sitter.github.io/tree-sitter/cli/init-config.html). |
 | yq | No supported global config file for Homebrew's Mike Farah yq. | No init. Do not confuse it with the Python/jq-wrapper yq: their command syntax differs. [Docs](https://mikefarah.gitbook.io/yq). |
@@ -137,32 +134,49 @@ created; chezmoi does not automatically track future files.
 
 ## Zsh startup and ordering
 
-`~/.zshenv` is a relative symlink to `.config/zsh/.zshenv`, so zsh can discover
-`ZDOTDIR` before loading later files. The XDG variables use their standard paths;
-`XDG_RUNTIME_DIR` is deliberately left to the OS/session because a persistent
-home-directory substitute would violate its lifetime/ownership requirements.
+`~/.zshenv` is a regular bootstrap file and the only zsh startup file placed
+in `$HOME`. It preserves existing XDG values, fills the standard defaults where
+unset, exports `ZDOTDIR="$XDG_CONFIG_HOME/zsh"`, and quietly sources
+`$ZDOTDIR/env.zsh`. No `.zshenv` remains inside ZDOTDIR; `.chezmoiremove` migrates
+old checkouts away from that former path.
 
-1. `.zshenv`: XDG paths, ZDOTDIR, supported tool config-path overrides, editor,
-   `PAGER=less`, and static PATH entries. No external commands, output, prompt hooks or widgets.
-   This file runs in scripts too. Known Homebrew locations support Apple Silicon,
-   Intel macOS and Linuxbrew. User binaries and existing pnpm/Docker paths are
-   portable and deduplicated.
-2. `.zprofile`: login shells only; guarded `brew shellenv` supplies Homebrew's
-   additional environment. Non-login shells still have the static PATH setup.
-3. `.zshrc`: interactive shells only; initialize history and XDG cache directories,
-   add package/Docker completion paths, then run `compinit` once with its dump
-   under `~/.cache/zsh`.
-4. Initialize fzf on one line with Ctrl-R disabled and its default candidates,
-   then Atuin, then zoxide replacing `cd`, then Starship. Define the lazydocker scoped-config wrapper.
-5. Load zsh-autosuggestions and zsh-syntax-highlighting with two direct source
-   lines, highlighting last. They use `<Homebrew prefix>/share/<plugin>/` on
-   either OS, or `/usr/share/<plugin>/` for standard Linux packages. Install both
-   plugins at those locations before starting the shell. No plugin manager or
-   search helper is initialized.
-6. The tracked `.zlogout` runs `[[ -o interactive ]] && clear` when a login shell
-   exits, clearing the terminal only for interactive shells.
+1. `env.zsh`: shared, idempotent environment and PATH setup. `.zshenv` and
+   `env.zsh` should **NEVER output anything**: scripts and SSH commands source
+   startup files too, so output can corrupt command data or transfer protocols.
+   No external commands, prompt hooks or widgets run in these two files.
+   XDG config-path overrides, `PAGER=less`, and editor selection live here.
+   `EDITOR` and `VISUAL` use nvim when available on the resulting PATH, falling
+   back to vim. `XDG_RUNTIME_DIR` remains the OS/session's responsibility.
+2. Homebrew discovery is rendered by chezmoi's OS templates. On macOS, check
+   `/opt/homebrew`, then `$HOME/.homebrew`, then `$HOME/.linuxbrew`. On Linux,
+   check `/home/linuxbrew/.linuxbrew`, then `$HOME/.linuxbrew`, then
+   `$HOME/.homebrew`. Only executable `bin/brew` files count as installations;
+   system installs always win. Intel macOS Homebrew under `/usr/local` is not
+   supported. Homebrew's bin/sbin lead PATH, followed by `~/.local/bin`; existing
+   Docker CLI paths are retained when present. PATH entries are deduplicated,
+   so sourcing `env.zsh` repeatedly is safe. No runtime OS tests are needed.
+3. macOS `.zprofile`: source `env.zsh` again after `/etc/zprofile` runs
+   `path_helper`, restoring our PATH order, then evaluate `brew shellenv zsh`
+   from the selected installation. Its first initialization explicitly seeds
+   Homebrew metadata even when bin/sbin already lead PATH; later initialization
+   can use Homebrew's built-in no-op behavior. Linux `.zprofile` has no Homebrew
+   initialization. [Homebrew shellenv](https://docs.brew.sh/Manpage#shellenv-shell-).
+4. `.zshrc`: interactive shells source `env.zsh` again to support inherited
+   ZDOTDIR, initialize history/state/cache directories, and, on Linux only,
+   evaluate `brew shellenv zsh`. Add package/Docker completion paths before
+   running `compinit` once with its dump under `~/.cache/zsh`. Each `setopt`
+   occupies its own line.
+5. Initialize fzf on one line with Ctrl-R disabled and its default candidates,
+   then Atuin, then zoxide replacing `cd`, then Starship. Define the lazydocker
+   scoped-config wrapper. Load zsh-autosuggestions and zsh-syntax-highlighting
+   with two direct source lines, highlighting last. They use the selected
+   Homebrew prefix's `share/<plugin>/` on either OS, or `/usr/share/<plugin>/`
+   for standard Linux packages. Install the plugins before starting the shell.
+6. `.zlogin` is **intentionally kept blank**, tracked solely as a placeholder.
+   The source filename `empty_dot_zlogin` ensures chezmoi preserves the empty
+   file. `.zlogout` contains `[[ -o interactive ]] && clear` and clears the
+   terminal only when an interactive login shell exits.
 
-No tool needs `.zlogin`; no file was created for it.
 No miscellaneous aliases or navigation functions are included. Prior aliases
 were retired to a local backup, including aliases for tools not in the inventory.
 
@@ -224,6 +238,11 @@ The same tool versions may still be needed to reproduce behavior exactly.
   state/cache locations, plugin loading and missing-tool guards.
 - Interactive login shells run the clear command in `.zlogout`; noninteractive
   login shells leave the terminal alone. `PAGER=less` is available in both.
+- The environment split was checked with real Homebrew on macOS and temporary
+  Homebrew fixtures in a Linux container. Verified silent/idempotent sourcing,
+  fresh metadata initialization, macOS path_helper recovery, system-before-local
+  discovery, both local installation fallbacks, inherited ZDOTDIR, existing XDG
+  overrides, nvim/vim selection, regular-file migration and the empty `.zlogin`.
 - bat, eza, dust, ripgrep, Glow, Starship, tree-sitter config loading on macOS;
   superfile v1.6.0 opened successfully with minimal config/hotkeys and exited cleanly.
 - JSON/TOML/YAML syntax and Neovim Lua syntax checked before publishing.

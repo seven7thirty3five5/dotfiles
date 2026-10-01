@@ -1,4 +1,0 @@
-# Login-shell environment; PATH discovery already happens in .zshenv.
-if (( $+commands[brew] )); then
-  eval "$(brew shellenv)"
-fi

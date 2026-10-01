@@ -1,0 +1,14 @@
+{{ if eq .chezmoi.os "darwin" -}}
+# /etc/zprofile runs path_helper before this; restore our PATH priorities.
+[[ -f "$ZDOTDIR/env.zsh" ]] && source "$ZDOTDIR/env.zsh"
+if [[ -n $_zsh_brew_prefix ]]; then
+  # shellenv skips leading bin/sbin paths; seed metadata on a fresh installation.
+  if [[ ${HOMEBREW_PREFIX:-} != $_zsh_brew_prefix ]]; then
+    eval "$(PATH=/usr/bin:/bin "$_zsh_brew_prefix/bin/brew" shellenv zsh)"
+  else
+    eval "$("$_zsh_brew_prefix/bin/brew" shellenv zsh)"
+  fi
+fi
+{{ else -}}
+# Linux initializes Homebrew in interactive .zshrc instead.
+{{ end -}}

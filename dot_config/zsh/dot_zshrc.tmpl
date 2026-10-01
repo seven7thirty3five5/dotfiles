@@ -1,6 +1,9 @@
 # Interactive setup only. Startup order is documented in the chezmoi README.
 [[ -o interactive ]] || return
 
+# Shells that inherit ZDOTDIR skip the home bootstrap; reusing env.zsh is safe.
+[[ -f "$ZDOTDIR/env.zsh" ]] && source "$ZDOTDIR/env.zsh"
+
 HISTFILE="$XDG_STATE_HOME/zsh/history"
 HISTSIZE=10000
 SAVEHIST=10000
@@ -9,11 +12,19 @@ setopt EXTENDED_HISTORY
 setopt SHARE_HISTORY
 setopt HIST_IGNORE_DUPS
 
-# Package-manager completions must be discoverable before compinit.
-_zsh_brew_prefix="${HOMEBREW_PREFIX:-}"
-if [[ -z $_zsh_brew_prefix ]] && (( $+commands[brew] )); then
-  _zsh_brew_prefix="$(brew --prefix)"
+{{ if eq .chezmoi.os "linux" -}}
+# Homebrew shell initialization belongs to interactive shells on Linux.
+if [[ -n $_zsh_brew_prefix ]]; then
+  # shellenv skips leading bin/sbin paths; seed metadata on a fresh installation.
+  if [[ ${HOMEBREW_PREFIX:-} != $_zsh_brew_prefix ]]; then
+    eval "$(PATH=/usr/bin:/bin "$_zsh_brew_prefix/bin/brew" shellenv zsh)"
+  else
+    eval "$("$_zsh_brew_prefix/bin/brew" shellenv zsh)"
+  fi
 fi
+{{ end -}}
+# Package-manager completions must be discoverable before compinit.
+typeset -U fpath
 [[ -d "$_zsh_brew_prefix/share/zsh/site-functions" ]] && fpath=("$_zsh_brew_prefix/share/zsh/site-functions" $fpath)
 [[ -d "$HOME/.docker/completions" ]] && fpath=("$HOME/.docker/completions" $fpath)
 autoload -Uz compinit
@@ -34,4 +45,3 @@ fi
 # Autosuggestions wraps widgets created above. Syntax highlighting goes last.
 source "${_zsh_brew_prefix:-/usr}/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
 source "${_zsh_brew_prefix:-/usr}/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
-unset _zsh_brew_prefix
