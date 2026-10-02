@@ -1,5 +1,8 @@
 {{- $brewPrefix := includeTemplate "brew-prefix" . | trim -}}
 {{- $pluginPrefix := default "/usr" $brewPrefix -}}
+[[ -f "$HOME/.aliases" ]] && source "$HOME/.aliases"
+[[ -f "$HOME/.functions" ]] && source "$HOME/.functions"
+
 # Interactive setup only. Startup order is documented in the chezmoi README.
 [[ -o interactive ]] || return
 

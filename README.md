@@ -4,28 +4,35 @@ Configuration-only chezmoi repository for macOS and Linux. Covers 28 tools from
 `brew leaves` on 2026-09-29. Existing supported configs were retained; missing
 configs use defaults. No installation scripts, binaries, credentials, history,
 plugin checkouts, or caches are managed.
-Only LazyVim's `autocmds.lua`, `keymaps.lua`, and `options.lua` are managed for
-Neovim; the upstream starter and remaining defaults are installed separately.
+The complete LazyVim configuration under `~/.config/nvim` is managed, including
+plugin specifications, extras selection, and `lazy-lock.json`.
 Tracked files and directories use ordinary chezmoi permissions, with no
 `private_` attributes. These attributes affect filesystem permissions, not GitHub
 repository visibility. [Source attributes](https://www.chezmoi.io/reference/source-state-attributes/).
 
+This repository makes these assumptions:
+
+- [Homebrew](https://docs.brew.sh/Installation) is the package manager for the
+  development tools whose configurations are tracked here, on macOS and Linux.
+- zsh is the shell used for startup files and tool integrations.
+- The [XDG Base Directory Specification](https://specifications.freedesktop.org/basedir/latest/)
+  is followed as much as possible, using its standard config/data/state/cache paths.
+
+Files that need to live in the home directory stay there: the zsh bootstrap
+`~/.zshenv` and the tracked `~/.editorconfig`. EditorConfig sets UTF-8, LF line
+endings, and a final newline; closer project files can override these defaults.
+[EditorConfig discovery and precedence](https://editorconfig.org/#file-location).
+
+`~/.aliases` and `~/.functions` are per-machine customizations. They are deliberately
+excluded from chezmoi and this repository; `.zshrc` sources them first, in that
+order, when present. On another machine, create them locally with
+`touch ~/.aliases ~/.functions` and add that machine's aliases and functions.
+
 ## Recreate on another machine
 
-1. Install zsh, Git, chezmoi, and the tools below using your platform's package
-   manager or official releases. Use current versions; `fzf --zsh` requires fzf
-   0.48 or newer. Linux package names can differ (`fd-find`, `batcat`, `git-delta`);
-   ensure the commands `fd`, `bat`, and `delta` are available under those names.
-   On a fresh machine, install the upstream LazyVim starter **before** applying
-   chezmoi, since cloning requires an empty destination directory:
-
-   ```sh
-   git clone --depth 1 https://github.com/LazyVim/starter.git ~/.config/nvim
-   ```
-
-   Skip this clone when LazyVim is already installed. Its `init.lua` and default
-   loader are required to start LazyVim even though this repository doesn't track
-   them. The next step overlays only the three selected user config files.
+1. Install Homebrew and ensure zsh, Git, and chezmoi are available before applying
+   the repository. Install the development-tool inventory below with Homebrew.
+   Use current versions; `fzf --zsh` requires fzf 0.48 or newer.
 2. Apply this public repository over HTTPS; no GitHub login is needed:
 
    ```sh
@@ -59,30 +66,24 @@ repository visibility. [Source attributes](https://www.chezmoi.io/reference/sour
    This was the only installed gh extension at audit time. The pin records the
    observed version without storing its executable. Upgrade deliberately, then
    update this README. [Extension installation](https://cli.github.com/manual/gh_extension_install).
-5. Start `nvim` using the upstream LazyVim starter installed in step 1. Its
-   default loader downloads lazy.nvim and the default plugins into Neovim's data
-   directory. Run `:LazyHealth` and `:checkhealth` to check the setup.
-   Only these files come from this repository:
-
-   - `~/.config/nvim/lua/config/autocmds.lua`
-   - `~/.config/nvim/lua/config/keymaps.lua`
-   - `~/.config/nvim/lua/config/options.lua`
-
-   `init.lua`, `lua/config/lazy.lua`, plugin specs, themes, extras selection,
-   `lazyvim.json`, `lazy-lock.json`, `.neoconf.json`, and `stylua.toml` remain
-   machine-local or come from the upstream starter. No plugin revisions or
-   extra selection are synchronized, so different machines can use different
-   upstream default versions. [LazyVim installation](https://www.lazyvim.org/installation).
+5. Start `nvim`. The tracked `init.lua` and `lua/config/lazy.lua` bootstrap
+   lazy.nvim and LazyVim into Neovim's data directory. The full configuration
+   tree is tracked, including Lua configuration and plugin specs, `lazyvim.json`,
+   `lazy-lock.json`, `.neoconf.json`, and `stylua.toml`; no separate starter clone
+   is needed. Run `:Lazy restore` to install the plugin revisions recorded in
+   the lockfile, then `:LazyHealth` and `:checkhealth` to check the setup.
+   [LazyVim configuration](https://www.lazyvim.org/configuration/general),
+   [lockfile restoration](https://lazy.folke.io/usage/lockfile).
 
    Language servers, formatters, parser builds, and Mason packages are separate
    installations. Install the dependencies reported by health checks; they can
-   vary by OS and selected language. Neither plugin versions nor system
-   packages or downloaded language tools are pinned by this repository.
+   vary by OS and selected language. Plugin checkouts, downloaded tools, caches,
+   and state stay outside this repository.
 6. Configure Docker separately if using lazydocker. Docker credentials, contexts,
    plugins, and daemon installations are not included. Atuin sync/login is also
    separate; this repo neither exports nor imports history or account keys.
 
-For Homebrew users, the observed common formula names are:
+Install the development-tool inventory with these Homebrew formula names:
 
 ```sh
 brew install ast-grep atuin bat btop chezmoi difftastic duf dust eza fd fzf \
@@ -97,43 +98,52 @@ where needed. Some integrations (especially LazyVim) need additional dependencie
 such as a C compiler and build tools. Built-in themes come from each application;
 track custom theme source files, not generated theme caches.
 
-## Files for every leaf
+## Configuration file support
 
-All paths below are relative to `~/.config/` unless otherwise specified.
-Environment-only settings live in the tracked zsh files, not invented per-tool
-config files. Files described as optional assets should be added explicitly when
-created; chezmoi does not automatically track future files.
+Support includes project configs, ignore/theme files, and options files selected
+through supported environment variables. gh-dash and LazyVim are listed alongside
+their host tools.
 
-| Tool | Tracked configuration / supported alternatives | Shell setup and notes |
+The environment column covers runtime controls, including color, authentication,
+and diagnostics. Shared OS variables such as `HOME`, `PATH`, and `XDG_*` are
+omitted, as are build/test-harness variables and arbitrary data read by expressions
+or templates. Linked `*` families refer to the supported names in the upstream
+reference; a prefix alone does not make an arbitrary variable supported. Zsh
+plugins use shell variables, marked below, including arrays that cannot be exported.
+Other extensions and plugins can define their own additional controls.
+
+| Tool | Supported | Custom environment variables |
 | --- | --- | --- |
-| ast-grep | No user-global file created. `sgconfig.yml`, rule YAML, tests and custom grammar references belong to each project. | No init. Use `ast-grep`; `sg` can collide with the Linux group-switching utility. [Project config](https://ast-grep.github.io/guide/project/project-config.html). |
-| atuin | `atuin/config.toml`; existing `enter_accept = true` retained. | `atuin init zsh` in `.zshrc`, after fzf; owns Ctrl-R and Up. Do not track databases, `key`, or `session`. [Config](https://docs.atuin.sh/configuration/config/), [init](https://docs.atuin.sh/main/reference/init/). |
-| bat | `bat/config` (comment-only). Optional custom `bat/themes/*.tmTheme` and `bat/syntaxes/*.sublime-syntax`. | `BAT_CONFIG_DIR` in `zsh/env.zsh` ensures the same directory on both OSes. Rebuild generated caches with `bat cache --build` after adding assets; do not track caches. [Config and assets](https://github.com/sharkdp/bat#configuration-file). |
-| btop | `btop/btop.conf`; optional custom `btop/themes/*.theme`. | No init. Existing built-in Default theme retained. GUI changes may rewrite the config: re-add deliberate changes. Hardware-specific metrics differ between macOS and Linux. [Config](https://github.com/aristocratos/btop#configurability). |
-| chezmoi | `.chezmoi.toml.tmpl` in the repository generates `chezmoi/chezmoi.toml`. Repository `.chezmoiignore` controls platform exclusions. | No init in zsh. Source repo defaults to `~/.local/share/chezmoi`; state databases stay local. [Setup](https://www.chezmoi.io/user-guide/setup/). |
-| difftastic | No native config file. Optional environment variables go in zsh; current opt-in Git difftool definition is in `git/config`. | No init. Run `git difftool --tool=difftastic`. Keep ordinary textual diffs for patches and staging. [Git integration](https://difftastic.wilfred.me.uk/git.html). |
-| duf | No supported user config file found; CLI flags select display/filtering. | No init. Do not invent a duf config. [Usage](https://github.com/muesli/duf#usage). |
-| dust | `dust/config.toml` (comment-only); legacy `~/.dust.toml` is unnecessary. | No init. Reports per-directory usage, complementing duf's filesystem capacity view. [Config](https://github.com/bootandy/dust#config-file). |
-| eza | `eza/theme.yml` (`{}` preserves built-in colors). | `EZA_CONFIG_DIR` in `zsh/env.zsh` avoids macOS's Application Support default. No init. Icons require a suitable font. [Themes](https://github.com/eza-community/eza-themes#installation). |
-| fd | `fd/ignore` (comment-only global ignore patterns). Project `.fdignore` files belong with their projects. | No init. No native global options config; also useful to editor file pickers. [Manual](https://github.com/sharkdp/fd/blob/master/doc/fd.1). |
-| fzf | No automatically read config file created. `FZF_CTRL_R_COMMAND` is cleared during initialization in `.zshrc`; candidate selection uses fzf defaults. `FZF_DEFAULT_OPTS_FILE` is supported if an options file is wanted later. | `source <(fzf --zsh)` after compinit. Disable its Ctrl-R during sourcing; retain Ctrl-T and Alt-C. [Shell integration](https://github.com/junegunn/fzf#setting-up-shell-integration). |
-| gh | `gh/config.yml` only; aliases/settings included. Never add `gh/hosts.yml`. | No required init. gh-dash also has its own `gh-dash/config.yml`, retained here. Extension binaries under data storage are excluded. [gh config](https://cli.github.com/manual/gh_config), [gh-dash](https://github.com/dlvhdr/gh-dash). |
-| git | `git/config` rendered from `dot_config/git/config.tmpl`, plus `git/ignore`; per-machine identity, delta settings and opt-in difftastic. | No init. XDG config/ignore paths are natively supported. Project `.gitconfig` includes, signing keys and credential stores require separate consideration if added. [Git config](https://git-scm.com/docs/git-config). |
-| git-delta | Settings in `git/config`, no invented standalone config. Optional custom themes can be a separate Git include file. | No init. `core.pager` and `interactive.diffFilter` enable delta. lazygit also explicitly uses delta; built-in delta themes require no copied assets. [Configuration](https://dandavison.github.io/delta/configuration.html). |
-| glow | `glow/glow.yml` (`{}` preserves defaults); optional custom renderer style JSON, referenced through `style`. | No init. Explicit XDG_CONFIG_HOME is recognized on macOS. [Config discovery source](https://github.com/charmbracelet/glow/blob/master/main.go). |
-| herdr | `herdr/config.toml`; existing built-in catppuccin theme and onboarding setting retained. No installed custom plugins found (empty `.plugins.lock`). | No required shell init. Do not track session JSON, sockets, logs or release metadata, even where they live under `.config`. [Configuration](https://herdr.dev/docs/configuration/). |
-| hyperfine | No supported global config file; benchmark flags and export destinations are command arguments. | No init. Benchmark recipes belong with projects. [Usage](https://github.com/sharkdp/hyperfine#usage). |
-| lazydocker | `lazydocker/config.yml` (`{}` preserves defaults). | `.zshrc` defines a command wrapper that scopes supported `CONFIG_DIR` to this command. Avoid exporting this generic name globally. Direct invocations outside the shell wrapper must pass that override if their defaults resolve elsewhere. [Discovery source](https://github.com/jesseduffield/lazydocker/blob/master/pkg/config/app_config.go), [config](https://github.com/jesseduffield/lazydocker/blob/master/docs/Config.md). |
-| lazygit | `lazygit/config.yml`, retaining the existing delta diff renderer. | No init; explicit XDG_CONFIG_HOME selects the XDG path on macOS. Requires delta for the configured renderer. `state.yml` is runtime state; repository overrides belong to projects. [Config](https://github.com/jesseduffield/lazygit/blob/master/docs/Config.md). |
-| neovim | Only `nvim/lua/config/autocmds.lua`, `nvim/lua/config/keymaps.lua`, and `nvim/lua/config/options.lua`. | No shell init; `EDITOR`/`VISUAL` in `zsh/env.zsh` select nvim when available and vim otherwise. Install the default LazyVim starter separately before applying these files; remaining Neovim files and plugins are unmanaged. [LazyVim](https://www.lazyvim.org/installation). |
-| ripgrep | `ripgrep/config` (comment-only), selected with `RIPGREP_CONFIG_PATH`; project `.rgignore` files remain project-owned. | Export the path in `zsh/env.zsh`; ripgrep does not discover an arbitrary dotfile itself. Keep defaults to avoid changing LazyVim's searches. [Configuration](https://github.com/BurntSushi/ripgrep/blob/master/GUIDE.md#configuration-file). |
-| starship | `starship.toml` (comment-only); custom prompt palettes belong inside it. | `STARSHIP_CONFIG` in `zsh/env.zsh`; `starship init zsh` in `.zshrc` after navigation/history widgets and before the final plugins. No second prompt framework. [Config](https://starship.rs/config/). |
-| superfile | `superfile/config.toml`, `superfile/hotkeys.toml`; custom `superfile/theme/*.toml` if added. | No required init. Installed v1.6.0 honors explicit XDG config/data/state variables. Minimal main config uses supported `ignore_missing_fields = true` to inherit built-in settings and keybindings without warnings. Built-in themes are generated by spf, not tracked as custom themes. Optional cd-on-quit needs a shell wrapper; left disabled. [Config](https://superfile.dev/configure/superfile-config/), [installed path source](https://github.com/yorukot/superfile/blob/v1.6.0/src/config/fixed_variable.go). |
-| tree-sitter-cli | `tree-sitter/config.json` with empty parser-directory list and theme map. | No init. Add actual grammar source directories when using CLI parse/highlight; an empty list may warn for grammar discovery and is intentional. Project `tree-sitter.json` and grammars belong in their repos, not dotfiles. [CLI config](https://tree-sitter.github.io/tree-sitter/cli/init-config.html). |
-| yq | No supported global config file for Homebrew's Mike Farah yq. | No init. Do not confuse it with the Python/jq-wrapper yq: their command syntax differs. [Docs](https://mikefarah.gitbook.io/yq). |
-| zoxide | No native config file; options/environment in zsh. | `zoxide init zsh --cmd cd` replaces interactive `cd` and adds `cdi` (fzf picker). `_ZO_DATA_DIR` selects XDG data storage on both OSes; its database stays local. `builtin cd` bypasses the wrapper. [Configuration](https://github.com/ajeetdsouza/zoxide#configuration). |
-| zsh-autosuggestions | Settings belong in `.zshrc`; no dedicated native config file. | Source after widget integrations, before syntax highlighting. Default suggestions use zsh's native history, while Atuin provides searchable history. [Config](https://github.com/zsh-users/zsh-autosuggestions#configuration). |
-| zsh-syntax-highlighting | Settings belong in `.zshrc`; no dedicated native config file. | Source last, after compinit, keybindings and other widget plugins. [Required order](https://github.com/zsh-users/zsh-syntax-highlighting/blob/master/INSTALL.md). |
+| [ast-grep](https://ast-grep.github.io/) | [yes](https://ast-grep.github.io/guide/project/project-config.html) | [`NO_COLOR`](https://github.com/ast-grep/ast-grep/blob/main/crates/cli/src/print/colored_print/styles.rs) |
+| [atuin](https://docs.atuin.sh/latest/) | [yes](https://docs.atuin.sh/latest/configuration/config/) | [`ATUIN_*`](https://github.com/atuinsh/atuin/tree/main/crates) (config overrides, config/theme paths, shell bindings, history context, logging); [`NO_COLOR`](https://github.com/atuinsh/atuin/blob/main/crates/atuin/src/command/client/output/search/mod.rs), [`NO_MOTION`](https://github.com/atuinsh/atuin/blob/main/crates/atuin-client/src/settings.rs) |
+| [bat](https://github.com/sharkdp/bat) | [yes](https://github.com/sharkdp/bat#configuration-file) | [`BAT_*` option overrides](https://github.com/sharkdp/bat/blob/master/src/bin/bat/config.rs); [`BAT_CONFIG_DIR`, `BAT_CACHE_PATH`](https://github.com/sharkdp/bat/blob/master/src/bin/bat/directories.rs); [`NO_COLOR`](https://github.com/sharkdp/bat/blob/master/src/bin/bat/app.rs) |
+| [btop](https://github.com/aristocratos/btop) | [yes](https://github.com/aristocratos/btop#configurability) | [`BTOP_SNAPPED`](https://github.com/aristocratos/btop/blob/main/src/osx/btop_collect.cpp) (macOS/BSD collector override) |
+| [chezmoi](https://www.chezmoi.io/) | [yes](https://www.chezmoi.io/reference/configuration-file/) | [`CHEZMOI_GITHUB_ACCESS_TOKEN`, `CHEZMOI_GITHUB_TOKEN`, `GITHUB_ACCESS_TOKEN`, `GITHUB_TOKEN`](https://www.chezmoi.io/reference/commands/upgrade/); [`NO_COLOR`, `EJSON_KEYDIR`](https://github.com/twpayne/chezmoi/blob/master/internal/cmd/config.go); optional integrations: [`BW_SESSION`](https://github.com/twpayne/chezmoi/blob/master/internal/cmd/bitwardentemplatefuncs.go), [`OP_SESSION_<account>`, `OP_CONNECT_HOST`, `OP_CONNECT_TOKEN`, `OP_SERVICE_ACCOUNT_TOKEN`](https://github.com/twpayne/chezmoi/blob/master/internal/cmd/onepasswordtemplatefuncs.go) |
+| [difftastic](https://difftastic.wilfred.me.uk/introduction.html) | no | [`DFT_*`](https://github.com/Wilfred/difftastic/tree/master/src) (display/limits, numbered syntax overrides, diagnostics) |
+| [duf](https://github.com/muesli/duf) | no | [`NO_COLOR`, `CLICOLOR_FORCE`](https://github.com/muesli/termenv#color-support) (through its termenv color detection) |
+| [dust](https://github.com/bootandy/dust) | [yes](https://github.com/bootandy/dust#config-file) | [`NO_COLOR`](https://github.com/bootandy/dust/blob/master/src/main.rs) |
+| [eza](https://github.com/eza-community/eza) | [yes](https://github.com/eza-community/eza-themes#installation) | [`EZA_*`, `LS_COLORS`, `NO_COLOR`](https://github.com/eza-community/eza/blob/main/man/eza.1.md#environment-variables); legacy [`EXA_*`](https://github.com/eza-community/eza/blob/main/src/options/vars.rs) fallbacks |
+| [fd](https://github.com/sharkdp/fd) | [yes](https://github.com/sharkdp/fd#excluding-specific-files-or-directories) | [`LS_COLORS`, `NO_COLOR`](https://github.com/sharkdp/fd#colorized-output) |
+| [fzf](https://junegunn.github.io/fzf/) | [yes](https://github.com/junegunn/fzf#environment-variables) | [`FZF_*` core options/API controls, `NO_COLOR`](https://github.com/junegunn/fzf/blob/master/man/man1/fzf.1); [`FZF_*` shell integration and tmux controls](https://junegunn.github.io/fzf/shell-integration/) |
+| [gh](https://cli.github.com/manual/) | [yes](https://cli.github.com/manual/gh_help_environment) | [`GH_*`, `GITHUB_TOKEN`, `GITHUB_ENTERPRISE_TOKEN`, `GLAMOUR_STYLE`, `NO_COLOR`, `CLICOLOR`, `CLICOLOR_FORCE`](https://cli.github.com/manual/gh_help_environment) |
+| [gh-dash](https://www.gh-dash.dev/getting-started/) | [yes](https://www.gh-dash.dev/configuration/) | [`GH_DASH_CONFIG`](https://github.com/dlvhdr/gh-dash/blob/main/internal/config/parser.go), [`LOG_LEVEL`](https://github.com/dlvhdr/gh-dash/blob/main/cmd/root.go), [`DASH_PROFILE`](https://github.com/dlvhdr/gh-dash/blob/main/gh-dash.go); gh authentication variables above |
+| [git](https://git-scm.com/docs) | [yes](https://git-scm.com/docs/git-config) | [`GIT_*`, `EMAIL`, `SSH_ASKPASS`](https://git-scm.com/docs/git#_environment_variables) |
+| [git-delta](https://dandavison.github.io/delta/) | [yes](https://dandavison.github.io/delta/configuration.html) | [`DELTA_*`](https://github.com/dandavison/delta/tree/main/src) (features, navigation, pager, diagnostics), [`BAT_THEME`](https://github.com/dandavison/delta/blob/main/src/env.rs); [`BAT_PAGER`, `GIT_PAGER`](https://dandavison.github.io/delta/environment-variables.html) |
+| [glow](https://github.com/charmbracelet/glow) | [yes](https://github.com/charmbracelet/glow#the-config-file) | [`GLOW_*`](https://github.com/charmbracelet/glow/blob/main/main.go) (config-key overrides and `GLOW_CONFIG_HOME`); [`GLOW_TEXT_SIZING`](https://github.com/charmbracelet/glow/blob/main/utils/textsize.go) |
+| [herdr](https://herdr.dev/docs/) | [yes](https://herdr.dev/docs/configuration/) | [`HERDR_*`](https://herdr.dev/docs/cli-reference/#environment-variables) (config/session/socket overrides, process detection, logging, sound, pane context) |
+| [hyperfine](https://github.com/sharkdp/hyperfine) | no | [`NO_COLOR`](https://github.com/sharkdp/hyperfine/blob/master/src/options.rs) |
+| [lazydocker](https://github.com/jesseduffield/lazydocker) | [yes](https://github.com/jesseduffield/lazydocker/blob/master/docs/Config.md) | [`CONFIG_DIR`, `DEBUG`](https://github.com/jesseduffield/lazydocker/blob/master/pkg/config/app_config.go), [`LOG_LEVEL`](https://github.com/jesseduffield/lazydocker/blob/master/pkg/log/log.go); [`DOCKER_HOST`, `DOCKER_CONTEXT`, `DOCKER_CERT_PATH`, `DOCKER_TLS_VERIFY`](https://github.com/jesseduffield/lazydocker/blob/master/pkg/commands/docker.go) |
+| [lazygit](https://github.com/jesseduffield/lazygit) | [yes](https://github.com/jesseduffield/lazygit/blob/master/docs/Config.md) | [`LG_CONFIG_FILE`, `CONFIG_DIR`, `LAZYGIT_KEYBINDING_PLATFORM`, `LAZYGIT_LOG_PATH`](https://github.com/jesseduffield/lazygit/blob/master/pkg/config/app_config.go); [`DEBUG`](https://github.com/jesseduffield/lazygit/blob/master/pkg/app/entry_point.go), [`LOG_LEVEL`](https://github.com/jesseduffield/lazygit/blob/master/pkg/logs/logs.go), [`GH_PATH`](https://github.com/jesseduffield/lazygit/blob/master/pkg/commands/git_commands/github.go), [`SHOW_RECENT_REPOS`](https://github.com/jesseduffield/lazygit/blob/master/pkg/app/app.go), [`LAZYGIT_NEW_DIR_FILE`](https://github.com/jesseduffield/lazygit/blob/master/pkg/gui/controllers/helpers/record_directory_helper.go), [`LAZYGIT_SLOW_RENDER`](https://github.com/jesseduffield/lazygit/blob/master/pkg/tasks/tasks.go); Git variables above |
+| [neovim](https://neovim.io/doc/user/) | [yes](https://neovim.io/doc/user/starting/#config) | [`NVIM_APPNAME`, `NVIM_LOG_FILE`, `VIMINIT`, `EXINIT`, `VIM`, `VIMRUNTIME`](https://neovim.io/doc/user/starting/); [`NVIM_RPLUGIN_MANIFEST`](https://neovim.io/doc/user/remote_plugin/); [`NVIM_PYTHON_LOG_FILE`, `NVIM_PYTHON_LOG_LEVEL`](https://github.com/neovim/pynvim#troubleshooting) |
+| [LazyVim](https://www.lazyvim.org/) | [yes](https://www.lazyvim.org/configuration/general) | [`MASON`](https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/util/init.lua), [`CC`](https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/util/treesitter.lua); Neovim variables above |
+| [ripgrep](https://github.com/BurntSushi/ripgrep) | [yes](https://github.com/BurntSushi/ripgrep/blob/master/GUIDE.md#configuration-file) | [`RIPGREP_CONFIG_PATH`](https://github.com/BurntSushi/ripgrep/blob/master/GUIDE.md#configuration-file), [`NO_COLOR`](https://github.com/BurntSushi/ripgrep/blob/master/crates/core/flags/defs.rs) |
+| [starship](https://starship.rs/) | [yes](https://starship.rs/config/) | [`STARSHIP_CONFIG`, `STARSHIP_CACHE`, `STARSHIP_SESSION_KEY`](https://starship.rs/config/#logging), [`STARSHIP_LOG`](https://github.com/starship/starship/blob/main/src/logger.rs), [`STARSHIP_NUM_THREADS`](https://github.com/starship/starship/blob/main/src/lib.rs), [`STARSHIP_SHELL`](https://github.com/starship/starship/blob/main/src/context/mod.rs); modules also read their tools' environment |
+| [superfile](https://superfile.dev/) | [yes](https://superfile.dev/configure/superfile-config/) | None |
+| [tree-sitter-cli](https://tree-sitter.github.io/tree-sitter/cli/) | [yes](https://tree-sitter.github.io/tree-sitter/cli/init-config.html) | [`TREE_SITTER_DIR`](https://github.com/tree-sitter/tree-sitter/blob/master/crates/config/src/tree_sitter_config.rs); [`TREE_SITTER_LIBDIR`, `TREE_SITTER_WASI_SDK_PATH`, `TREE_SITTER_BINARYEN_PATH`](https://github.com/tree-sitter/tree-sitter/blob/master/crates/loader/src/loader.rs); [`TREE_SITTER_*` playground controls](https://github.com/tree-sitter/tree-sitter/blob/master/crates/cli/src/playground.rs), [`TREE_SITTER_*` fuzz/logging controls](https://github.com/tree-sitter/tree-sitter/blob/master/crates/cli/src/fuzz.rs); [`NO_COLOR`](https://github.com/tree-sitter/tree-sitter/blob/master/crates/cli/src/paint.rs) |
+| [yq](https://mikefarah.gitbook.io/yq) | no | [`NO_COLOR`](https://github.com/mikefarah/yq/blob/master/cmd/root.go) |
+| [zoxide](https://github.com/ajeetdsouza/zoxide) | no | [`_ZO_DATA_DIR`, `_ZO_ECHO`, `_ZO_EXCLUDE_DIRS`, `_ZO_FZF_OPTS`, `_ZO_MAXAGE`, `_ZO_RESOLVE_SYMLINKS`](https://github.com/ajeetdsouza/zoxide#configuration) |
+| [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions) | no | None; [`ZSH_AUTOSUGGEST_*`](https://github.com/zsh-users/zsh-autosuggestions#configuration) are shell variables |
+| [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting) | no | None; [`ZSH_HIGHLIGHT_*`](https://github.com/zsh-users/zsh-syntax-highlighting/blob/master/docs/highlighters.md) are shell variables |
 
 ## Zsh startup and ordering
 
@@ -167,8 +177,9 @@ old checkouts away from that former path.
    again to restore the shared environment and select the editor with Homebrew
    tools now on PATH. Linux `.zprofile` has no Homebrew
    initialization. [Homebrew shellenv](https://docs.brew.sh/Manpage#shellenv-shell-).
-4. `.zshrc`: on Linux only, first evaluate `brew shellenv zsh`. Interactive
-   shells then source `env.zsh` again to support inherited ZDOTDIR and refresh
+4. `.zshrc`: first source the unmanaged `~/.aliases`, then `~/.functions`, when
+   present. On Linux only, next evaluate `brew shellenv zsh`. Interactive shells
+   then source `env.zsh` again to support inherited ZDOTDIR and refresh
    editor selection, and initialize history/state/cache directories. Add
    Docker completion paths alongside Homebrew's supplied completions before
    running `compinit` once with its dump under `~/.cache/zsh`. Each `setopt`
@@ -179,13 +190,14 @@ old checkouts away from that former path.
    with two direct source lines, highlighting last. They use the selected
    Homebrew prefix's `share/<plugin>/` on either OS, or `/usr/share/<plugin>/`
    for standard Linux packages. Install the plugins before starting the shell.
-6. `.zlogin` is **intentionally kept blank**, tracked solely as a placeholder.
-   The source filename `empty_dot_zlogin` ensures chezmoi preserves the empty
-   file. `.zlogout` contains `[[ -o interactive ]] && clear` and clears the
-   terminal only when an interactive login shell exits.
+6. `.zlogin` contains only a comment saying it is not used and is tracked as
+   a placeholder. `.zlogout` contains `[[ -o interactive ]] && clear` and clears
+   the terminal only when an interactive login shell exits.
 
-No miscellaneous aliases or navigation functions are included. Prior aliases
-were retired to a local backup, including aliases for tools not in the inventory.
+Shared startup files contain no miscellaneous aliases or navigation functions.
+Use the unmanaged `~/.aliases` and `~/.functions` for per-machine customizations.
+Prior aliases were retired to a local backup, including aliases for tools not in
+the inventory.
 
 ## Interactions and limits
 
@@ -203,6 +215,10 @@ were retired to a local backup, including aliases for tools not in the inventory
   delta. Git, lazygit, and gh-dash cover different tasks: local repository commands,
   local interactive staging, and GitHub PR/issue review. gh-dash can use a delta
   diff pager explicitly if customized later.
+- lazydocker and lazygit both recognize the generic `CONFIG_DIR`, `DEBUG`, and
+  `LOG_LEVEL` variables; gh-dash also uses `LOG_LEVEL`. Scope overrides to the
+  command that needs them. The lazydocker shell wrapper scopes `CONFIG_DIR` to
+  its XDG config directory without changing lazygit's configuration.
 - ripgrep and fd complement LazyVim's search/file pickers; global ignore changes
   affect shell results and integrations. ast-grep is structural search and rewriting,
   using tree-sitter grammars; it does not automatically adopt Neovim's parsers.
@@ -212,8 +228,9 @@ were retired to a local backup, including aliases for tools not in the inventory
   tool assets should stay outside chezmoi.
 - Installed font/terminal support affects icons, prompt glyphs and theme colors.
   Built-in themes are represented by config choices or application defaults;
-  copying every built-in theme is unnecessary. Add custom theme source files only
-  for tools you intend to manage; Neovim themes remain unmanaged.
+  copying every built-in theme is unnecessary. Custom Neovim theme configuration
+  and plugin specs under `~/.config/nvim` are tracked; downloaded theme plugins
+  remain in Neovim's data directory.
 - Previously configured required Git LFS filters were removed because `git-lfs`
   was absent. If an LFS repository needs it, install git-lfs separately and run
   `git lfs install`; then explicitly track the generated filter config if desired.
@@ -227,10 +244,11 @@ were retired to a local backup, including aliases for tools not in the inventory
 
 After editing a managed config, run `chezmoi add <path>` to update its source copy,
 then `chezmoi diff`, review, commit, and push from `chezmoi cd`. After a deliberate
-LazyVim change, re-add only the selected `autocmds.lua`, `keymaps.lua`, and
-`options.lua` files. The ignore rules exclude the rest of Neovim; avoid
-overriding those rules. After adding a custom theme for another
-managed tool, explicitly add that asset and its selecting config.
+LazyVim change or plugin update, run `chezmoi add --secrets error ~/.config/nvim`
+to capture the full configuration and updated `lazy-lock.json`. Git metadata is
+excluded; newly created config files must be explicitly added. After adding a
+custom theme for another managed tool, explicitly add that asset and its
+selecting config.
 Use `chezmoi update` on other machines to pull and apply the committed config.
 The same tool versions may still be needed to reproduce behavior exactly.
 
@@ -250,8 +268,8 @@ The same tool versions may still be needed to reproduce behavior exactly.
   fixtures. Verified silent/idempotent sourcing, fresh metadata initialization,
   macOS path_helper recovery, render-time system-before-local selection, both
   local fallbacks, executable checks, paths with spaces, reapplying after moves,
-  inherited ZDOTDIR, XDG overrides, and nvim/vim selection. Regular-file migration
-  and the empty `.zlogin` were checked when the environment split was introduced.
+  inherited ZDOTDIR, XDG overrides, and nvim/vim selection. The regular-file
+  bootstrap migration was checked when the environment split was introduced.
 - bat, eza, dust, ripgrep, Glow, Starship, tree-sitter config loading on macOS;
   superfile v1.6.0 opened successfully with minimal config/hotkeys and exited cleanly.
 - JSON/TOML/YAML syntax and Neovim Lua syntax checked before publishing.
@@ -263,6 +281,10 @@ The Git identity template was additionally checked with a separate work identity
 including names with spaces, quotes and backslashes, and repeated initialization
 was checked to preserve the saved machine-local identity without prompting.
 
-Following the tracking-scope change, macOS and Linux target layouts were checked
-to contain only the three selected Neovim files and no private source attributes.
-Existing local default LazyVim files are preserved.
+The full LazyVim configuration and plugin lockfile are tracked with ordinary
+source attributes. macOS and Linux target layouts and the comment-only `.zlogin`
+were checked after updating the tracking scope.
+Fresh init/apply/verify checks for both OS targets also restored `~/.editorconfig`,
+preserved existing unmanaged aliases/functions, and confirmed their startup order
+and optional loading when absent. Neovim's EditorConfig parser confirmed the home
+defaults and a closer project's override.
