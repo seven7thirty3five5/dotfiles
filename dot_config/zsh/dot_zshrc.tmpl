@@ -58,4 +58,6 @@ unset _zsh_arrow
 # Homebrew on either OS, or standard Linux packages under /usr/share.
 # Autosuggestions wraps widgets created above. Syntax highlighting goes last.
 source {{ joinPath $pluginPrefix "share/zsh-autosuggestions/zsh-autosuggestions.zsh" | shellQuote }}
+# Catppuccin theme (fetched via .chezmoiexternal.toml) must load before the plugin.
+[[ -f "$ZDOTDIR/catppuccin_mocha-zsh-syntax-highlighting.zsh" ]] && source "$ZDOTDIR/catppuccin_mocha-zsh-syntax-highlighting.zsh"
 source {{ joinPath $pluginPrefix "share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" | shellQuote }}

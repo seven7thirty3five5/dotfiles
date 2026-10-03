@@ -1,0 +1,28 @@
+# Official Catppuccin Mocha ports, fetched from upstream on apply.
+# Refreshed weekly, or immediately with `chezmoi apply --refresh-externals`.
+# Accent is blue wherever a port offers a choice, to match lazygit.
+
+[".config/btop/themes/catppuccin_mocha.theme"]
+    type = "file"
+    url = "https://raw.githubusercontent.com/catppuccin/btop/main/themes/catppuccin_mocha.theme"
+    refreshPeriod = "168h"
+
+[".config/atuin/themes/catppuccin-mocha-blue.toml"]
+    type = "file"
+    url = "https://raw.githubusercontent.com/catppuccin/atuin/main/themes/mocha/catppuccin-mocha-blue.toml"
+    refreshPeriod = "168h"
+
+[".config/eza/theme.yml"]
+    type = "file"
+    url = "https://raw.githubusercontent.com/catppuccin/eza/main/themes/mocha/catppuccin-mocha-blue.yml"
+    refreshPeriod = "168h"
+
+[".config/glow/catppuccin-mocha.json"]
+    type = "file"
+    url = "https://raw.githubusercontent.com/catppuccin/glamour/main/themes/catppuccin-mocha.json"
+    refreshPeriod = "168h"
+
+[".config/zsh/catppuccin_mocha-zsh-syntax-highlighting.zsh"]
+    type = "file"
+    url = "https://raw.githubusercontent.com/catppuccin/zsh-syntax-highlighting/main/themes/catppuccin_mocha-zsh-syntax-highlighting.zsh"
+    refreshPeriod = "168h"
