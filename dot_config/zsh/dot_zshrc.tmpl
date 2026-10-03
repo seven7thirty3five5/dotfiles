@@ -23,17 +23,89 @@ HISTFILE="$XDG_STATE_HOME/zsh/history"
 HISTSIZE=10000
 SAVEHIST=10000
 mkdir -p -- "$XDG_STATE_HOME/zsh" "$XDG_CACHE_HOME/zsh"
-setopt EXTENDED_HISTORY
-setopt SHARE_HISTORY
-setopt HIST_IGNORE_DUPS
+
+# Atuin keeps the full chronological record; zsh's list is a deduped recall list.
+setopt EXTENDED_HISTORY       # save timestamp and duration
+setopt SHARE_HISTORY          # all shells read/write one history file
+setopt HIST_IGNORE_ALL_DUPS   # re-running a command drops its older copy
+setopt HIST_IGNORE_SPACE      # leading space = don't save (atuin agrees)
+setopt HIST_REDUCE_BLANKS     # collapse extra whitespace before saving
+setopt HIST_VERIFY            # show !!/!$ expansions for review before running
+
+# General shell behavior.
+setopt INTERACTIVE_COMMENTS   # allow '# comment' at the prompt
+setopt NO_FLOW_CONTROL        # free Ctrl-S/Ctrl-Q from terminal freeze/resume
+setopt AUTO_PUSHD             # cd pushes onto the dir stack (dirs -v, cd -N)
+setopt PUSHD_IGNORE_DUPS      # keep each directory once on the stack
+setopt PUSHD_MINUS            # cd -N matches dirs -v numbering
+WORDCHARS=${WORDCHARS//\/}    # Ctrl-W / Alt-B stop at '/'
 
 # Homebrew shellenv supplies its completions
 typeset -U fpath
+# Completions not installed by Homebrew would go here, before compinit:
+#   fpath=("$ZDOTDIR/completions" $fpath)
+# then e.g. `some-tool completion zsh > "$ZDOTDIR/completions/_some-tool"`.
+zmodload zsh/complist          # menu selection; must load before compinit
 autoload -Uz compinit
 compinit -d "$XDG_CACHE_HOME/zsh/zcompdump-$ZSH_VERSION"
 
+# Completion menu, smart-case then substring matching, grouped results.
+# Alternative: fzf-tab (github.com/Aloxaf/fzf-tab) swaps this menu for an fzf
+# picker. Source it after compinit and before autosuggestions/highlighting,
+# then set `menu no` and a plain descriptions format ('[%d]'; it ignores %F
+# colors). matcher-list, group-name, and the cache styles stay useful; complist
+# and the Shift-Tab binding become unnecessary.
+setopt COMPLETE_IN_WORD        # complete at the cursor, not only at word end
+setopt ALWAYS_TO_END           # then move the cursor to the end of the word
+zstyle ':completion:*' menu select
+zstyle ':completion:*' matcher-list '' 'm:{[:lower:]}={[:upper:]}' 'l:|=* r:|=*'
+zstyle ':completion:*' group-name ''
+zstyle ':completion:*:descriptions' format '%F{yellow}-- %d --%f'
+zstyle ':completion:*' use-cache on
+zstyle ':completion:*' cache-path "$XDG_CACHE_HOME/zsh/zcompcache"
+
+# Color menu entries by file type using zsh's built-in defaults (LS_COLORS is
+# unset; eza uses its own theme). Alternative: brew install vivid, then
+#   export LS_COLORS="$(vivid generate catppuccin-mocha)"
+#   zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+# for Catppuccin colors here; check eza afterwards, since it also reads LS_COLORS.
+zstyle ':completion:*' list-colors ''
+
 # Use Emacs editing even when EDITOR or VISUAL is nvim/vim.
 bindkey -e
+
+# Up/Down and Ctrl-P/N: search history for lines starting with what's typed.
+# Both arrow sequences cover normal and application cursor modes.
+# Alternative: drop --disable-up-arrow from atuin init and delete these
+# bindings; Up then opens atuin's picker prefilled with the typed text
+# (tune via search_mode/filter_mode_shell_up_key_binding in atuin config).
+autoload -Uz up-line-or-beginning-search down-line-or-beginning-search
+zle -N up-line-or-beginning-search
+zle -N down-line-or-beginning-search
+bindkey '^[[A' up-line-or-beginning-search
+bindkey '^[OA' up-line-or-beginning-search
+bindkey '^[[B' down-line-or-beginning-search
+bindkey '^[OB' down-line-or-beginning-search
+bindkey '^P'   up-line-or-beginning-search
+bindkey '^N'   down-line-or-beginning-search
+
+# Keys emacs mode leaves unbound.
+bindkey '^[[H'    beginning-of-line    # Home
+bindkey '^[OH'    beginning-of-line
+bindkey '^[[F'    end-of-line          # End
+bindkey '^[OF'    end-of-line
+bindkey '^[[3~'   delete-char          # Delete (fn-Backspace on a Mac)
+bindkey '^[[1;5C' forward-word         # Ctrl-Right
+bindkey '^[[1;5D' backward-word        # Ctrl-Left
+bindkey '^[[1;3C' forward-word         # Alt/Option-Right
+bindkey '^[[1;3D' backward-word        # Alt/Option-Left
+bindkey ' '       magic-space          # expand !!/!$ on space
+bindkey '^[[Z'    reverse-menu-complete  # Shift-Tab: back through the menu
+
+# Ctrl-X Ctrl-E: edit the current command line in $EDITOR.
+autoload -Uz edit-command-line
+zle -N edit-command-line
+bindkey '^X^E'    edit-command-line
 
 # Atuin owns Ctrl-R; fzf keeps its default file/directory selection.
 (( $+commands[fzf] )) && FZF_CTRL_R_COMMAND= source <(fzf --zsh)
@@ -43,16 +115,6 @@ bindkey -e
 
 # Scope lazydocker's generic CONFIG_DIR variable to this one command.
 (( $+commands[lazydocker] )) && lazydocker() { CONFIG_DIR="$XDG_CONFIG_HOME/lazydocker" command lazydocker "$@"; }
-
-# Disable arrows at the zsh prompt after tools install their keybindings.
-# Ctrl-F/B moves forward/backward; Ctrl-P/N moves through history.
-zmodload zsh/terminfo
-for _zsh_arrow in '\e[A' '\e[B' '\e[C' '\e[D' \
-    '\eOA' '\eOB' '\eOC' '\eOD' \
-    "${terminfo[kcuu1]}" "${terminfo[kcud1]}" "${terminfo[kcuf1]}" "${terminfo[kcub1]}"; do
-  [[ -n "$_zsh_arrow" ]] && bindkey -M emacs "$_zsh_arrow" undefined-key
-done
-unset _zsh_arrow
 
 {{ if $brewPrefix -}}
 # Homebrew zsh plugins. Autosuggestions wraps widgets created above.
