@@ -8,9 +8,11 @@ README.md
 # Superfile application data is deliberately unmanaged.
 .local/share/superfile
 .local/share/superfile/**
-# Manage the complete Neovim configuration, excluding Git metadata.
+# Manage Neovim configuration, excluding Git metadata and starter documentation.
 .config/nvim/.git
 .config/nvim/.git/**
+.config/nvim/LICENSE
+.config/nvim/README.md
 # Defense in depth: these files must never be applied as plain dotfiles.
 .config/gh/hosts.yml
 .config/atuin/key

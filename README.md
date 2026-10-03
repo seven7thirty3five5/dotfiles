@@ -5,7 +5,8 @@ Chezmoi configurations for macOS and Linux.
 ## Prerequisites
 
 - Homebrew is the package manager for the configured development tools.
-- zsh is your shell; Git and chezmoi are available.
+- zsh is your shell; Git is available.
+- chezmoi is installed.
 - `~/.aliases` and `~/.functions` exist for per-machine customizations. They are
   not tracked by chezmoi.
 
