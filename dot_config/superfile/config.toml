@@ -1,2 +1,3 @@
-# Inherit built-in defaults, including hotkeys and theme.
+# Inherit built-in defaults (including hotkeys); only the theme is overridden.
 ignore_missing_fields = true
+theme = "catppuccin-mocha"
