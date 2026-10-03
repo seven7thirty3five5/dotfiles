@@ -1,5 +1,4 @@
 {{- $brewPrefix := includeTemplate "brew-prefix" . | trim -}}
-{{- $pluginPrefix := default "/usr" $brewPrefix -}}
 # Interactive setup only. Startup order is documented in the chezmoi README.
 [[ -o interactive ]] || return
 
@@ -55,9 +54,11 @@ for _zsh_arrow in '\e[A' '\e[B' '\e[C' '\e[D' \
 done
 unset _zsh_arrow
 
-# Homebrew on either OS, or standard Linux packages under /usr/share.
-# Autosuggestions wraps widgets created above. Syntax highlighting goes last.
-source {{ joinPath $pluginPrefix "share/zsh-autosuggestions/zsh-autosuggestions.zsh" | shellQuote }}
-# Catppuccin theme (fetched via .chezmoiexternal.toml) must load before the plugin.
+{{ if $brewPrefix -}}
+# Homebrew zsh plugins. Autosuggestions wraps widgets created above.
+# Syntax highlighting goes last; its Catppuccin theme (fetched via
+# .chezmoiexternal.toml) must load before it.
+source {{ joinPath $brewPrefix "share/zsh-autosuggestions/zsh-autosuggestions.zsh" | shellQuote }}
 [[ -f "$ZDOTDIR/catppuccin_mocha-zsh-syntax-highlighting.zsh" ]] && source "$ZDOTDIR/catppuccin_mocha-zsh-syntax-highlighting.zsh"
-source {{ joinPath $pluginPrefix "share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" | shellQuote }}
+source {{ joinPath $brewPrefix "share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" | shellQuote }}
+{{ end -}}

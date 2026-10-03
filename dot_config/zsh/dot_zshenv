@@ -1,4 +1,4 @@
-# .zshenv and env.zsh should NEVER output anything: they run in scripts and
+# ~/.zshenv and this file should NEVER output anything: they run in scripts and
 # SSH commands too, where startup output can corrupt data or transfer protocols.
 # Keep this file idempotent so macOS .zprofile can source it after path_helper.
 export XDG_CONFIG_DIRS="${XDG_CONFIG_DIRS:-/etc/xdg}"

@@ -5,7 +5,7 @@
 eval "$({{ joinPath $brewPrefix "bin" "brew" | shellQuote }} shellenv zsh)"
 {{ end -}}
 # Refresh the shared environment and editor selection after Homebrew setup.
-[[ -f "$ZDOTDIR/env.zsh" ]] && source "$ZDOTDIR/env.zsh"
+[[ -f "$ZDOTDIR/.zshenv" ]] && source "$ZDOTDIR/.zshenv"
 {{ else -}}
 # Linux initializes Homebrew in interactive .zshrc instead.
 {{ end -}}

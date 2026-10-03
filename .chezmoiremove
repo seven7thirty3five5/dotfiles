@@ -1,5 +1,5 @@
-# Replaced by the regular home bootstrap and .config/zsh/env.zsh.
-.config/zsh/.zshenv
+# Renamed to .config/zsh/.zshenv.
+.config/zsh/env.zsh
 
 # Replaced by alternatives in .config/zsh
 .zshlogin
