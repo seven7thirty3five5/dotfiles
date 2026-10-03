@@ -102,14 +102,6 @@ Starship's config lives at `~/.config/starship/config.toml`, selected by
 `STARSHIP_CONFIG` in `env.zsh`. Applying the repo removes the former
 `~/.config/starship.toml` path.
 
-Superfile v1.6.0 saves hidden-file visibility in
-`~/.local/share/superfile/toggleDotFile`, rather than a TOML option. This single
-preference is tracked with the exact contents `true` and no trailing newline,
-so hidden files start visible on each machine. The EditorConfig exception keeps
-that format intact; other superfile data, caches, and state remain unmanaged.
-[Preference loading](https://github.com/yorukot/superfile/blob/v1.6.0/src/internal/config_function.go),
-[preference format](https://github.com/yorukot/superfile/blob/v1.6.0/src/pkg/utils/bool_file_store.go).
-
 ## Configuration file support
 
 Support includes project configs, ignore/theme files, and options files selected
@@ -307,7 +299,5 @@ preserved existing unmanaged aliases/functions, and confirmed their startup orde
 and optional loading when absent. Neovim's EditorConfig parser confirmed the home
 defaults and a closer project's override.
 
-The Starship directory migration, Emacs keymap, disabled arrows, preserved
-Ctrl-F/B/P/N and Atuin Ctrl-R, and superfile visibility preference were checked
-with fresh macOS/Linux template targets. Superfile v1.6.0 displayed a hidden
-fixture file on startup, and Neovim saved its preference without adding a newline.
+The Starship directory migration, Emacs keymap, disabled arrows, and preserved
+Ctrl-F/B/P/N and Atuin Ctrl-R were checked with fresh macOS/Linux template targets.

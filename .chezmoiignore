@@ -5,6 +5,9 @@ README.md
 .functions
 # Mole is intentionally unmanaged on every platform.
 .config/mole
+# Superfile application data is deliberately unmanaged.
+.local/share/superfile
+.local/share/superfile/**
 # Manage the complete Neovim configuration, excluding Git metadata.
 .config/nvim/.git
 .config/nvim/.git/**
