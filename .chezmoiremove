@@ -5,6 +5,8 @@
 .zshlogin
 .zshlogout
 .zshprofile
+.zshrc
 
-# Starship now has its own XDG config directory.
+# Using XDG config directory.
+.gitconfig
 .config/starship.toml

@@ -13,9 +13,9 @@ Chezmoi configurations for macOS and Linux.
 **Rule:** Follow the [XDG Base Directory Specification](https://specifications.freedesktop.org/basedir/latest/)
 wherever supported, using its standard paths.
 
-## Apply the dotfiles
+## Initialize dotfiles
 
-Use this public repository directly, or fork it and substitute your fork's URL:
+To initialize and apply this dotfiles repository to your machine:
 
 ```sh
 chezmoi init --apply seven7thirty3five5
@@ -27,14 +27,9 @@ or if you don't even have `chezmoi` installed, run:
 sh -c "$(curl -fsSL get.chezmoi.io)" -- init --apply seven7thirty3five5
 ```
 
-Reading this public repository requires no GitHub login. Enter your Git author
-name and email when prompted, using your work email on work machines. These values
-stay in your local chezmoi config. Start a new zsh login shell afterward.
+## Sync dotfiles
 
-## Pull updates
-
-If you use a fork, [sync it with this repository](https://docs.github.com/en/pull-requests/how-tos/work-with-forks/syncing-a-fork#syncing-a-fork-branch-from-the-web-ui)
-first. Pull and apply the latest commits from your configured repository with:
+To update your dotfiles such that they are synced with this repository, run:
 
 ```sh
 chezmoi update
