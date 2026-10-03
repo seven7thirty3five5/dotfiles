@@ -1,2 +1,3 @@
 font-family = JetBrains Mono
 theme = Catppuccin Mocha
+shell-integration-features = ssh-env,ssh-terminfo

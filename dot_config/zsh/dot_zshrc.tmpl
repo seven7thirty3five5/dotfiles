@@ -1,28 +1,33 @@
 {{- $brewPrefix := includeTemplate "brew-prefix" . | trim -}}
-# Interactive setup only. Startup order is documented in the chezmoi README.
+# Interactive setup only.
 [[ -o interactive ]] || return
-
-# Default aliases and functions.
-alias ls="eza"
-alias vi="nvim"
-alias vim="nvim"
-
-# Machine-specific aliases and functions.
-[[ -f "$HOME/.aliases" ]] && source "$HOME/.aliases"
-[[ -f "$HOME/.functions" ]] && source "$HOME/.functions"
-
-
 
 {{ if and (eq .chezmoi.os "linux") $brewPrefix -}}
 # Homebrew shell initialization belongs to interactive shells on Linux.
 eval "$({{ joinPath $brewPrefix "bin" "brew" | shellQuote }} shellenv zsh)"
+# Refresh the shared environment so ~/.local/bin stays ahead of Homebrew, as on macOS.
+[[ -f "$ZDOTDIR/.zshenv" ]] && source "$ZDOTDIR/.zshenv"
 
 {{ end -}}
+# Default aliases and functions, only for programs that are installed.
+if (( $+commands[nvim] )); then
+  alias vi="nvim"
+  alias vim="nvim"
+fi
+(( $+commands[spf] )) && alias ff="spf"
 
+# eza listings; plain ls keeps its usual flags (ls -ltr etc.).
+if (( $+commands[eza] )); then
+  alias l="eza -lah"               # long, hidden files, header row
+  alias ll="eza -l"                # long
+  alias la="eza -la"               # long + hidden files
+  alias lt="eza --tree --level=2"  # tree, two levels deep
+fi
+
+mkdir -p -- "$XDG_STATE_HOME/zsh" "$XDG_CACHE_HOME/zsh"
 HISTFILE="$XDG_STATE_HOME/zsh/history"
 HISTSIZE=10000
 SAVEHIST=10000
-mkdir -p -- "$XDG_STATE_HOME/zsh" "$XDG_CACHE_HOME/zsh"
 
 # Atuin keeps the full chronological record; zsh's list is a deduped recall list.
 setopt EXTENDED_HISTORY       # save timestamp and duration
@@ -34,20 +39,41 @@ setopt HIST_VERIFY            # show !!/!$ expansions for review before running
 
 # General shell behavior.
 setopt INTERACTIVE_COMMENTS   # allow '# comment' at the prompt
+setopt LONG_LIST_JOBS         # job notices include the PID
 setopt NO_FLOW_CONTROL        # free Ctrl-S/Ctrl-Q from terminal freeze/resume
+setopt AUTO_CD                # type a directory's path (e.g. ..) to cd into it
 setopt AUTO_PUSHD             # cd pushes onto the dir stack (dirs -v, cd -N)
 setopt PUSHD_IGNORE_DUPS      # keep each directory once on the stack
 setopt PUSHD_MINUS            # cd -N matches dirs -v numbering
 WORDCHARS=${WORDCHARS//\/}    # Ctrl-W / Alt-B stop at '/'
 
-# Homebrew shellenv supplies its completions
+# Directory stack shortcuts: d lists recent directories, 1-9 jump to one of them,
+# - returns to the previous one; ... and .... go up two and three levels (AUTO_CD).
+alias d='dirs -v | head -n 10'
+for i in {1..9}; do alias "$i"="cd -$i"; done; unset i
+alias -- -='cd -'
+alias ...='../..'
+alias ....='../../..'
+
+# Keep fpath entries unique, so re-adding a folder that's already listed is harmless.
 typeset -U fpath
+{{ if $brewPrefix -}}
+# Homebrew's completion folder. On macOS, .zprofile's brew shellenv adds it in
+# login shells (every terminal tab), and shells started from those inherit it via
+# FPATH. This line covers a non-login zsh started outside a terminal (e.g. by an
+# app opened from the Dock), which gets neither.
+fpath=({{ joinPath $brewPrefix "share/zsh/site-functions" | shellQuote }} $fpath)
+{{ end -}}
+# Docker Desktop's completions (its own setup lines go to ~/.zshrc, which zsh never reads here).
+[[ -d "$HOME/.docker/completions" ]] && fpath=("$HOME/.docker/completions" $fpath)
 # Completions not installed by Homebrew would go here, before compinit:
 #   fpath=("$ZDOTDIR/completions" $fpath)
 # then e.g. `some-tool completion zsh > "$ZDOTDIR/completions/_some-tool"`.
 zmodload zsh/complist          # menu selection; must load before compinit
 autoload -Uz compinit
 compinit -d "$XDG_CACHE_HOME/zsh/zcompdump-$ZSH_VERSION"
+# Let tools that only ship bash completions (complete -C ...; e.g. aws, terraform) work.
+autoload -Uz bashcompinit && bashcompinit
 
 # Completion menu, smart-case then substring matching, grouped results.
 # Alternative: fzf-tab (github.com/Aloxaf/fzf-tab) swaps this menu for an fzf
@@ -70,6 +96,7 @@ zstyle ':completion:*' cache-path "$XDG_CACHE_HOME/zsh/zcompcache"
 #   zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 # for Catppuccin colors here; check eza afterwards, since it also reads LS_COLORS.
 zstyle ':completion:*' list-colors ''
+zstyle ':completion:*' special-dirs true   # also complete . and .. (cd ..<Tab> -> ../)
 
 # Use Emacs editing even when EDITOR or VISUAL is nvim/vim.
 bindkey -e
@@ -94,6 +121,10 @@ bindkey '^[[H'    beginning-of-line    # Home
 bindkey '^[OH'    beginning-of-line
 bindkey '^[[F'    end-of-line          # End
 bindkey '^[OF'    end-of-line
+bindkey '^[[1~'   beginning-of-line    # Home/End as VT220-style terminals send them
+bindkey '^[[4~'   end-of-line
+bindkey '^[[7~'   beginning-of-line    # Home/End as rxvt-style terminals send them
+bindkey '^[[8~'   end-of-line
 bindkey '^[[3~'   delete-char          # Delete (fn-Backspace on a Mac)
 bindkey '^[[1;5C' forward-word         # Ctrl-Right
 bindkey '^[[1;5D' backward-word        # Ctrl-Left
@@ -107,19 +138,31 @@ autoload -Uz edit-command-line
 zle -N edit-command-line
 bindkey '^X^E'    edit-command-line
 
+# Escape ?, &, * etc. in URLs as they're typed or pasted, so commands like
+# curl https://x/?a=b&c=d work unquoted. Must precede the plugins, which wrap widgets.
+autoload -Uz url-quote-magic bracketed-paste-magic
+zle -N self-insert url-quote-magic
+zle -N bracketed-paste bracketed-paste-magic
+
 # Atuin owns Ctrl-R; fzf keeps its default file/directory selection.
 (( $+commands[fzf] )) && FZF_CTRL_R_COMMAND= source <(fzf --zsh)
-(( $+commands[atuin] )) && eval "$(atuin init zsh --disable-up-arrow)"
+# Autosuggestion sources: atuin init puts its history first; zsh history and Tab
+# completion are fallbacks (completion suggests e.g. branch or file names never typed).
+ZSH_AUTOSUGGEST_STRATEGY=(history completion)
+(( $+commands[atuin] )) && eval "$(atuin init zsh --disable-up-arrow --disable-ai)"
 (( $+commands[zoxide] )) && eval "$(zoxide init zsh --cmd cd)"
 (( $+commands[starship] )) && eval "$(starship init zsh)"
 
 # Scope lazydocker's generic CONFIG_DIR variable to this one command.
 (( $+commands[lazydocker] )) && lazydocker() { CONFIG_DIR="$XDG_CONFIG_HOME/lazydocker" command lazydocker "$@"; }
 
+# Machine-specific settings (not tracked by chezmoi), loaded last so they can
+# override the defaults above and use compdef; the plugins below must still follow.
+[[ -f "$ZDOTDIR/.zshrc.local" ]] && source "$ZDOTDIR/.zshrc.local"
+
 {{ if $brewPrefix -}}
 # Homebrew zsh plugins. Autosuggestions wraps widgets created above.
-# Syntax highlighting goes last; its Catppuccin theme (fetched via
-# .chezmoiexternal.toml) must load before it.
+# Syntax highlighting goes last; its Catppuccin theme (fetched via .chezmoiexternal.toml) must load before it.
 [[ -f {{ joinPath $brewPrefix "share/zsh-autosuggestions/zsh-autosuggestions.zsh" | shellQuote }} ]] && source {{ joinPath $brewPrefix "share/zsh-autosuggestions/zsh-autosuggestions.zsh" | shellQuote }}
 [[ -f "$ZDOTDIR/themes/catppuccin_mocha-zsh-syntax-highlighting.zsh" ]] && source "$ZDOTDIR/themes/catppuccin_mocha-zsh-syntax-highlighting.zsh"
 [[ -f {{ joinPath $brewPrefix "share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" | shellQuote }} ]] && source {{ joinPath $brewPrefix "share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" | shellQuote }}

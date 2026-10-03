@@ -1,12 +1,16 @@
+{{- $brewPrefix := includeTemplate "brew-prefix" . | trim -}}
 [user]
 	name = {{ .gitName | quote }}
 	email = {{ .gitEmail | quote }}
+{{ if and $brewPrefix (isExecutable (joinPath $brewPrefix "bin" "delta")) -}}
+# delta only where Homebrew installed it; elsewhere git keeps its default pager (less).
 [core]
     pager = delta
 
 [interactive]
     diffFilter = delta --color-only
 
+{{ end -}}
 [delta]
     navigate = true  # use n and N to move between diff sections
     dark = true      # or `light = true`, or omit for auto-detection
@@ -15,9 +19,24 @@
 [merge]
     conflictStyle = zdiff3
 
+[init]
+    defaultBranch = main         # new repos start on main instead of master
+[push]
+    autoSetupRemote = true       # first push of a new branch sets its upstream
+[pull]
+    rebase = true                # replay local commits instead of merge commits
+[fetch]
+    prune = true                 # drop local copies of branches deleted on the remote
+[rerere]
+    enabled = true               # remember conflict resolutions and reuse them
 
 # Structural diffs are opt-in; regular git diff remains a text diff via delta.
+[diff]
+    tool = difftastic
+    colorMoved = default         # moved lines get their own colors
 [difftool "difftastic"]
 	cmd = difft \"$LOCAL\" \"$REMOTE\"
 [difftool]
     prompt = false
+[pager]
+    difftool = true

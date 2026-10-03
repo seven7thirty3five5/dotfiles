@@ -1,15 +1,16 @@
-# Renamed to .config/zsh/.zshenv.
-.config/zsh/env.zsh
-
-# Moved to .config/zsh/themes/.
-.config/zsh/catppuccin_mocha-zsh-syntax-highlighting.zsh
-
 # Replaced by alternatives in .config/zsh
-.zshlogin
-.zshlogout
-.zshprofile
+.zlogin
+.zlogout
+.zprofile
 .zshrc
 
 # Using XDG config directory.
 .gitconfig
 .config/starship.toml
+
+# LazyVim starter files no longer tracked.
+.config/nvim/lua/plugins/example.lua
+.config/nvim/.neoconf.json
+.config/nvim/LICENSE
+.config/nvim/README.md
+.config/nvim/.gitignore

@@ -2,3 +2,6 @@ onboarding = false
 
 [theme]
 name = "catppuccin"
+
+[ui]
+status_indicators = "symbols"
