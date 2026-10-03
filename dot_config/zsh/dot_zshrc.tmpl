@@ -29,14 +29,29 @@ typeset -U fpath
 autoload -Uz compinit
 compinit -d "$XDG_CACHE_HOME/zsh/zcompdump-$ZSH_VERSION"
 
+# Use Emacs editing even when EDITOR or VISUAL is nvim/vim.
+bindkey -e
+
 # Atuin owns Ctrl-R; fzf keeps its default file/directory selection.
 (( $+commands[fzf] )) && FZF_CTRL_R_COMMAND= source <(fzf --zsh)
-(( $+commands[atuin] )) && eval "$(atuin init zsh)"
+(( $+commands[atuin] )) && eval "$(atuin init zsh --disable-up-arrow)"
 (( $+commands[zoxide] )) && eval "$(zoxide init zsh --cmd cd)"
 (( $+commands[starship] )) && eval "$(starship init zsh)"
 
+# Default aliases and functions.
+# Machine-specific customizations live in ~/.aliases and ~/.functions.
 # Scope lazydocker's generic CONFIG_DIR variable to this one command.
 (( $+commands[lazydocker] )) && lazydocker() { CONFIG_DIR="$XDG_CONFIG_HOME/lazydocker" command lazydocker "$@"; }
+
+# Disable arrows at the zsh prompt after tools install their keybindings.
+# Ctrl-F/B moves forward/backward; Ctrl-P/N moves through history.
+zmodload zsh/terminfo
+for _zsh_arrow in '\e[A' '\e[B' '\e[C' '\e[D' \
+    '\eOA' '\eOB' '\eOC' '\eOD' \
+    "${terminfo[kcuu1]}" "${terminfo[kcud1]}" "${terminfo[kcuf1]}" "${terminfo[kcub1]}"; do
+  [[ -n "$_zsh_arrow" ]] && bindkey -M emacs "$_zsh_arrow" undefined-key
+done
+unset _zsh_arrow
 
 # Homebrew on either OS, or standard Linux packages under /usr/share.
 # Autosuggestions wraps widgets created above. Syntax highlighting goes last.

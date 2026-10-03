@@ -15,7 +15,7 @@ export PATH
 export BAT_CONFIG_DIR="$XDG_CONFIG_HOME/bat"
 export EZA_CONFIG_DIR="$XDG_CONFIG_HOME/eza"
 export RIPGREP_CONFIG_PATH="$XDG_CONFIG_HOME/ripgrep/config"
-export STARSHIP_CONFIG="$XDG_CONFIG_HOME/starship.toml"
+export STARSHIP_CONFIG="$XDG_CONFIG_HOME/starship/config.toml"
 export _ZO_DATA_DIR="$XDG_DATA_HOME/zoxide"
 export PAGER="less"
 (( $+commands[nvim] )) && export EDITOR="nvim" || export EDITOR="vim"

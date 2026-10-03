@@ -1,2 +1,4 @@
 # Inherit built-in defaults, including hotkeys and theme.
 ignore_missing_fields = true
+# Hidden-file visibility is saved in $XDG_DATA_HOME/superfile/toggleDotFile,
+# not a TOML setting. The tracked preference enables it by default.

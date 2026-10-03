@@ -98,6 +98,18 @@ where needed. Some integrations (especially LazyVim) need additional dependencie
 such as a C compiler and build tools. Built-in themes come from each application;
 track custom theme source files, not generated theme caches.
 
+Starship's config lives at `~/.config/starship/config.toml`, selected by
+`STARSHIP_CONFIG` in `env.zsh`. Applying the repo removes the former
+`~/.config/starship.toml` path.
+
+Superfile v1.6.0 saves hidden-file visibility in
+`~/.local/share/superfile/toggleDotFile`, rather than a TOML option. This single
+preference is tracked with the exact contents `true` and no trailing newline,
+so hidden files start visible on each machine. The EditorConfig exception keeps
+that format intact; other superfile data, caches, and state remain unmanaged.
+[Preference loading](https://github.com/yorukot/superfile/blob/v1.6.0/src/internal/config_function.go),
+[preference format](https://github.com/yorukot/superfile/blob/v1.6.0/src/pkg/utils/bool_file_store.go).
+
 ## Configuration file support
 
 Support includes project configs, ignore/theme files, and options files selected
@@ -184,9 +196,13 @@ old checkouts away from that former path.
    Docker completion paths alongside Homebrew's supplied completions before
    running `compinit` once with its dump under `~/.cache/zsh`. Each `setopt`
    occupies its own line.
-5. Initialize fzf on one line with Ctrl-R disabled and its default candidates,
-   then Atuin, then zoxide replacing `cd`, then Starship. Define the lazydocker
-   scoped-config wrapper. Load zsh-autosuggestions and zsh-syntax-highlighting
+5. Set `bindkey -e` for Emacs editing before tool keybindings. Initialize fzf on
+   one line with Ctrl-R disabled and its default candidates, then Atuin with
+   `--disable-up-arrow`, then zoxide replacing `cd`, then Starship. The default
+   aliases/functions section holds shared definitions, including the lazydocker
+   scoped-config wrapper. Disable normal/application-mode and terminfo arrow
+   sequences after the integrations, keeping Ctrl-F/B/P/N for editing/history.
+   Load zsh-autosuggestions and zsh-syntax-highlighting
    with two direct source lines, highlighting last. They use the selected
    Homebrew prefix's `share/<plugin>/` on either OS, or `/usr/share/<plugin>/`
    for standard Linux packages. Install the plugins before starting the shell.
@@ -194,7 +210,7 @@ old checkouts away from that former path.
    a placeholder. `.zlogout` contains `[[ -o interactive ]] && clear` and clears
    the terminal only when an interactive login shell exits.
 
-Shared startup files contain no miscellaneous aliases or navigation functions.
+The shared aliases/functions section contains only the existing lazydocker wrapper.
 Use the unmanaged `~/.aliases` and `~/.functions` for per-machine customizations.
 Prior aliases were retired to a local backup, including aliases for tools not in
 the inventory.
@@ -203,7 +219,9 @@ the inventory.
 
 - Atuin and fzf compete for Ctrl-R; Atuin now owns it. fzf retains Ctrl-T/Alt-C,
   also powers zoxide's `cdi`, and uses its default candidate selection. Atuin's Up
-  binding can be disabled later with `atuin init zsh --disable-up-arrow` if desired.
+  binding is disabled. Arrow keys are disabled at the zsh prompt; Ctrl-F/B moves
+  through the line and Ctrl-P/N moves through history. Programs such as Atuin's
+  search interface and Neovim use their own keybindings.
 - Atuin and native zsh history are separate stores. Autosuggestions still uses
   native history; it does not automatically query Atuin's database. Native history
   lives under `~/.local/state/zsh/history`. Neither history store is versioned.
@@ -288,3 +306,8 @@ Fresh init/apply/verify checks for both OS targets also restored `~/.editorconfi
 preserved existing unmanaged aliases/functions, and confirmed their startup order
 and optional loading when absent. Neovim's EditorConfig parser confirmed the home
 defaults and a closer project's override.
+
+The Starship directory migration, Emacs keymap, disabled arrows, preserved
+Ctrl-F/B/P/N and Atuin Ctrl-R, and superfile visibility preference were checked
+with fresh macOS/Linux template targets. Superfile v1.6.0 displayed a hidden
+fixture file on startup, and Neovim saved its preference without adding a newline.
