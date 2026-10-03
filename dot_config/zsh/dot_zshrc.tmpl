@@ -1,19 +1,24 @@
 {{- $brewPrefix := includeTemplate "brew-prefix" . | trim -}}
 {{- $pluginPrefix := default "/usr" $brewPrefix -}}
+# Interactive setup only. Startup order is documented in the chezmoi README.
+[[ -o interactive ]] || return
+
+# Default aliases and functions.
+alias ls="eza"
+alias vi="nvim"
+alias vim="nvim"
+
+# Machine-specific aliases and functions.
 [[ -f "$HOME/.aliases" ]] && source "$HOME/.aliases"
 [[ -f "$HOME/.functions" ]] && source "$HOME/.functions"
 
-# Interactive setup only. Startup order is documented in the chezmoi README.
-[[ -o interactive ]] || return
+
 
 {{ if and (eq .chezmoi.os "linux") $brewPrefix -}}
 # Homebrew shell initialization belongs to interactive shells on Linux.
 eval "$({{ joinPath $brewPrefix "bin" "brew" | shellQuote }} shellenv zsh)"
 
 {{ end -}}
-# Shells that inherit ZDOTDIR skip the home bootstrap; reusing env.zsh is safe.
-# Refresh editor selection after Homebrew setup as well.
-[[ -f "$ZDOTDIR/env.zsh" ]] && source "$ZDOTDIR/env.zsh"
 
 HISTFILE="$XDG_STATE_HOME/zsh/history"
 HISTSIZE=10000
@@ -23,9 +28,8 @@ setopt EXTENDED_HISTORY
 setopt SHARE_HISTORY
 setopt HIST_IGNORE_DUPS
 
-# Homebrew shellenv supplies its completions; add Docker's before compinit.
+# Homebrew shellenv supplies its completions
 typeset -U fpath
-[[ -d "$HOME/.docker/completions" ]] && fpath=("$HOME/.docker/completions" $fpath)
 autoload -Uz compinit
 compinit -d "$XDG_CACHE_HOME/zsh/zcompdump-$ZSH_VERSION"
 
@@ -38,8 +42,6 @@ bindkey -e
 (( $+commands[zoxide] )) && eval "$(zoxide init zsh --cmd cd)"
 (( $+commands[starship] )) && eval "$(starship init zsh)"
 
-# Default aliases and functions.
-# Machine-specific customizations live in ~/.aliases and ~/.functions.
 # Scope lazydocker's generic CONFIG_DIR variable to this one command.
 (( $+commands[lazydocker] )) && lazydocker() { CONFIG_DIR="$XDG_CONFIG_HOME/lazydocker" command lazydocker "$@"; }
 

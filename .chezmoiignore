@@ -21,6 +21,7 @@ README.md
 .config/herdr/sessions
 .config/herdr/*.log
 .config/herdr/.plugins.lock
+.config/herdr/release-notes.json
 .config/lazygit/state.yml
 .config/lazydocker/state.yml
 .config/zsh/.zcompdump*
