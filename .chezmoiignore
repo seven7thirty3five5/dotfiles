@@ -1,2 +1,7 @@
 # Repository documentation is not a home-directory dotfile.
 README.md
+
+# Ghostty config is macOS-only.
+{{ if ne .chezmoi.os "darwin" }}
+.config/ghostty
+{{ end }}
