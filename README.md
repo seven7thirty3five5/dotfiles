@@ -5,8 +5,6 @@ Chezmoi configurations for macOS and Linux.
 ## Prerequisites
 
 - `chezmoi` is installed; Git is available.
-- `$HOME/.config/chezmoi/chezmoi.toml` exists with at least `gitName` and `gitEmail`
-  set under `[data]` for your Git identity.
 - zsh is your shell.
 - Homebrew is the package manager for the configured development tools.
 - `~/.aliases` and `~/.functions` exist for per-machine customizations. They are
