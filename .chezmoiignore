@@ -1,7 +1,2 @@
 # Repository documentation is not a home-directory dotfile.
 README.md
-# Per-machine shell customizations are deliberately unmanaged.
-.aliases
-.functions
-# Neovim's Git ignore rules are deliberately unmanaged.
-.config/nvim/.gitignore

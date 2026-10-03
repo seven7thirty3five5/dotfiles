@@ -1,4 +1,10 @@
-# Replaced by the regular home bootstrap and zsh/env.zsh.
+# Replaced by the regular home bootstrap and .config/zsh/env.zsh.
 .config/zsh/.zshenv
+
+# Replaced by alternatives in .config/zsh
+.zshlogin
+.zshlogout
+.zshprofile
+
 # Starship now has its own XDG config directory.
 .config/starship.toml
