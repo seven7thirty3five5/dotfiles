@@ -4,9 +4,9 @@ Chezmoi configurations for macOS and Linux.
 
 ## Prerequisites
 
+- chezmoi is installed; Git is available.
+- zsh is your shell.
 - Homebrew is the package manager for the configured development tools.
-- zsh is your shell; Git is available.
-- chezmoi is installed.
 - `~/.aliases` and `~/.functions` exist for per-machine customizations. They are
   not tracked by chezmoi.
 
@@ -18,7 +18,13 @@ wherever supported, using its standard paths.
 Use this public repository directly, or fork it and substitute your fork's URL:
 
 ```sh
-chezmoi init --apply https://github.com/seven7thirty3five5/dotfiles.git
+chezmoi init --apply seven7thirty3five5
+```
+
+or if you don't even have `chezmoi` installed, run:
+
+```sh
+sh -c "$(curl -fsSL get.chezmoi.io)" -- init --apply seven7thirty3five5
 ```
 
 Reading this public repository requires no GitHub login. Enter your Git author
