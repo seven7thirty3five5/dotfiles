@@ -59,6 +59,6 @@ unset _zsh_arrow
 # Syntax highlighting goes last; its Catppuccin theme (fetched via
 # .chezmoiexternal.toml) must load before it.
 source {{ joinPath $brewPrefix "share/zsh-autosuggestions/zsh-autosuggestions.zsh" | shellQuote }}
-[[ -f "$ZDOTDIR/catppuccin_mocha-zsh-syntax-highlighting.zsh" ]] && source "$ZDOTDIR/catppuccin_mocha-zsh-syntax-highlighting.zsh"
+[[ -f "$ZDOTDIR/themes/catppuccin_mocha-zsh-syntax-highlighting.zsh" ]] && source "$ZDOTDIR/themes/catppuccin_mocha-zsh-syntax-highlighting.zsh"
 source {{ joinPath $brewPrefix "share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" | shellQuote }}
 {{ end -}}

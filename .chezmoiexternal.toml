@@ -22,7 +22,7 @@
     url = "https://raw.githubusercontent.com/catppuccin/glamour/main/themes/catppuccin-mocha.json"
     refreshPeriod = "168h"
 
-[".config/zsh/catppuccin_mocha-zsh-syntax-highlighting.zsh"]
+[".config/zsh/themes/catppuccin_mocha-zsh-syntax-highlighting.zsh"]
     type = "file"
     url = "https://raw.githubusercontent.com/catppuccin/zsh-syntax-highlighting/main/themes/catppuccin_mocha-zsh-syntax-highlighting.zsh"
     refreshPeriod = "168h"
