@@ -1,0 +1,13 @@
+#!/bin/sh
+# Install the Brewfile before chezmoi writes any file, so templates see the packages.
+# chezmoi re-runs this whenever the Brewfile changes, which keeps every machine in sync.
+# Brewfile hash: {{ include "dot_config/homebrew/Brewfile" | sha256sum }}
+set -eu
+
+{{ template "find-brew.sh" . }}
+if [ -z "$brew" ]; then
+  echo "error: Homebrew not found; run install.sh from the dotfiles repository." >&2
+  exit 1
+fi
+eval "$("$brew" shellenv)"
+brew bundle --file={{ joinPath .chezmoi.sourceDir "dot_config/homebrew/Brewfile" | shellQuote }} --no-upgrade

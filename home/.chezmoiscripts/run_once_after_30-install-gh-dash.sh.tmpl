@@ -1,0 +1,11 @@
+#!/bin/sh
+# gh-dash is a gh extension, not a formula. Installing it needs no GitHub login;
+# using it does (gh auth login). Check gh's extension folder directly, because
+# `gh extension list` prints nothing until you have logged in.
+set -eu
+
+{{ template "find-brew.sh" . }}
+extension=${GH_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/gh}/extensions/gh-dash
+if [ ! -d "$extension" ]; then
+  "$(dirname "$brew")/gh" extension install dlvhdr/gh-dash
+fi

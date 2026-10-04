@@ -1,5 +1,6 @@
-# Formulae for the tools configured by these dotfiles and companion CLI utilities.
-# Install manually with the commands in README.md.
+# Packages for the tools configured by these dotfiles and companion CLI utilities.
+# install.sh and `chezmoi apply` install them (home/.chezmoiscripts) and re-run
+# `brew bundle` whenever this file changes.
 
 # Dotfile management.
 brew "chezmoi"
@@ -13,14 +14,14 @@ brew "zoxide"
 brew "zsh-autosuggestions"
 brew "zsh-syntax-highlighting"
 
-# Git and GitHub. Install gh-dash separately as a gh extension (see README.md).
+# Git and GitHub. gh-dash is a gh extension; a chezmoi script installs it.
 brew "git"
 brew "git-delta"
 brew "difftastic"
 brew "gh"
 brew "lazygit"
 
-# Neovim and search. lazy.nvim installs LazyVim on first launch.
+# Neovim and search. A chezmoi script installs LazyVim's plugins from lazy-lock.json.
 brew "neovim"
 brew "ast-grep"
 brew "fd"
@@ -43,3 +44,7 @@ brew "gnu-tar" if OS.mac?
 
 # Mole is macOS-only.
 brew "mole" if OS.mac?
+
+# Terminal (macOS). Ghostty bundles JetBrains Mono and the Nerd Font symbols. brew bundle
+# installs casks with --adopt, so an existing /Applications/Ghostty.app is taken over.
+cask "ghostty" if OS.mac?

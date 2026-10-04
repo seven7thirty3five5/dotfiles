@@ -1,0 +1,92 @@
+#!/bin/sh
+# Install Homebrew before chezmoi writes any file; the shell and git templates look for it.
+# The prefix follows sudo access, detected like Homebrew's own installer does:
+#   with sudo     the default prefix (on Linux, also the build tools Homebrew lists)
+#   without sudo  Linux: ~/.linuxbrew or ~/.brew, whichever is no longer than the
+#                 default, so Homebrew still installs bottles; macOS: stop with advice.
+set -eu
+
+{{ template "find-brew.sh" . }}
+if [ -n "$brew" ]; then
+  exit 0
+fi
+
+# The checks in have_sudo_access() from Homebrew's install.sh.
+have_sudo() {
+  [ -x /usr/bin/sudo ] || return 1
+  if ! output=$(LC_ALL=C /usr/bin/sudo -n -k -l 2>&1); then
+    case $output in
+      *"is not in the sudoers file"* | *"is not allowed to run sudo on"* | *"may not run sudo on"* | \
+        *'The "no new privileges" flag is set'* | *"effective uid is not 0"* | \
+        *"must be owned by uid 0 and have the setuid bit set"*)
+        return 1
+        ;;
+    esac
+  fi
+  if [ -t 0 ]; then
+    /usr/bin/sudo -v && /usr/bin/sudo -l mkdir >/dev/null 2>&1
+  else
+    /usr/bin/sudo -n -l mkdir >/dev/null 2>&1
+  fi
+}
+
+# Homebrew's official installer; arguments such as --path go to it.
+install_homebrew() {
+  NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" install.sh "$@"
+}
+
+{{ if eq .chezmoi.os "darwin" -}}
+if [ "$(uname -m)" != arm64 ]; then
+  echo "error: these dotfiles expect Homebrew in /opt/homebrew; Intel Macs are not supported." >&2
+  exit 1
+fi
+if ! have_sudo; then
+  cat >&2 <<'MSG'
+error: Homebrew on macOS needs an Administrator account (prefix /opt/homebrew).
+       A prefix in your home folder is longer than /opt/homebrew, so every formula
+       would compile from source (Homebrew Tier 3). Ask for admin rights, then re-run.
+MSG
+  exit 1
+fi
+install_homebrew
+{{- else if eq .chezmoi.os "linux" -}}
+if have_sudo; then
+  # Homebrew's Linux requirements, plus zsh for the login shell and unzip for Mason.
+  if command -v apt-get >/dev/null 2>&1; then
+    sudo apt-get update
+    sudo apt-get install -y build-essential procps curl file git ca-certificates zsh unzip
+  elif command -v dnf >/dev/null 2>&1; then
+    sudo dnf group install -y development-tools || sudo dnf group install -y 'Development Tools'
+    sudo dnf install -y procps-ng curl file git zsh unzip
+  elif command -v pacman >/dev/null 2>&1; then
+    sudo pacman -S --needed --noconfirm base-devel procps-ng curl file git zsh unzip
+  else
+    echo "warning: unknown package manager; install a C compiler, curl, file, git, zsh and unzip." >&2
+  fi
+  install_homebrew
+else
+  # Homebrew uses bottles in a custom prefix only if it is no longer than the default.
+  default=/home/linuxbrew/.linuxbrew
+  prefix=
+  for candidate in "$HOME/.linuxbrew" "$HOME/.brew"; do
+    if [ "${#candidate}" -le "${#default}" ]; then
+      prefix=$candidate
+      break
+    fi
+  done
+  if [ -z "$prefix" ]; then
+    echo "error: $HOME is too long for a Homebrew prefix that can use bottles (${#default} bytes max)." >&2
+    echo "       Ask an administrator to create $default for you, then re-run." >&2
+    exit 1
+  fi
+  missing=
+  for tool in curl git file cc zsh; do
+    command -v "$tool" >/dev/null 2>&1 || missing="$missing $tool"
+  done
+  if [ -n "$missing" ]; then
+    echo "warning: without sudo these can't be installed:$missing (Homebrew needs curl and git)." >&2
+  fi
+  export HOMEBREW_NO_SUDO=1
+  install_homebrew --path "$prefix"
+fi
+{{- end }}

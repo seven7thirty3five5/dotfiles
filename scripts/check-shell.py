@@ -78,7 +78,7 @@ def render(chezmoi, zsh, source, home, temporary, config, search_path):
     managed = run(
         command + ["managed", "--include=files", "--path-style=relative"], env, home
     ).splitlines()
-    if any(path.split("/")[0] in (".github", "scripts", "README.md") for path in managed):
+    if any(path.split("/")[0] in (".github", "scripts", "README.md", "install.sh") for path in managed):
         raise RuntimeError("Repository files must stay outside the source state")
     for relative in STARTUP_FILES:
         target = home / relative

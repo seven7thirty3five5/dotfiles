@@ -1,0 +1,29 @@
+#!/bin/sh
+# These dotfiles are zsh-only: make zsh the login shell when it isn't already.
+set -eu
+
+user=$(id -un)
+{{ if eq .chezmoi.os "darwin" -}}
+current=$(dscl . -read "/Users/$user" UserShell | awk '{print $2}')
+{{- else -}}
+current=$(getent passwd "$user" | cut -d: -f7)
+{{- end }}
+case $current in
+  */zsh) exit 0 ;;
+esac
+
+# chsh only accepts shells listed in /etc/shells; use the system zsh listed there.
+zsh=$(grep -E '^/.*/zsh$' /etc/shells | head -n 1 || true)
+if [ -z "$zsh" ]; then
+  echo "note: zsh is not listed in /etc/shells, so your login shell stays $current." >&2
+  echo "      Ask an administrator to install zsh or to make it your login shell." >&2
+  exit 0
+fi
+
+echo "Changing your login shell from $current to $zsh."
+if /usr/bin/sudo -n true 2>/dev/null; then
+  /usr/bin/sudo chsh -s "$zsh" "$user" && exit 0
+elif [ -t 0 ]; then
+  chsh -s "$zsh" && exit 0
+fi
+echo "note: run 'chsh -s $zsh' yourself (it asks for your password), or ask an administrator." >&2

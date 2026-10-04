@@ -1,0 +1,10 @@
+#!/bin/sh
+# Install LazyVim's plugins at the versions in lazy-lock.json, without opening Neovim:
+# lazy.nvim installs missing plugins from the lockfile on startup, and Lazy! restore
+# moves installed ones to it. Re-runs when the lockfile or the enabled extras change.
+# lazy-lock.json hash: {{ include "dot_config/nvim/.lazy-lock.json" | sha256sum }}
+# lazyvim.json hash: {{ include "dot_config/nvim/lazyvim.json" | sha256sum }}
+set -eu
+
+{{ template "find-brew.sh" . }}
+"$(dirname "$brew")/nvim" --headless "+Lazy! restore" +qa

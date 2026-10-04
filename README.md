@@ -1,128 +1,77 @@
 # Portable XDG dotfiles
 
-Chezmoi configurations for macOS and Linux.
+Chezmoi configurations for macOS (Apple silicon) and Linux.
 
-## Prerequisites
+## Set up a new machine
 
-- zsh is your shell.
-- Install [Homebrew](https://docs.brew.sh/Installation) and follow its `shellenv`
-  setup instructions. Homebrew recommends `.zprofile` on macOS and `.zshrc` on
-  Linux for zsh; these dotfiles preserve that split. Make sure `brew` works in your
-  current shell before continuing.
-- Git and `chezmoi` are available (or bootstrap chezmoi below).
-- LazyVim needs a C compiler; its plugins also use `curl`, `unzip`, and `gzip`.
-  On macOS, use Apple's Command Line Tools. On Linux, install these utilities,
-  GNU tar, and your distribution's development/build tools with the system package
-  manager. The Brewfile supplies GNU tar on macOS for Mason.
+Run one command. It asks for your Git name and email, and whether this machine should
+commit and push dotfile changes; answer yes only on the machine you publish from.
+
+```sh
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/seven7thirty3five5/dotfiles/main/install.sh)"
+```
+
+[`install.sh`](install.sh) runs `chezmoi init --apply`, and the scripts in
+[`home/.chezmoiscripts`](home/.chezmoiscripts) set the machine up in this order:
+
+1. **Homebrew**, if it is missing. Its prefix depends on sudo access, detected the same
+   way as Homebrew's own installer:
+   - With sudo: the default prefix (`/opt/homebrew` or `/home/linuxbrew/.linuxbrew`).
+     On Linux it first installs the build tools Homebrew requires, plus zsh and unzip,
+     with `apt-get`, `dnf` or `pacman`; on macOS, Homebrew installs Apple's Command
+     Line Tools.
+   - Without sudo on Linux: `~/.linuxbrew`, or `~/.brew` when that path would be longer
+     than the default. Homebrew uses its prebuilt bottles in a custom prefix only if it
+     is no longer than the default ([support tiers](https://docs.brew.sh/Support-Tiers)).
+     A C compiler, `file` and zsh must then come from your administrator.
+   - Without sudo on macOS, and on Intel Macs, it stops and explains why.
+2. **The [Brewfile](home/dot_config/homebrew/Brewfile)**, with `brew bundle --no-upgrade`.
+   Mole, GNU tar and the Ghostty cask are macOS-only; the cask adopts an existing
+   Ghostty app.
+3. **The dotfiles** themselves.
+4. **[gh-dash](https://www.gh-dash.dev/)**, the GitHub CLI extension.
+5. **LazyVim's plugins**, headless, at the versions in `lazy-lock.json`.
+6. **zsh as the login shell**, with `chsh` when zsh is listed in `/etc/shells`;
+   otherwise it says what to ask an administrator for.
+
+`install.sh` then runs `chezmoi init` once more so chezmoi's own config picks up `delta`
+and `nvim`. Re-running it is safe, and extra arguments are passed to `chezmoi init`.
+
+### After setup
+
+- Open a new terminal.
+- Run `gh auth login` before using `gh dash`; installing it needed no login.
+- In Neovim, `:LazyHealth` and `:checkhealth mason` report anything still missing.
+  Language servers that need Node use your pnpm-managed runtime; Node and pnpm are
+  not installed by the Brewfile.
+- Ghostty bundles JetBrains Mono and the Nerd Font symbols. Over SSH, LazyVim, lazygit,
+  eza and gh-dash icons need a Nerd Font (v3 or newer) in the connecting terminal.
+- `lazydocker` needs a working Docker installation, which you set up separately.
 - `~/.config/zsh/.zshrc.local` (optional) holds per-machine zsh settings such as
   aliases and functions. It is not tracked by chezmoi.
 
 **Rule:** Follow the [XDG Base Directory Specification](https://specifications.freedesktop.org/basedir/latest/)
 wherever supported, using its standard paths.
 
-## Initialize dotfiles
-
-Initialize this repository without applying the dotfiles yet:
-
-```sh
-chezmoi init seven7thirty3five5
-```
-
-If `chezmoi` is not installed, bootstrap it and initialize instead:
-
-```sh
-sh -c "$(curl -fsSL get.chezmoi.io)" -- -b "$HOME/.local/bin" init seven7thirty3five5
-export PATH="$HOME/.local/bin:$PATH"
-```
-
-`init` asks for your Git name and email, and whether this machine should commit and
-push dotfile changes (`autoCommit`/`autoPush`). Answer yes only on the machine you
-publish from; other machines just pull.
-
-Install the formulae, regenerate chezmoi's configuration so it detects `delta` and
-`nvim`, then apply the dotfiles:
-
-```sh
-brew bundle --file="$(chezmoi source-path)/dot_config/homebrew/Brewfile" --no-upgrade
-chezmoi init
-chezmoi apply
-```
-
-Package installation is a manual step; `chezmoi apply` does not run it. The
-[Brewfile](home/dot_config/homebrew/Brewfile) tracks formulae only and installs Mole only
-on macOS. `--no-upgrade` skips explicit upgrades of existing packages; it does not
-pin versions, and installing missing packages can still update their dependencies.
-See [Homebrew Bundle](https://docs.brew.sh/Brew-Bundle-and-Brewfile).
-
-Open a new terminal after applying. If Homebrew is installed later, run
-`chezmoi apply` again so the shell templates detect its location.
-
-## Finish tool setup
-
-### LazyVim
-
-This repository already contains the LazyVim configuration and lazy.nvim
-bootstrap. After applying the dotfiles, start Neovim:
-
-```sh
-nvim
-```
-
-On first launch, lazy.nvim downloads LazyVim and the configured plugins, using the
-tracked `lazy-lock.json` for plugin revisions. Wait for installation to finish,
-then run `:LazyHealth` and `:checkhealth mason` inside Neovim.
-
-LazyVim automatically installs `tree-sitter-cli` through Mason when the executable
-is missing, so it is omitted from the Brewfile. The C compiler and archive
-utilities above support parser builds and Mason installations. See the
-[LazyVim requirements](https://www.lazyvim.org/) and
-[Mason requirements](https://github.com/mason-org/mason.nvim#requirements).
-
-Language servers and formatters may need additional runtimes. Use your existing
-pnpm-managed Node runtime or a per-project runtime when Node/npm is required;
-Node and pnpm are not installed through this Brewfile.
-
-### gh-dash
-
-The Brewfile installs GitHub CLI (`gh`). On a new machine, authenticate with
-`gh auth login` if needed, then install gh-dash as a GitHub CLI extension:
-
-```sh
-gh extension install dlvhdr/gh-dash
-gh dash
-```
-
-This follows the [gh-dash installation instructions](https://www.gh-dash.dev/getting-started)
-and uses the configuration managed at `~/.config/gh-dash/config.yml`. If the
-extension is already installed, update it with `gh extension upgrade gh-dash`.
-
-### Terminal, fonts, and Docker
-
-- Install your terminal and fonts separately. The macOS Ghostty configuration uses
-  JetBrains Mono. LazyVim and gh-dash display some icons with a Nerd Font v3 or
-  newer; select that font in your terminal if you want those icons.
-- `lazydocker` needs a working Docker installation and an accessible Docker daemon.
-  Install and configure Docker for your OS separately.
-
-## Install new dependencies
-
-After pulling dotfile changes, review and install any missing formulae manually:
-
-```sh
-brew bundle check --file="$HOME/.config/homebrew/Brewfile" --no-upgrade --verbose
-brew bundle --file="$HOME/.config/homebrew/Brewfile" --no-upgrade
-```
-
 ## Sync dotfiles
-
-To update your dotfiles such that they are synced with this repository, run:
 
 ```sh
 chezmoi update
 ```
 
-If chezmoi then warns that the config file template has changed, run `chezmoi init`
-to regenerate this machine's config; it only asks questions it hasn't asked before.
+This pulls the repository and applies it. When the Brewfile, `lazy-lock.json` or the
+LazyVim extras change, the scripts also install the new packages and plugin versions.
+If chezmoi warns that the config file template has changed, run `chezmoi init` to
+regenerate this machine's config; it only asks questions it hasn't asked before.
+
+## Repository layout
+
+- `home/` is the chezmoi source state, as named in `.chezmoiroot`. Everything outside it
+  (this README, `install.sh`, `scripts/`, `.github/`) is never deployed.
+- `.chezmoiversion` sets the oldest chezmoi that can read the source state.
+- `~/.config/nvim/lazy-lock.json` and `~/.config/gh/config.yml` are symlinks to
+  `.lazy-lock.json` and `.config.yml` in `home/`, because lazy.nvim and gh rewrite
+  them. Their changes appear in this repository as ordinary git changes.
 
 ## Validate shell configuration
 
