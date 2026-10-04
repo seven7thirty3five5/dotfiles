@@ -106,25 +106,25 @@ install_homebrew
 # ------------------------------------------------------------------------------
 
 if have_sudo; then
-  # Install what Homebrew needs (a C compiler, curl, file, git, ...) plus zsh,
-  # the shell these dotfiles use, and unzip, which LazyVim's Mason needs. Use
+  # Install what Homebrew needs (a C compiler, curl, file, git, ...) plus unzip,
+  # which LazyVim's Mason needs. (zsh comes from the Brewfile, as on macOS.) Use
   # this Linux's package manager: apt-get (Debian, Ubuntu), dnf (Fedora, RHEL)
   # or pacman (Arch). `command -v` checks whether a program exists.
   if command -v apt-get >/dev/null 2>&1; then
     sudo apt-get update
-    sudo apt-get install -y build-essential procps curl file git ca-certificates zsh unzip
+    sudo apt-get install -y build-essential procps curl file git ca-certificates unzip
   elif command -v dnf >/dev/null 2>&1; then
     # The build tools group is "development-tools" on newer Fedora and
     # "Development Tools" on older Fedora and RHEL; || tries the second name if
     # the first fails.
     sudo dnf group install -y development-tools ||
       sudo dnf group install -y 'Development Tools'
-    sudo dnf install -y procps-ng curl file git zsh unzip
+    sudo dnf install -y procps-ng curl file git unzip
   elif command -v pacman >/dev/null 2>&1; then
-    sudo pacman -S --needed --noconfirm base-devel procps-ng curl file git zsh unzip
+    sudo pacman -S --needed --noconfirm base-devel procps-ng curl file git unzip
   else
     echo "warning: unknown package manager;" \
-      "install a C compiler, curl, file, git, zsh and unzip yourself." >&2
+      "install a C compiler, curl, file, git and unzip yourself." >&2
   fi
 
   # Install Homebrew in its default folder, /home/linuxbrew/.linuxbrew.
@@ -154,7 +154,7 @@ fi
 
 # Without sudo these tools can't be installed, so only warn about missing ones.
 missing=
-for tool in curl git file cc zsh; do
+for tool in curl git file cc; do
   if ! command -v "$tool" >/dev/null 2>&1; then
     missing="$missing $tool"
   fi

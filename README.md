@@ -21,19 +21,20 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/seven7thirty3five5/dotfile
      Homebrew installs Apple's Command Line Tools when needed. Intel Macs are not
      supported by these dotfiles.
    - Linux with sudo: `/home/linuxbrew/.linuxbrew`. Setup first installs the build
-     tools Homebrew requires, plus zsh and unzip, with `apt-get`, `dnf` or `pacman`.
+     tools Homebrew requires, plus unzip, with `apt-get`, `dnf` or `pacman`.
    - Without sudo on Linux: `~/.linuxbrew`, or `~/.brew` when that path would be longer
      than the default. Homebrew uses its prebuilt bottles in a custom prefix only if it
      is no longer than the default ([support tiers](https://docs.brew.sh/Support-Tiers)).
-     A C compiler, `file` and zsh must then come from your administrator.
+     A C compiler and `file` must then come from your administrator.
 2. **The [Brewfile](home/dot_config/homebrew/Brewfile)**, with `brew bundle --no-upgrade`.
-   Mole, GNU tar and the Ghostty cask are macOS-only; the cask adopts an existing
-   Ghostty app.
+   It includes zsh itself, so macOS and Linux run the same version. Mole, GNU tar and
+   the Ghostty cask are macOS-only; the cask adopts an existing Ghostty app.
 3. **The dotfiles** themselves.
 4. **[gh-dash](https://www.gh-dash.dev/)**, the GitHub CLI extension.
 5. **LazyVim's plugins**, headless, at the versions in `lazy-lock.json`.
-6. **zsh as the login shell**, with `chsh` when zsh is listed in `/etc/shells`;
-   otherwise it says what to ask an administrator for.
+6. **Homebrew's zsh as the login shell**: setup adds it to `/etc/shells` with sudo
+   (in a terminal, sudo asks for your password) and switches to it with `chsh`.
+   Without sudo, it says what to ask an administrator for.
 
 `install.sh` then initializes Homebrew in its own shell and runs `chezmoi init` once
 more so chezmoi's own config picks up `delta` and `nvim`. Re-running it is safe, and
@@ -123,7 +124,7 @@ GitHub Actions runs three workflows on pushes and pull requests:
   Ubuntu runners, and in fresh Ubuntu containers as a user with sudo and as one
   without (Homebrew then goes into the home folder). `scripts/check-install.sh` then
   checks the result: the tools on PATH, `chezmoi verify`, the Homebrew prefix, the
-  symlinks, gh-dash and LazyVim's plugins.
+  symlinks, gh-dash, LazyVim's plugins and, where sudo works, the login shell.
 - **Secret scan** runs gitleaks over the whole history, which also covers edits made
   without `chezmoi add` and its secret check.
 

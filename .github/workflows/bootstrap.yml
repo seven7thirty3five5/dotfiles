@@ -64,15 +64,6 @@ jobs:
           # where later steps could read it; nothing here needs to push.
           persist-credentials: false
 
-      # Workaround: the Homebrew script installs zsh only when it installs Homebrew
-      # itself (on Linux, with sudo). This Ubuntu image already has Homebrew, so the
-      # script skips that, and zsh, which the image lacks, has to be added here.
-      - name: Install zsh on Linux
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install --no-install-recommends --yes zsh
-
       # install.sh normally downloads the repository from GitHub into
       # ~/.local/share/chezmoi. Putting this commit there first makes it use the
       # pushed code instead (chezmoi reuses a folder that already exists).
@@ -143,7 +134,7 @@ jobs:
           if [ "${{ matrix.access }}" = no-sudo ]; then
             # Without sudo, the installer can't install system packages, so this
             # pretends an administrator already provided what Homebrew and LazyVim need.
-            apt-get install --no-install-recommends --yes build-essential procps file zsh unzip
+            apt-get install --no-install-recommends --yes build-essential procps file unzip
           fi
 
           useradd --create-home --shell /bin/bash tester

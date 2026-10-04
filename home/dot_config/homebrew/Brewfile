@@ -10,7 +10,8 @@
 # Dotfile management.
 brew "chezmoi"                  # manages these dotfiles
 
-# Interactive shell.
+# Interactive shell. A chezmoi script makes Homebrew's zsh your login shell.
+brew "zsh"                      # the shell itself, the same version on macOS and Linux
 brew "atuin"                    # shell history in a searchable database (Ctrl-R)
 brew "eza"                      # a modern ls, with colors, icons and git status
 brew "fzf"                      # fuzzy finder: pick from a list by typing part of an entry

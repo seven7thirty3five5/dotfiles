@@ -16,12 +16,28 @@ fail() {
   exit 1
 }
 
-# Use the same PATH a new terminal gets. We start zsh as an interactive login
-# shell (-l -i), the way a terminal does, and have it print its PATH. This
-# matters on Linux, where Homebrew is only added to PATH in .zshrc, a file
-# other shells never read. zsh's startup warnings are thrown away (2>/dev/null)
-# and only the last line of output, the PATH itself, is kept (tail -n 1).
-PATH=$(zsh -l -i -c 'echo "$PATH"' 2>/dev/null | tail -n 1)
+# Find Homebrew's zsh, which the Brewfile installs. Nothing from Homebrew is on
+# PATH yet, so look in each folder Homebrew may be installed in (the folders in
+# home/.chezmoitemplates/brew-prefixes) for a zsh we can run (-x).
+zsh=
+for prefix in /opt/homebrew /home/linuxbrew/.linuxbrew "$HOME/.linuxbrew" "$HOME/.brew"; do
+  if [ -x "$prefix/bin/zsh" ]; then
+    zsh=$prefix/bin/zsh
+    break # use the first one found
+  fi
+done
+
+if [ -z "$zsh" ]; then
+  fail "Homebrew's zsh is not installed"
+fi
+
+# Use the same PATH a new terminal gets. We start that zsh as an interactive
+# login shell (-l -i), the way a terminal does, and have it print its PATH.
+# This matters on Linux, where Homebrew is only added to PATH in .zshrc, a
+# file other shells never read. zsh's startup warnings are thrown away
+# (2>/dev/null) and only the last line of output, the PATH itself, is kept
+# (tail -n 1).
+PATH=$("$zsh" -l -i -c 'echo "$PATH"' 2>/dev/null | tail -n 1)
 export PATH
 
 # Where the dotfiles keep config and data files. ${NAME:-default} means "the
@@ -95,6 +111,25 @@ fi
 
 if [ ! -d "$data_dir/nvim/lazy/LazyVim" ]; then
   fail "LazyVim's plugins are not installed"
+fi
+
+# --- 8. Homebrew's zsh is the login shell -----------------------------------
+
+# Setup needs sudo to add Homebrew's zsh to /etc/shells, the list of allowed
+# login shells; without sudo it only says what to ask an administrator. So
+# check only where sudo works without a password (-n: never ask for one), as
+# on CI's machines that have sudo. uname prints the system's name: Darwin on
+# macOS. (dscl and getent look up the login shell, as in the setup script.)
+if /usr/bin/sudo -n true 2>/dev/null; then
+  if [ "$(uname)" = Darwin ]; then
+    login_shell=$(dscl . -read "/Users/$(id -un)" UserShell | awk '{print $2}')
+  else
+    login_shell=$(getent passwd "$(id -un)" | cut -d: -f7)
+  fi
+
+  if [ "$login_shell" != "$zsh" ]; then
+    fail "the login shell is $login_shell, not Homebrew's zsh ($zsh)"
+  fi
 fi
 
 echo "Install checks passed (Homebrew in $brew_prefix)."

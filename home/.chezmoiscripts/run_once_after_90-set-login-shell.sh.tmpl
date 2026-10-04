@@ -1,13 +1,30 @@
 #!/bin/sh
 #
-# Make zsh your login shell: the shell a new terminal or SSH session starts.
+# Make Homebrew's zsh your login shell: the shell a new terminal or SSH session
+# starts.
 #
-# These dotfiles only configure zsh. chezmoi runs this once per machine
+# These dotfiles only configure zsh, and the Brewfile installs it on macOS and
+# Linux alike, so both run the same zsh. chezmoi runs this once per machine
 # ("run_once_"), after writing the dotfiles ("after_").
 
 # Stop at the first command that fails (-e), and treat an unset variable as an
 # error instead of quietly using an empty value (-u).
 set -eu
+
+# Find Homebrew; this sets $brew (see find-brew.sh in home/.chezmoitemplates).
+{{ template "find-brew.sh" . }}
+
+# Homebrew's zsh is in the same folder as brew: dirname turns .../bin/brew into
+# .../bin. This path stays the same when Homebrew updates zsh.
+zsh=$(dirname "$brew")/zsh
+
+# A login shell that can't start would lock you out of new terminals and SSH
+# logins, so first check that this zsh starts: -f skips its startup files, and
+# -c true runs a command that does nothing. (-z "$brew": Homebrew wasn't found.)
+if [ -z "$brew" ] || ! "$zsh" -f -c true; then
+  echo "error: Homebrew's zsh is missing or doesn't start; the Brewfile installs it." >&2
+  exit 1
+fi
 
 # Look up your current login shell; chezmoi keeps only this OS's line.
 #   macOS: dscl reads the UserShell setting from the user directory.
@@ -20,26 +37,43 @@ current=$(dscl . -read "/Users/$user" UserShell | awk '{print $2}')
 current=$(getent passwd "$user" | cut -d: -f7)
 {{- end }}
 
-# Already zsh (the path ends in /zsh)? Then there's nothing to do.
-# `case` compares $current with the pattern; * matches any text.
-case $current in
-  */zsh) exit 0 ;;
-esac
+# Already Homebrew's zsh? Then there's nothing to do.
+if [ "$current" = "$zsh" ]; then
+  exit 0
+fi
 
-# chsh only accepts shells listed in /etc/shells, so take the first zsh listed
-# there: grep finds lines that start with / and end with /zsh, head keeps the
-# first one, and `|| true` carries on (with an empty result) if there is none.
-zsh=$(grep -E '^/.*/zsh$' /etc/shells | head -n 1 || true)
-if [ -z "$zsh" ]; then
-  echo "note: zsh is not listed in /etc/shells, so your login shell stays $current." >&2
-  echo "      Ask an administrator to install zsh or to make it your login shell." >&2
+# chsh only accepts shells listed in /etc/shells, and only an administrator may
+# change that file. grep checks for a line that is exactly this path (-F: plain
+# text, -x: the whole line, -q: just succeed or fail, printing nothing).
+if ! grep -Fqx "$zsh" /etc/shells; then
+  # Add it with sudo, if sudo works without a password (-n: never ask for one)
+  # or this runs in a terminal (-t 0), where sudo can ask for yours. tee -a adds
+  # the line it reads to the end of the file. If that fails, `|| true` carries
+  # on to the check below.
+  if /usr/bin/sudo -n true 2>/dev/null || [ -t 0 ]; then
+    echo "Adding $zsh to /etc/shells, the list of allowed login shells."
+    echo "$zsh" | /usr/bin/sudo tee -a /etc/shells >/dev/null || true
+  fi
+fi
+
+# Still not listed (no sudo here)? Then say how to do it by hand.
+if ! grep -Fqx "$zsh" /etc/shells; then
+  # Print the lines up to MSG as an error, with $zsh and $current filled in.
+  cat >&2 <<MSG
+note: $zsh is not listed in /etc/shells, so your login shell stays $current.
+      Add it with sudo (or ask an administrator to), then switch to it:
+        echo $zsh | sudo tee -a /etc/shells
+        chsh -s $zsh
+      Until then, start zsh by typing $zsh.
+MSG
   exit 0
 fi
 
 echo "Changing your login shell from $current to $zsh."
 if /usr/bin/sudo -n true 2>/dev/null; then
-  # sudo works here without a password, so change it with sudo
-  # (&& exit 0: stop here if that worked).
+  # sudo works here without asking for a password (it remembers one you typed
+  # a few minutes ago), so change it with sudo (&& exit 0: stop here if that
+  # worked).
   /usr/bin/sudo chsh -s "$zsh" "$user" && exit 0
 elif [ -t 0 ]; then
   # Running in a terminal (-t 0): chsh asks for your password.
