@@ -50,7 +50,7 @@ extra arguments are passed to `chezmoi init`.
   not installed by the Brewfile.
 - Ghostty bundles JetBrains Mono and the Nerd Font symbols. Over SSH, LazyVim, lazygit,
   eza and gh-dash icons need a Nerd Font (v3 or newer) in the connecting terminal.
-- `lazydocker` needs a working Docker installation, which you set up separately.
+- `lazydocker` and `act` need a working Docker installation, which you set up separately.
 - `~/.config/zsh/.zshrc.local` (optional) holds per-machine zsh settings such as
   aliases and functions. It is not tracked by chezmoi.
 
@@ -76,6 +76,46 @@ regenerate this machine's config; it only asks questions it hasn't asked before.
 - `~/.config/nvim/lazy-lock.json` and `~/.config/gh/config.yml` are symlinks to
   `.lazy-lock.json` and `.config.yml` in `home/`, because lazy.nvim and gh rewrite
   them. Their changes appear in this repository as ordinary git changes.
+- `.editorconfig` links to `home/dot_editorconfig`, so the repository and deployed
+  shell scripts use the same formatting settings.
+
+### Shell and workflow tools
+
+The Brewfile installs [ShellCheck](https://github.com/koalaman/shellcheck),
+[shfmt](https://github.com/mvdan/sh), [act](https://github.com/nektos/act) and
+[actionlint](https://github.com/rhysd/actionlint) on macOS and Linux.
+
+- ShellCheck reads `~/.config/shellcheckrc` (or `$XDG_CONFIG_HOME/shellcheckrc`). It
+  checks sourced files and resolves them relative to each script. Project configs
+  take precedence; the global config keeps the standard checks and shell detection.
+- shfmt reads `~/.editorconfig`; it has no separate global config or shell init.
+  Shell files use two spaces, indented case arms and continued operators at the
+  start of the next line. Project EditorConfig settings take precedence.
+- act reads `$XDG_CONFIG_HOME/act/actrc`. It uses the upstream Medium Ubuntu images
+  and, on Apple silicon, amd64 containers. Its caches follow `$XDG_CACHE_HOME`.
+  Project `.actrc` files and CLI arguments can override these defaults. Homebrew
+  installs its Zsh completion, which the existing `fpath` and `compinit` setup load.
+- actionlint checks every workflow when run from a repository. It automatically
+  uses ShellCheck for shell steps. Its optional config belongs to the project at
+  `.github/actionlint.yaml`; the standard defaults fit this repo, so there is no
+  global config or init command.
+
+From the repository root:
+
+```sh
+shellcheck install.sh scripts/check-install.sh
+shfmt -w install.sh scripts/check-install.sh
+actionlint
+act --list
+act -W .github/workflows/shell-checks.yml -j shell --matrix os:ubuntu-latest
+```
+
+`act --list` only lists jobs and needs no running Docker daemon. Running a job
+downloads the runner image when needed and starts Docker containers. For this repo,
+select the Linux shell job as above; the Bootstrap workflow installs packages and
+changes the login shell, and macOS jobs need a real macOS runner. Keep GitHub
+tokens out of tracked configs; pass a required token interactively with
+`act -s GITHUB_TOKEN`.
 
 ### How chezmoi reads `home/`
 
@@ -118,9 +158,10 @@ in which lazy.nvim records the exact version of each plugin.
 
 GitHub Actions runs three workflows on pushes and pull requests:
 
-- **Shell checks** test the bootstrap prefix policy, sudo requirements and installer
-  PATH propagation with stand-ins, then run `scripts/check-shell.py` on macOS and
-  Linux, as described below.
+- **Shell checks** run ShellCheck and shfmt on plain shell scripts and chezmoi
+  templates rendered for macOS and Linux, and actionlint on all workflows. They
+  also test the bootstrap prefix policy, sudo requirements and installer PATH
+  propagation with stand-ins, then run `scripts/check-shell.py` on macOS and Linux.
 - **Bootstrap** runs `install.sh` against the pushed commit on GitHub's macOS and
   Ubuntu runners, and in fresh Ubuntu containers as a user with sudo and as one
   without (Homebrew then goes into the home folder). `scripts/check-install.sh` then
@@ -129,10 +170,11 @@ GitHub Actions runs three workflows on pushes and pull requests:
 - **Secret scan** runs gitleaks over the whole history, which also covers edits made
   without `chezmoi add` and its secret check.
 
-You can also run the shell checks locally with Python 3.8+, `chezmoi`, and `zsh`
-available:
+You can also run the checks locally with Python 3.8+, `chezmoi`, `zsh`, `shellcheck`,
+`shfmt` and `actionlint` available:
 
 ```sh
+python3 scripts/check-lint.py
 python3 scripts/check-bootstrap.py
 python3 scripts/check-shell.py
 ```

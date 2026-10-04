@@ -16,7 +16,6 @@ set -eu
 
 # Find Homebrew; this sets $brew (see find-brew.sh in home/.chezmoitemplates).
 {{ template "find-brew.sh" . }}
-
 # -z: the text is empty, so Homebrew isn't installed. (>&2 prints an error.)
 if [ -z "$brew" ]; then
   echo "error: Homebrew not found; run install.sh from the dotfiles repository." >&2
@@ -32,7 +31,8 @@ fi
 # (includeTemplate). The quotes in <<'BREWFILE' make the shell pass those lines
 # on unchanged. (This script runs before chezmoi updates
 # ~/.config/homebrew/Brewfile, so that copy could still be the old one.)
-eval "$("$brew" shellenv sh)"
+brew_env=$("$brew" shellenv sh)
+eval "$brew_env"
 brew bundle --file=- --no-upgrade <<'BREWFILE'
 {{ includeTemplate "dot_config/homebrew/Brewfile.tmpl" . -}}
 BREWFILE

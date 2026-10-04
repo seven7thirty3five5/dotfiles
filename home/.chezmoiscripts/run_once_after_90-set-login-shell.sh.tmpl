@@ -13,7 +13,6 @@ set -eu
 
 # Find Homebrew; this sets $brew (see find-brew.sh in home/.chezmoitemplates).
 {{ template "find-brew.sh" . }}
-
 # Homebrew's zsh is in the same folder as brew: dirname turns .../bin/brew into
 # .../bin. This path stays the same when Homebrew updates zsh.
 zsh=$(dirname "$brew")/zsh

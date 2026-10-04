@@ -1,0 +1,8 @@
+# ShellCheck's native XDG config: $XDG_CONFIG_HOME/shellcheckrc.
+# Project .shellcheckrc/shellcheckrc files take precedence over this file.
+
+# Resolve sourced files relative to the script, even when checking it elsewhere.
+source-path=SCRIPTDIR
+
+# Check sourced files too, without needing to list each one on the command line.
+external-sources=true

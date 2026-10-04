@@ -173,6 +173,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           for run in 1 2; do # twice, because re-running install.sh must be safe
+            echo "Installation pass $run"
             sudo --user=tester --login env LANG=C.UTF-8 GH_TOKEN="$GH_TOKEN" \
               sh /home/tester/.local/share/chezmoi/install.sh
           done

@@ -14,3 +14,13 @@ end_of_line = lf
 
 # End the last line with a line break too.
 insert_final_newline = true
+
+# shfmt also reads EditorConfig; it has no separate global config file.
+# Keep the existing two-space shell indentation. These options follow shfmt's
+# example of Google's shell style: indent case arms and put continued &&/|| first.
+# .sh.tmpl covers chezmoi scripts after rendering; raw templates aren't shell code.
+[*.{sh,bash,bats,sh.tmpl,bash.tmpl,bats.tmpl}]
+indent_style = space
+indent_size = 2
+binary_next_line = true
+switch_case_indent = true

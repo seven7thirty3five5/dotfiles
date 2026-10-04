@@ -1,5 +1,7 @@
-# Shell checks: run the repository's two test scripts on macOS and on Linux.
+# Shell checks: lint the scripts and workflows, then test macOS and Linux startup.
 #
+#   scripts/check-lint.py       runs ShellCheck and shfmt on shell scripts and
+#                               rendered templates, plus actionlint on workflows
 #   scripts/check-bootstrap.py  tests install.sh and the Homebrew install script
 #                               using fake programs, without installing anything
 #   scripts/check-shell.py      renders the zsh startup files and starts zsh in
@@ -25,6 +27,35 @@ permissions:
   contents: read
 
 jobs:
+  lint:
+    name: Shell and workflow lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # GitHub's Ubuntu runner already has Homebrew in its standard Linux prefix.
+      # Use the same packages locally and in CI; no dotfiles are applied here.
+      - name: Install lint tools and chezmoi
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+          HOMEBREW_NO_INSTALL_CLEANUP: 1
+        run: |
+          brew_env=$(/home/linuxbrew/.linuxbrew/bin/brew shellenv bash)
+          eval "$brew_env"
+          brew install shellcheck shfmt actionlint chezmoi
+          echo "$HOMEBREW_PREFIX/bin" >> "$GITHUB_PATH"
+
+      - name: Lint shell scripts and workflows
+        run: python3 scripts/check-lint.py
+
   shell:
     # The job's name in the Actions tab, e.g. "Zsh (macos-latest)".
     name: Zsh (${{ matrix.os }})

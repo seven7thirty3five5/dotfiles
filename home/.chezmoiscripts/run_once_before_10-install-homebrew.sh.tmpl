@@ -25,12 +25,18 @@ set -eu
 # command, or to nothing if Homebrew isn't installed (see find-brew.sh in
 # home/.chezmoitemplates).
 {{ template "find-brew.sh" . }}
-
 # -n: the text isn't empty, so Homebrew is already installed.
 if [ -n "$brew" ]; then
   exit 0
 fi
 
+{{ if and (eq .chezmoi.os "darwin") (ne .chezmoi.arch "arm64") -}}
+# chezmoi only writes this part on an Intel Mac. Refuse before defining setup
+# functions or including commands that cannot run on this unsupported machine.
+echo "error: these dotfiles expect Homebrew in /opt/homebrew;" \
+  "Intel Macs are not supported." >&2
+exit 1
+{{- else -}}
 # have_sudo: succeed if this user may use sudo, fail if not. These are the
 # same checks Homebrew's own installer makes (have_sudo_access in its
 # install.sh).
@@ -69,6 +75,8 @@ have_sudo() {
 # install_homebrew: download Homebrew's official installer with curl and run it
 # with bash. NONINTERACTIVE=1 tells it not to ask questions. Any arguments,
 # such as --path FOLDER, are passed on to the installer.
+# macOS intentionally passes no arguments; Linux can supply a custom --path.
+# shellcheck disable=SC2120
 install_homebrew() {
   installer=https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
   NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL "$installer")" install.sh "$@"
@@ -78,15 +86,6 @@ install_homebrew() {
 # ------------------------------------------------------------------------------
 # macOS
 # ------------------------------------------------------------------------------
-{{- if ne .chezmoi.arch "arm64" }}
-
-# chezmoi only writes this part on an Intel Mac: .chezmoi.arch is the processor
-# type, arm64 on Apple silicon and amd64 on Intel, and ne means "not equal".
-# (>&2 prints the message as an error.)
-echo "error: these dotfiles expect Homebrew in /opt/homebrew;" \
-  "Intel Macs are not supported." >&2
-exit 1
-{{- end }}
 
 if ! have_sudo; then
   # Print the lines up to MSG as an error.
@@ -100,6 +99,8 @@ fi
 
 # Install Homebrew in /opt/homebrew. The installer also installs Apple's
 # Command Line Tools (git, a C compiler) if they're missing.
+# Do not forward this setup script's arguments to Homebrew's installer.
+# shellcheck disable=SC2119
 install_homebrew
 {{- else if eq .chezmoi.os "linux" -}}
 # ------------------------------------------------------------------------------
@@ -118,8 +119,8 @@ if have_sudo; then
     # The build tools group is "development-tools" on newer Fedora and
     # "Development Tools" on older Fedora and RHEL; || tries the second name if
     # the first fails.
-    sudo dnf group install -y development-tools ||
-      sudo dnf group install -y 'Development Tools'
+    sudo dnf group install -y development-tools \
+      || sudo dnf group install -y 'Development Tools'
     sudo dnf install -y procps-ng curl file git unzip
   elif command -v pacman >/dev/null 2>&1; then
     sudo pacman -S --needed --noconfirm base-devel procps-ng curl file git unzip
@@ -169,4 +170,5 @@ fi
 # HOMEBREW_NO_SUDO=1 tells Homebrew's installer not to try sudo.
 export HOMEBREW_NO_SUDO=1
 install_homebrew --path "$prefix"
+{{- end }}
 {{- end }}

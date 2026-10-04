@@ -1,0 +1,15 @@
+{{- /*
+  act reads $XDG_CONFIG_HOME/act/actrc automatically. It accepts one argument
+  per line and no comments, so this explanation disappears when chezmoi renders it.
+  Use the upstream default Medium runner images rather than its Large downloads.
+  XDG_CACHE_HOME already directs act's action and workflow caches to ~/.cache.
+  Apple silicon uses amd64 containers to match GitHub's standard Ubuntu runners;
+  Docker Desktop supplies the emulation. Other machines keep their native arch.
+  Repository .actrc files and command-line arguments can override these choices.
+*/ -}}
+--platform=ubuntu-latest=catthehacker/ubuntu:act-latest
+--platform=ubuntu-22.04=catthehacker/ubuntu:act-22.04
+--platform=ubuntu-20.04=catthehacker/ubuntu:act-20.04
+{{ if and (eq .chezmoi.os "darwin") (eq .chezmoi.arch "arm64") -}}
+--container-architecture=linux/amd64
+{{ end -}}

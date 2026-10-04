@@ -37,6 +37,8 @@ fi
 # file other shells never read. zsh's startup warnings are thrown away
 # (2>/dev/null) and only the last line of output, the PATH itself, is kept
 # (tail -n 1).
+# Expand PATH in the child zsh after it has read its startup files.
+# shellcheck disable=SC2016
 PATH=$("$zsh" -l -i -c 'echo "$PATH"' 2>/dev/null | tail -n 1)
 export PATH
 
@@ -49,7 +51,7 @@ data_dir=${XDG_DATA_HOME:-$HOME/.local/share}
 
 # The loop goes through the list one word at a time.
 tools="brew chezmoi git delta difft nvim fzf fd rg bat eza
-       atuin zoxide starship lazygit gh"
+       atuin zoxide starship lazygit gh shellcheck shfmt act actionlint"
 for tool in $tools; do
   if ! command -v "$tool" >/dev/null; then
     fail "$tool is not on PATH"

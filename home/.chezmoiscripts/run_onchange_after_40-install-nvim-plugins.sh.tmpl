@@ -21,7 +21,6 @@ set -eu
 
 # Find Homebrew; this sets $brew (see find-brew.sh in home/.chezmoitemplates).
 {{ template "find-brew.sh" . }}
-
 # Homebrew's nvim is in the same folder as brew: dirname turns .../bin/brew
 # into .../bin.
 "$(dirname "$brew")/nvim" --headless "+Lazy! restore" +qa

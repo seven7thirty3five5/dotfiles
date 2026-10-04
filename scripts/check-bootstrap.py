@@ -363,6 +363,23 @@ else:
         ])
         self.assertIn("Done.", result.stdout)
 
+    def test_package_install_stops_if_shellenv_fails(self):
+        """Do not run brew bundle after a failed brew shellenv command."""
+        brew = self.bin / "brew"
+        executable(brew, '#!/bin/sh\n'
+                   '[ "$1" = shellenv ] && exit 7\n'
+                   'echo "bundle must not run" >&2\nexit 1\n')
+        template = (STATE / ".chezmoiscripts/run_onchange_before_20-install-packages.sh.tmpl").read_text()
+        template = template.replace(
+            '{{ template "find-brew.sh" . }}',
+            'brew=' + shlex.quote(str(brew)),
+        )
+        for system in ("darwin", "linux"):
+            with self.subTest(system=system):
+                result = self.run_command(["sh"], self.render(template, system))
+                self.assertEqual(result.returncode, 7, result.stderr)
+                self.assertNotIn("bundle must not run", result.stderr)
+
     def test_installer_stops_after_failure(self):
         """install.sh stops at the first failure, with that failure's exit status.
 

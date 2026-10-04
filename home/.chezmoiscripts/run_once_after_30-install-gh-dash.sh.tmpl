@@ -13,7 +13,6 @@ set -eu
 
 # Find Homebrew; this sets $brew (see find-brew.sh in home/.chezmoitemplates).
 {{ template "find-brew.sh" . }}
-
 # Where gh keeps its extensions: $GH_DATA_DIR if you set it, otherwise
 # $XDG_DATA_HOME/gh, which is ~/.local/share/gh by default.
 # (${NAME:-default} means "the value of $NAME, or default when it isn't set".)
