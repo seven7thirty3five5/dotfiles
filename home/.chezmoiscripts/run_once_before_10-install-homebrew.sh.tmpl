@@ -1,11 +1,16 @@
 #!/bin/sh
 # Install Homebrew before chezmoi writes any file; the shell and git templates look for it.
-# The prefix follows sudo access, detected like Homebrew's own installer does:
-#   with sudo     the default prefix (on Linux, also the build tools Homebrew lists)
-#   without sudo  Linux: ~/.linuxbrew or ~/.brew, whichever is no longer than the
-#                 default, so Homebrew still installs bottles; macOS: stop with advice.
+# macOS uses only /opt/homebrew and needs sudo for a new installation.
+# On Linux, sudo installs the default prefix and build tools; without sudo, use
+# ~/.linuxbrew or ~/.brew if it is no longer than the default, so bottles still work.
 set -eu
 
+{{ if eq .chezmoi.os "darwin" -}}
+if [ "$(uname -m)" != arm64 ]; then
+  echo "error: these dotfiles expect Homebrew in /opt/homebrew; Intel Macs are not supported." >&2
+  exit 1
+fi
+{{ end -}}
 {{ template "find-brew.sh" . }}
 if [ -n "$brew" ]; then
   exit 0
@@ -36,15 +41,11 @@ install_homebrew() {
 }
 
 {{ if eq .chezmoi.os "darwin" -}}
-if [ "$(uname -m)" != arm64 ]; then
-  echo "error: these dotfiles expect Homebrew in /opt/homebrew; Intel Macs are not supported." >&2
-  exit 1
-fi
 if ! have_sudo; then
   cat >&2 <<'MSG'
-error: Homebrew on macOS needs an Administrator account (prefix /opt/homebrew).
-       A prefix in your home folder is longer than /opt/homebrew, so every formula
-       would compile from source (Homebrew Tier 3). Ask for admin rights, then re-run.
+error: installing Homebrew on macOS requires sudo access for /opt/homebrew.
+       Use an administrator account or ask an administrator to install Homebrew
+       there, then re-run. Custom macOS prefixes are not supported by these dotfiles.
 MSG
   exit 1
 fi

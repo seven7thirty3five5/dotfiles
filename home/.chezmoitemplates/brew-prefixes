@@ -1,10 +1,9 @@
 {{- /* Homebrew prefixes these dotfiles support, most preferred first, one per line.
-       The default prefix needs sudo once to create. Without sudo, Linux uses a prefix
-       in the home folder that is no longer than the default, so bottles still work
-       (see the install-homebrew script); macOS has no such prefix. */ -}}
+       macOS uses only /opt/homebrew, which needs sudo to install. Without sudo,
+       Linux uses a prefix in the home folder that is no longer than the default,
+       so bottles still work (see the install-homebrew script). */ -}}
 {{- if eq .chezmoi.os "darwin" -}}
 /opt/homebrew
-{{ joinPath .chezmoi.homeDir ".homebrew" }}
 {{- else -}}
 /home/linuxbrew/.linuxbrew
 {{ joinPath .chezmoi.homeDir ".linuxbrew" }}

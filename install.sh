@@ -4,8 +4,9 @@
 #   sh -c "$(curl -fsSL https://raw.githubusercontent.com/seven7thirty3five5/dotfiles/main/install.sh)"
 #
 # `chezmoi init --apply` does the work: the scripts in home/.chezmoiscripts install
-# Homebrew (choosing its prefix by sudo access), the Brewfile, gh-dash and LazyVim's
-# plugins, and make zsh the login shell. `chezmoi init` then runs once more because
+# Homebrew (/opt/homebrew on macOS; a prefix chosen by sudo access on Linux),
+# the Brewfile, gh-dash and LazyVim's plugins, and make zsh the login shell.
+# `chezmoi init` then runs once more because
 # chezmoi's own config looks for delta and nvim, which did not exist the first time,
 # and a chezmoi script cannot run chezmoi itself.
 #
@@ -14,7 +15,7 @@
 set -eu
 
 tmpdir=$(mktemp -d)
-trap 'rm -rf "$tmpdir"' EXIT
+trap 'rm -f "$tmpdir/chezmoi"; rmdir "$tmpdir"' EXIT
 trap 'exit 1' HUP INT TERM
 
 if command -v chezmoi >/dev/null 2>&1; then
@@ -26,6 +27,17 @@ else
 fi
 
 "$chezmoi" init --apply "$@" seven7thirty3five5
+
+# The install scripts run in child processes; their PATH changes cannot reach this
+# shell. Initialize the detected Homebrew here so the second init finds delta and
+# nvim, including on Linux where .zshrc only runs in interactive shells.
+prefix=$("$chezmoi" execute-template '{{ includeTemplate "brew-prefix" . }}')
+if [ -z "$prefix" ] || [ ! -x "$prefix/bin/brew" ]; then
+  echo "error: Homebrew not found after applying the dotfiles." >&2
+  exit 1
+fi
+brew_env=$("$prefix/bin/brew" shellenv sh)
+eval "$brew_env"
 "$chezmoi" init "$@"
 
 echo "Done. Open a new terminal to start using the new setup."

@@ -14,17 +14,18 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/seven7thirty3five5/dotfile
 [`install.sh`](install.sh) runs `chezmoi init --apply`, and the scripts in
 [`home/.chezmoiscripts`](home/.chezmoiscripts) set the machine up in this order:
 
-1. **Homebrew**, if it is missing. Its prefix depends on sudo access, detected the same
-   way as Homebrew's own installer:
-   - With sudo: the default prefix (`/opt/homebrew` or `/home/linuxbrew/.linuxbrew`).
-     On Linux it first installs the build tools Homebrew requires, plus zsh and unzip,
-     with `apt-get`, `dnf` or `pacman`; on macOS, Homebrew installs Apple's Command
-     Line Tools.
+1. **Homebrew**, if it is missing:
+   - macOS (Apple silicon): `/opt/homebrew` is the only supported prefix. Installing
+     it requires sudo access; without it, setup stops and asks for an administrator
+     to install Homebrew there. An existing installation is reused without sudo.
+     Homebrew installs Apple's Command Line Tools when needed. Intel Macs are not
+     supported by these dotfiles.
+   - Linux with sudo: `/home/linuxbrew/.linuxbrew`. Setup first installs the build
+     tools Homebrew requires, plus zsh and unzip, with `apt-get`, `dnf` or `pacman`.
    - Without sudo on Linux: `~/.linuxbrew`, or `~/.brew` when that path would be longer
      than the default. Homebrew uses its prebuilt bottles in a custom prefix only if it
      is no longer than the default ([support tiers](https://docs.brew.sh/Support-Tiers)).
      A C compiler, `file` and zsh must then come from your administrator.
-   - Without sudo on macOS, and on Intel Macs, it stops and explains why.
 2. **The [Brewfile](home/dot_config/homebrew/Brewfile)**, with `brew bundle --no-upgrade`.
    Mole, GNU tar and the Ghostty cask are macOS-only; the cask adopts an existing
    Ghostty app.
@@ -34,8 +35,9 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/seven7thirty3five5/dotfile
 6. **zsh as the login shell**, with `chsh` when zsh is listed in `/etc/shells`;
    otherwise it says what to ask an administrator for.
 
-`install.sh` then runs `chezmoi init` once more so chezmoi's own config picks up `delta`
-and `nvim`. Re-running it is safe, and extra arguments are passed to `chezmoi init`.
+`install.sh` then initializes Homebrew in its own shell and runs `chezmoi init` once
+more so chezmoi's own config picks up `delta` and `nvim`. Re-running it is safe, and
+extra arguments are passed to `chezmoi init`.
 
 ### After setup
 
@@ -77,7 +79,9 @@ regenerate this machine's config; it only asks questions it hasn't asked before.
 
 GitHub Actions runs three workflows on pushes and pull requests:
 
-- **Shell checks** run `scripts/check-shell.py` on macOS and Linux, as described below.
+- **Shell checks** test the bootstrap prefix policy, sudo requirements and installer
+  PATH propagation with stand-ins, then run `scripts/check-shell.py` on macOS and
+  Linux, as described below.
 - **Bootstrap** runs `install.sh` against the pushed commit on GitHub's macOS and
   Ubuntu runners, and in fresh Ubuntu containers as a user with sudo and as one
   without (Homebrew then goes into the home folder). `scripts/check-install.sh` then
@@ -90,6 +94,7 @@ You can also run the shell checks locally with Python 3.8+, `chezmoi`, and `zsh`
 available:
 
 ```sh
+python3 scripts/check-bootstrap.py
 python3 scripts/check-shell.py
 ```
 
