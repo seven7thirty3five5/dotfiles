@@ -7,7 +7,7 @@ install.sh and the script that installs Homebrew
 (home/.chezmoiscripts/run_once_before_10-install-homebrew.sh.tmpl) are hard to
 test for real: they download and install software, need sudo, and behave
 differently on macOS and Linux. So these tests swap the programs those scripts
-call (curl, sudo, uname, brew and chezmoi) for "stubs": tiny fake programs that
+call (curl, sudo, brew and chezmoi) for "stubs": tiny fake programs that
 only give a made-up answer or write down how they were called. The tests check:
 
   - which folders Homebrew may be installed in, on macOS and on Linux;
@@ -117,7 +117,7 @@ class BootstrapChecks(unittest.TestCase):
             text=True, capture_output=True, timeout=30,
         )
 
-    def render(self, template, system):
+    def render(self, template, system, arch="arm64"):
         """Fill in a chezmoi template as `system` would, and return the result.
 
         `chezmoi execute-template TEXT` fills in the template parts of TEXT (the
@@ -126,17 +126,19 @@ class BootstrapChecks(unittest.TestCase):
         chezmoi detected. To fill in the macOS version on Linux, and the other
         way around, this wraps the template in
 
-            {{ with dict "chezmoi" (dict "os" ... "homeDir" ... "sourceDir" ...) }}
+            {{ with dict "chezmoi" (dict "os" ... "arch" ... "homeDir" ... "sourceDir" ...) }}
             the template
             {{ end }}
 
         Inside `with`, the data the template reads (its "dot") is swapped for
         this made-up data. So .chezmoi.os is `system` ("darwin", which is what
-        chezmoi calls macOS, or "linux"), .chezmoi.homeDir is the pretend home
-        folder, and .chezmoi.sourceDir is the repository's home/ folder. Those
-        are the only .chezmoi values the tested templates read; if one ever reads
-        another, chezmoi stops with an error instead of guessing. json.dumps()
-        writes each value in quotes, the same way templates write text.
+        chezmoi calls macOS, or "linux"), .chezmoi.arch is `arch` (the processor
+        type: "arm64" for Apple silicon, "amd64" for Intel), .chezmoi.homeDir is
+        the pretend home folder, and .chezmoi.sourceDir is the repository's home/
+        folder. Those are the only .chezmoi values the tested templates read; if
+        one ever reads another, chezmoi stops with an error instead of guessing.
+        json.dumps() writes each value in quotes, the same way templates write
+        text.
         """
 
         chezmoi = shutil.which("chezmoi")
@@ -148,7 +150,8 @@ class BootstrapChecks(unittest.TestCase):
         config.write_text('[git]\nautoCommit = false\nautoPush = false\n')
         context = (
             '{{ with dict "chezmoi" (dict "os" '
-            + json.dumps(system) + ' "homeDir" '
+            + json.dumps(system) + ' "arch" '
+            + json.dumps(arch) + ' "homeDir" '
             + json.dumps(str(self.home)) + ' "sourceDir" '
             + json.dumps(str(STATE)) + ') }}'
         )
@@ -198,9 +201,9 @@ class BootstrapChecks(unittest.TestCase):
     def test_macos_install_requires_sudo_and_uses_default_prefix(self):
         """On macOS, the Homebrew script reuses, refuses, or installs into /opt/homebrew.
 
-        It runs the script, filled in for macOS, with three fake programs:
+        It runs the script, filled in for a Mac with Apple silicon (arm64) or
+        with an Intel processor (amd64), with two fake programs:
 
-          uname  prints $TEST_ARCH: arm64 (Apple silicon) or x86_64 (Intel);
           sudo   succeeds if $TEST_SUDO is yes, and otherwise fails with the
                  message the real sudo prints for a user who isn't an
                  administrator;
@@ -208,7 +211,6 @@ class BootstrapChecks(unittest.TestCase):
                  Homebrew's real one. It only writes down how it was run.
         """
 
-        executable(self.bin / "uname", '#!/bin/sh\nprintf "%s\\n" "$TEST_ARCH"\n')
         sudo = self.bin / "sudo"
         executable(sudo, '#!/bin/sh\n[ "$TEST_SUDO" = yes ] && exit 0\n'
                    'echo "tester is not in the sudoers file" >&2\nexit 1\n')
@@ -229,13 +231,18 @@ class BootstrapChecks(unittest.TestCase):
         # becomes the fake sudo. The script calls sudo by its full path, as
         # Homebrew's installer does, so a fake sudo on PATH alone wouldn't be used.
         template = template.replace('{{ template "find-brew.sh" . }}', "brew=\n")
-        script = self.render(template, "darwin").replace("/usr/bin/sudo", shlex.quote(str(sudo)))
+
+        # Fill in the script twice: for Apple silicon and for an Intel Mac.
+        scripts = {}
+        for arch in ("arm64", "amd64"):
+            script = self.render(template, "darwin", arch)
+            scripts[arch] = script.replace("/usr/bin/sudo", shlex.quote(str(sudo)))
 
         # Case 1: Homebrew is already installed. The script must finish
         # successfully right away: no sudo needed, no installer run. (`sh` with
         # no file name runs the script it's given as input.)
-        self.env.update(TEST_ARCH="arm64", TEST_SUDO="no")
-        existing = script.replace("brew=\n", "brew=/opt/homebrew/bin/brew\n")
+        self.env.update(TEST_SUDO="no")
+        existing = scripts["arm64"].replace("brew=\n", "brew=/opt/homebrew/bin/brew\n")
         result = self.run_command(["sh"], existing)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertFalse(log.exists(), "An existing macOS installation must be reused without sudo")
@@ -245,12 +252,12 @@ class BootstrapChecks(unittest.TestCase):
         # error output must contain ("" means any: all text contains "").
         for architecture, access, expected, message in (
             ("arm64", "no", 1, "requires sudo access for /opt/homebrew"),
-            ("x86_64", "yes", 1, "Intel Macs are not supported"),
+            ("amd64", "yes", 1, "Intel Macs are not supported"),
             ("arm64", "yes", 0, ""),
         ):
             with self.subTest(architecture=architecture, sudo=access):
-                self.env.update(TEST_ARCH=architecture, TEST_SUDO=access)
-                result = self.run_command(["sh"], script)
+                self.env.update(TEST_SUDO=access)
+                result = self.run_command(["sh"], scripts[architecture])
                 self.assertEqual(result.returncode, expected, result.stderr)
                 self.assertIn(message, result.stderr)
 

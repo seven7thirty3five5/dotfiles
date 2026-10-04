@@ -118,10 +118,11 @@ fi
 # Setup needs sudo to add Homebrew's zsh to /etc/shells, the list of allowed
 # login shells; without sudo it only says what to ask an administrator. So
 # check only where sudo works without a password (-n: never ask for one), as
-# on CI's machines that have sudo. uname prints the system's name: Darwin on
-# macOS. (dscl and getent look up the login shell, as in the setup script.)
+# on CI's machines that have sudo. As in step 3, chezmoi fills in a template:
+# .chezmoi.os is darwin on macOS. (dscl and getent look up the login shell, as
+# in the setup script.)
 if /usr/bin/sudo -n true 2>/dev/null; then
-  if [ "$(uname)" = Darwin ]; then
+  if [ "$(chezmoi execute-template '{{ .chezmoi.os }}')" = darwin ]; then
     login_shell=$(dscl . -read "/Users/$(id -un)" UserShell | awk '{print $2}')
   else
     login_shell=$(getent passwd "$(id -un)" | cut -d: -f7)

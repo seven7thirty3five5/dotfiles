@@ -78,14 +78,15 @@ install_homebrew() {
 # ------------------------------------------------------------------------------
 # macOS
 # ------------------------------------------------------------------------------
+{{- if ne .chezmoi.arch "arm64" }}
 
-# `uname -m` prints the processor type: arm64 on Apple silicon, x86_64 on Intel.
+# chezmoi only writes this part on an Intel Mac: .chezmoi.arch is the processor
+# type, arm64 on Apple silicon and amd64 on Intel, and ne means "not equal".
 # (>&2 prints the message as an error.)
-if [ "$(uname -m)" != arm64 ]; then
-  echo "error: these dotfiles expect Homebrew in /opt/homebrew;" \
-    "Intel Macs are not supported." >&2
-  exit 1
-fi
+echo "error: these dotfiles expect Homebrew in /opt/homebrew;" \
+  "Intel Macs are not supported." >&2
+exit 1
+{{- end }}
 
 if ! have_sudo; then
   # Print the lines up to MSG as an error.
