@@ -1,0 +1,94 @@
+name: Bootstrap
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # install.sh on GitHub's runners, which already ship Homebrew in its default prefix.
+  runner:
+    name: install.sh (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # The Homebrew script installs zsh only alongside Homebrew, which this image has.
+      - name: Install zsh on Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends --yes zsh
+
+      - name: Use this commit as the dotfiles repository
+        run: |
+          mkdir -p "$HOME/.local/share"
+          cp -R "$GITHUB_WORKSPACE" "$HOME/.local/share/chezmoi"
+
+      - name: Run install.sh
+        env:
+          GH_TOKEN: ${{ github.token }} # avoids API rate limits on shared runner IPs
+        run: sh install.sh --promptDefaults
+
+      - name: Check the result
+        run: sh scripts/check-install.sh
+
+  # install.sh on a fresh Ubuntu without Homebrew, as a user with sudo and as one without,
+  # like a locked-down work machine where Homebrew goes into the home folder.
+  container:
+    name: install.sh (fresh Ubuntu, ${{ matrix.access }})
+    runs-on: ubuntu-latest
+    container: ubuntu:24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        access: [sudo, no-sudo]
+    steps:
+      - name: Create a machine and a user
+        run: |
+          apt-get update
+          apt-get install --no-install-recommends --yes ca-certificates curl git sudo
+          if [ "${{ matrix.access }}" = no-sudo ]; then
+            # Without sudo, an administrator provides what Homebrew and LazyVim need.
+            apt-get install --no-install-recommends --yes build-essential procps file zsh unzip
+          fi
+          useradd --create-home --shell /bin/bash tester
+          if [ "${{ matrix.access }}" = sudo ]; then
+            echo 'tester ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/tester
+          fi
+
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Use this commit as the dotfiles repository
+        run: |
+          install -d -o tester -g tester /home/tester/.local /home/tester/.local/share
+          cp -R "$GITHUB_WORKSPACE" /home/tester/.local/share/chezmoi
+          chown -R tester:tester /home/tester/.local/share/chezmoi
+
+      - name: Run install.sh as the user
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          sudo --user=tester --login env LANG=C.UTF-8 GH_TOKEN="$GH_TOKEN"
+          sh /home/tester/.local/share/chezmoi/install.sh --promptDefaults
+
+      - name: Check the result
+        run: >-
+          sudo --user=tester --login env LANG=C.UTF-8
+          sh /home/tester/.local/share/chezmoi/scripts/check-install.sh

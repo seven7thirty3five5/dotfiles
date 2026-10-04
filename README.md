@@ -73,11 +73,21 @@ regenerate this machine's config; it only asks questions it hasn't asked before.
   `.lazy-lock.json` and `.config.yml` in `home/`, because lazy.nvim and gh rewrite
   them. Their changes appear in this repository as ordinary git changes.
 
-## Validate shell configuration
+## Validate
 
-GitHub Actions runs the shell checks on macOS and Linux for pushes and pull
-requests. You can also run the same checks locally with Python 3.8+, `chezmoi`, and
-`zsh` available:
+GitHub Actions runs three workflows on pushes and pull requests:
+
+- **Shell checks** run `scripts/check-shell.py` on macOS and Linux, as described below.
+- **Bootstrap** runs `install.sh` against the pushed commit on GitHub's macOS and
+  Ubuntu runners, and in fresh Ubuntu containers as a user with sudo and as one
+  without (Homebrew then goes into the home folder). `scripts/check-install.sh` then
+  checks the result: the tools on PATH, `chezmoi verify`, the Homebrew prefix, the
+  symlinks, gh-dash and LazyVim's plugins.
+- **Secret scan** runs gitleaks over the whole history, which also covers edits made
+  without `chezmoi add` and its secret check.
+
+You can also run the shell checks locally with Python 3.8+, `chezmoi`, and `zsh`
+available:
 
 ```sh
 python3 scripts/check-shell.py
