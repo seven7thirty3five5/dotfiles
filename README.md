@@ -49,7 +49,7 @@ chezmoi apply
 ```
 
 Package installation is a manual step; `chezmoi apply` does not run it. The
-[Brewfile](dot_config/homebrew/Brewfile) tracks formulae only and installs Mole only
+[Brewfile](home/dot_config/homebrew/Brewfile) tracks formulae only and installs Mole only
 on macOS. `--no-upgrade` skips explicit upgrades of existing packages; it does not
 pin versions, and installing missing packages can still update their dependencies.
 See [Homebrew Bundle](https://docs.brew.sh/Brew-Bundle-and-Brewfile).

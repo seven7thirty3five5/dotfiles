@@ -78,8 +78,8 @@ def render(chezmoi, zsh, source, home, temporary, config, search_path):
     managed = run(
         command + ["managed", "--include=files", "--path-style=relative"], env, home
     ).splitlines()
-    if any(path.split("/")[0] in (".github", "scripts") for path in managed):
-        raise RuntimeError("CI files must be excluded by .chezmoiignore")
+    if any(path.split("/")[0] in (".github", "scripts", "README.md") for path in managed):
+        raise RuntimeError("Repository files must stay outside the source state")
     for relative in STARTUP_FILES:
         target = home / relative
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -114,6 +114,8 @@ def main():
 
         fixture = temporary / "source"
         shutil.copytree(SOURCE, fixture, ignore=shutil.ignore_patterns(".git"))
+        # The dotfiles live in the subdirectory named by .chezmoiroot (home/).
+        state = fixture / (fixture / ".chezmoiroot").read_text().strip()
         shell_bin = temporary / "shell-bin"
         shell_bin.mkdir()
         for name in utilities:
@@ -160,7 +162,7 @@ def main():
             home = temporary / scenario / "home with spaces"
             # Control detection only in this temporary source copy. Never execute
             # real Homebrew or optional programs installed on the host machine.
-            (fixture / ".chezmoitemplates/brew-prefix").write_text(
+            (state / ".chezmoitemplates/brew-prefix").write_text(
                 str(prefix) if with_brew else ""
             )
             render(

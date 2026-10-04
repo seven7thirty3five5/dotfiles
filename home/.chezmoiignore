@@ -1,8 +1,3 @@
-# Repository documentation and validation tooling are not home-directory dotfiles.
-README.md
-.github
-scripts
-
 # Ghostty config is macOS-only.
 {{ if ne .chezmoi.os "darwin" }}
 .config/ghostty
