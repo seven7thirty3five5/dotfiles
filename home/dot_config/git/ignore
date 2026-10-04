@@ -1,2 +1,9 @@
+# Files git ignores in every repository on this machine: git reads this
+# "global" ignore file from ~/.config/git/ignore by itself. It uses the same
+# patterns as a repository's .gitignore.
+
+# Claude Code's personal settings for a project, which aren't meant to be shared
+# (**/ matches any folder).
 **/.claude/settings.local.json
+# The file in which macOS's Finder remembers how a folder is displayed.
 .DS_Store

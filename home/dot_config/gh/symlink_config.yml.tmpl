@@ -1,1 +1,9 @@
+{{- /*
+  ~/.config/gh/config.yml is a symlink (a pointer) to .config.yml in this
+  repository, not a copy, because gh rewrites its own config file, for example
+  on `gh config set`. Through the symlink, its changes land straight in the
+  repository, where git shows them. The real file's name starts with a dot so
+  that chezmoi, which skips such names, doesn't also install it as a copy. The
+  line below is the symlink's target: that file, in this repository.
+*/ -}}
 {{ .chezmoi.sourceDir }}/dot_config/gh/.config.yml

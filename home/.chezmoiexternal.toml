@@ -1,32 +1,49 @@
+# Files chezmoi downloads from the internet when it applies the dotfiles,
+# instead of keeping copies in this repository. Each section is one file, and
+# the name in brackets is where that file goes in your home folder.
+#
 # Official Catppuccin Mocha ports, fetched from upstream on apply.
 # Refreshed weekly, or immediately with `chezmoi apply --refresh-externals`.
 # Accent is blue wherever a port offers a choice, to match lazygit.
+# (Catppuccin calls its theme for each app a "port".)
+#
+# In each section, type = "file" downloads one file (other types unpack whole
+# archives), url is where it comes from, and refreshPeriod = "168h" (7 days of
+# 24 hours) is how long chezmoi waits before downloading it again.
 
+# btop's theme. btop.conf selects it with color_theme = "catppuccin_mocha".
 [".config/btop/themes/catppuccin_mocha.theme"]
     type = "file"
     url = "https://raw.githubusercontent.com/catppuccin/btop/main/themes/catppuccin_mocha.theme"
     refreshPeriod = "168h"
 
+# atuin's theme. atuin's config.toml selects it under [theme].
 [".config/atuin/themes/catppuccin-mocha-blue.toml"]
     type = "file"
     url = "https://raw.githubusercontent.com/catppuccin/atuin/main/themes/mocha/catppuccin-mocha-blue.toml"
     refreshPeriod = "168h"
 
+# eza's theme. eza reads theme.yml from its config folder by itself.
 [".config/eza/theme.yml"]
     type = "file"
     url = "https://raw.githubusercontent.com/catppuccin/eza/main/themes/mocha/catppuccin-mocha-blue.yml"
     refreshPeriod = "168h"
 
+# glow's style for Markdown. glow.yml points to it.
 [".config/glow/catppuccin-mocha.json"]
     type = "file"
     url = "https://raw.githubusercontent.com/catppuccin/glamour/main/themes/catppuccin-mocha.json"
     refreshPeriod = "168h"
 
+# The colors for zsh-syntax-highlighting. .zshrc loads this file just before
+# the plugin itself.
 [".config/zsh/themes/catppuccin_mocha-zsh-syntax-highlighting.zsh"]
     type = "file"
     url = "https://raw.githubusercontent.com/catppuccin/zsh-syntax-highlighting/main/themes/catppuccin_mocha-zsh-syntax-highlighting.zsh"
     refreshPeriod = "168h"
 
+# delta's theme. The git config includes this file and turns the theme on with
+# features = catppuccin-mocha.
 [".config/delta/themes/catppuccin.gitconfig"]
     type = "file"
     url = "https://raw.githubusercontent.com/catppuccin/delta/main/catppuccin.gitconfig"

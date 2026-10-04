@@ -1,10 +1,17 @@
 # ~/.config/lazygit/config.yml
+# lazygit's settings. lazygit (lg) is a terminal interface for git. Settings not
+# listed here keep lazygit's defaults; `lazygit --config` prints all of them.
 
 # Homebrew manages upgrades; disable LazyGit's own update prompts.
 update:
   method: never
 
 git:
+  # How lazygit shows diffs; press | to switch between these. First delta, which
+  # restyles git's colored diff (--paging=never: lazygit does the scrolling).
+  # Then difftastic, which replaces git's diff altogether (extDiff), showing as
+  # many lines around each change as lazygit's setting ({{diffContext}}, which
+  # the { and } keys change).
   diffRenderers:
     - colorArg: always
       command: delta --dark --paging=never
@@ -35,4 +42,4 @@ gui:
     searchingActiveBorderColor:
       - "#f9e2af"
   authorColors:
-    "*": "#b4befe"
+    "*": "#b4befe"  # every commit author's name in Catppuccin Lavender

@@ -1,19 +1,32 @@
+{{- /*
+  git's settings for your user; git reads them from ~/.config/git/config. It's a
+  template: your name and email come from your answers to chezmoi's setup
+  questions, and the delta settings are only written where Homebrew installed
+  delta. `git help config` explains every setting.
+*/ -}}
 {{- $brewPrefix := includeTemplate "brew-prefix" . | trim -}}
+# Who you are: git records this name and email as the author of your commits.
 [user]
 	name = {{ .gitName | quote }}
 	email = {{ .gitEmail | quote }}
 {{ if and $brewPrefix (isExecutable (joinPath $brewPrefix "bin" "delta")) -}}
 # delta only where Homebrew installed it; elsewhere git keeps its default pager (less).
+# (A pager shows long output one screen at a time. delta also colors diffs, with
+# syntax highlighting and line numbers.)
 [core]
     pager = delta
 
+# `git add -p` shows each change through delta too. --color-only keeps the lines
+# exactly where git put them, which git needs there.
 [interactive]
     diffFilter = delta --color-only
 
 {{ end -}}
+# Read more settings from another file: the Catppuccin theme for delta.
 [include]
     path = ~/.config/delta/themes/catppuccin.gitconfig  # fetched via .chezmoiexternal.toml
 
+# delta's own settings. syntax-theme sets the colors for the code itself.
 [delta]
     features = catppuccin-mocha  # Catppuccin's delta theme: diff, header, line-number colors
     navigate = true  # use n and N to move between diff sections
@@ -21,6 +34,8 @@
     syntax-theme = Catppuccin Mocha
     line-numbers = true
 
+# In a merge conflict, also show the original version both sides started from.
+# (zdiff3 is diff3 with the lines both sides share moved out of the conflict.)
 [merge]
     conflictStyle = zdiff3
 
@@ -54,18 +69,28 @@
     autocorrect = prompt         # on a typo, offer to run the closest git command
 
 # Structural diffs are opt-in; regular git diff remains a text diff via delta.
+# difftastic (the difft command) compares code by its structure instead of line by
+# line, which shows moved or reformatted code more clearly. `git difftool` uses it.
 [diff]
     tool = difftastic
     colorMoved = default         # moved lines get their own colors
     algorithm = histogram        # cleaner hunks when code is moved or reordered
+# How `git difftool` runs difft. It passes git's longer "external diff" format,
+# as difftastic's manual shows, so difft can show the file's real name ($MERGED)
+# rather than the names of the temporary copies it compares ($LOCAL, $REMOTE).
+# The commit hashes and file modes in that format are placeholders.
 [difftool "difftastic"]
 	cmd = difft \"$MERGED\" \"$LOCAL\" abcdef1 100644 \"$REMOTE\" abcdef2 100644
+# Don't ask before showing each file.
 [difftool]
     prompt = false
+# Show difftool's output one screen at a time, like git diff's.
 [pager]
     difftool = true
 
 # Structural diffs for commit history, individual commits, and working-tree changes.
+# git dlog, git dshow and git ddiff run log, show and diff with difft doing the
+# diffing, just for that command (-c sets a setting for one command only).
 [alias]
     dlog = -c diff.external=difft log -p --ext-diff
     dshow = -c diff.external=difft show --ext-diff

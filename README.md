@@ -75,6 +75,43 @@ regenerate this machine's config; it only asks questions it hasn't asked before.
   `.lazy-lock.json` and `.config.yml` in `home/`, because lazy.nvim and gh rewrite
   them. Their changes appear in this repository as ordinary git changes.
 
+### How chezmoi reads `home/`
+
+Each file in `home/` becomes a file in your home folder, and its name says how:
+
+| Name in `home/`                | What chezmoi does                                                   |
+| ------------------------------ | ------------------------------------------------------------------- |
+| `dot_zshenv`                   | Writes `~/.zshenv`: `dot_` stands for the leading dot.              |
+| `dot_config/git/config.tmpl`   | Writes `~/.config/git/config`, filled in as a template (`.tmpl`).   |
+| `empty_dot_hushlogin`          | Writes `~/.hushlogin`, keeping it although it's empty (`empty_`).   |
+| `symlink_config.yml.tmpl`      | Makes `config.yml` a symlink; the file holds the path it points to. |
+| `.config.yml`, or any name starting with a dot | Nothing: chezmoi skips it.                          |
+
+A template is a file with parts between double braces (`{{ ... }}`) that chezmoi fills
+in for each machine: for example only its macOS or its Linux part, or the name and
+email you gave during setup.
+
+The names starting with `.chezmoi` control chezmoi itself:
+
+- `.chezmoi.toml.tmpl` asks the setup questions and writes each machine's chezmoi
+  settings.
+- `.chezmoiignore` lists files not to install on some machines, and `.chezmoiremove`
+  lists old files to delete.
+- `.chezmoiexternal.toml` lists files that chezmoi downloads instead of keeping them
+  here: the Catppuccin themes.
+- `.chezmoitemplates/` holds template pieces that several files share, such as how
+  to find Homebrew.
+- `.chezmoiscripts/` holds the setup scripts. A `run_once_` script runs once per
+  machine (and again if it changes), a `run_onchange_` script again whenever its
+  contents change, and `before_` or `after_` says whether it runs before or after
+  chezmoi writes the files. The numbers set the order.
+
+Most files explain themselves in comments. A few can't hold any: `.chezmoiroot` (just
+the folder name, `home`), `.chezmoiversion` (just a version number),
+`empty_dot_hushlogin`, and two JSON files that Neovim's plugins write themselves:
+`lazyvim.json`, the LazyVim extras turned on with `:LazyExtras`, and `.lazy-lock.json`,
+in which lazy.nvim records the exact version of each plugin.
+
 ## Validate
 
 GitHub Actions runs three workflows on pushes and pull requests:

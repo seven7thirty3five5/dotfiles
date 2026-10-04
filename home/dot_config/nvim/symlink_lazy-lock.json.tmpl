@@ -1,1 +1,10 @@
+{{- /*
+  ~/.config/nvim/lazy-lock.json is a symlink (a pointer) to .lazy-lock.json in
+  this repository, not a copy, because lazy.nvim rewrites it whenever plugins
+  are installed or updated: it records the exact version of each plugin. Through
+  the symlink, those changes land straight in the repository, where git shows
+  them. The real file's name starts with a dot so that chezmoi, which skips such
+  names, doesn't also install it as a copy. The line below is the symlink's
+  target: that file, in this repository.
+*/ -}}
 {{ .chezmoi.sourceDir }}/dot_config/nvim/.lazy-lock.json

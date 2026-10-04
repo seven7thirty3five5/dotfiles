@@ -1,13 +1,21 @@
-# Replaced by alternatives in .config/zsh
+# Paths chezmoi deletes from your home folder when it applies the dotfiles:
+# leftovers from older setups that would otherwise get in the way. Each line is
+# a path in your home folder, written without the ~/.
+
+# zsh reads its startup files from ~/.config/zsh instead (~/.zshenv sets
+# ZDOTDIR), so copies directly in the home folder would never run.
 .zlogin
 .zlogout
 .zprofile
 .zshrc
 
-# Using XDG config directory.
+# Starship's settings live in ~/.config/starship/config.toml instead
+# (STARSHIP_CONFIG in ~/.config/zsh/.zshenv points there).
 .config/starship.toml
 
-# LazyVim starter files no longer tracked.
+# Files from LazyVim's starter template (github.com/LazyVim/starter), which a new
+# LazyVim setup is copied from: its example plugin file, license, readme and git
+# data. This configuration doesn't use them.
 .config/nvim/lua/plugins/example.lua
 .config/nvim/LICENSE
 .config/nvim/README.md

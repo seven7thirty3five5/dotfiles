@@ -1,3 +1,6 @@
+# superfile's settings. superfile (spf, or the ff alias) is a file manager that
+# runs in the terminal.
+
 # Inherit built-in defaults (including hotkeys) for every setting not listed here.
 ignore_missing_fields = true
 theme = "catppuccin-mocha"

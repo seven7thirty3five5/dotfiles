@@ -1,49 +1,55 @@
 # Packages for the tools configured by these dotfiles and companion CLI utilities.
 # install.sh and `chezmoi apply` install them (home/.chezmoiscripts) and re-run
 # `brew bundle` whenever this file changes.
+#
+# A Brewfile lists Homebrew packages for `brew bundle` to install. Each brew line
+# is a command-line package (a "formula"), and the cask line is an app. A line
+# ending in `if OS.mac?` only applies on macOS. (Brewfiles are written in Ruby,
+# the programming language Homebrew is written in.)
 
 # Dotfile management.
-brew "chezmoi"
+brew "chezmoi"                  # manages these dotfiles
 
 # Interactive shell.
-brew "atuin"
-brew "eza"
-brew "fzf"
-brew "starship"
-brew "zoxide"
-brew "zsh-autosuggestions"
-brew "zsh-syntax-highlighting"
+brew "atuin"                    # shell history in a searchable database (Ctrl-R)
+brew "eza"                      # a modern ls, with colors, icons and git status
+brew "fzf"                      # fuzzy finder: pick from a list by typing part of an entry
+brew "starship"                 # the prompt (the text before your cursor)
+brew "zoxide"                   # cd jumps to folders you use often, by part of their name
+brew "zsh-autosuggestions"      # suggests the rest of a command as you type
+brew "zsh-syntax-highlighting"  # colors the command line as you type
 
 # Git and GitHub. gh-dash is a gh extension; a chezmoi script installs it.
-brew "git"
-brew "git-delta"
-brew "difftastic"
-brew "gh"
-brew "lazygit"
+brew "git"                      # a newer git than the system's
+brew "git-delta"                # delta: diffs with syntax highlighting and line numbers
+brew "difftastic"               # difft: diffs that compare code by its structure
+brew "gh"                       # GitHub's command-line tool
+brew "lazygit"                  # a terminal interface for git (lg)
 
 # Neovim and search. A chezmoi script installs LazyVim's plugins from lazy-lock.json.
-brew "neovim"
-brew "ast-grep"
-brew "fd"
-brew "ripgrep"
+brew "neovim"                   # the editor (nvim) that LazyVim runs in
+brew "ast-grep"                 # searches and rewrites code by its structure
+brew "fd"                       # a simpler, faster find
+brew "ripgrep"                  # rg: fast search through file contents
 
 # Terminal utilities.
-brew "bat"
-brew "btop"
-brew "duf"
-brew "dust"
-brew "glow"
-brew "herdr"
-brew "hyperfine"
-brew "lazydocker"
-brew "superfile"
-brew "yq"
+brew "bat"                      # cat with syntax highlighting
+brew "btop"                     # live view of CPU, memory, disks, network and processes
+brew "duf"                      # free space on each disk (a friendlier df)
+brew "dust"                     # which folders use the most space (a friendlier du)
+brew "glow"                     # shows Markdown files nicely in the terminal
+brew "herdr"                    # runs AI coding agents side by side in one terminal
+brew "hyperfine"                # times commands precisely (benchmarks)
+brew "lazydocker"               # a terminal interface for Docker (lzd)
+brew "superfile"                # a file manager in the terminal (spf, or ff)
+brew "yq"                       # reads and edits YAML, JSON and other data files
 
 # Mason needs GNU tar; Linux supplies it through the system package manager.
+# (Mason is the tool LazyVim uses to install language servers and formatters.)
 brew "gnu-tar" if OS.mac?
 
 # Mole is macOS-only.
-brew "mole" if OS.mac?
+brew "mole" if OS.mac?          # mo: cleans caches and leftovers to free space on a Mac
 
 # Terminal (macOS). Ghostty bundles JetBrains Mono and the Nerd Font symbols. brew bundle
 # installs casks with --adopt, so an existing /Applications/Ghostty.app is taken over.

@@ -1,3 +1,24 @@
+{{- /*
+  The template for chezmoi's own settings file on each machine,
+  ~/.config/chezmoi/chezmoi.toml. `chezmoi init` (which install.sh runs) fills
+  it in and writes that file. Text between double braces is template code, like
+  this note, which is left out of the result. The dashes next to the braces
+  remove the line breaks around the code, so it leaves no blank lines behind.
+
+  The three lines below ask the questions you answer during setup.
+  promptStringOnce asks for text and promptBoolOnce for yes or no (the false at
+  the end is the default answer). "Once" means a question is only asked if this
+  machine's settings file has no answer yet, so running `chezmoi init` again
+  keeps your earlier answers. They are saved under [data] at the end, where
+  every template can read them: the git config, for example, uses .gitName and
+  .gitEmail. (`| quote` puts the text answers in quotes, as TOML requires.)
+
+  lookPath "delta" checks whether the delta program is on PATH right now, so
+  the [diff] and [merge] sections are only written if those programs exist.
+
+  After this file changes, chezmoi warns that the config file template has
+  changed until you run `chezmoi init` on that machine.
+*/ -}}
 {{- $gitName := promptStringOnce . "gitName" "Git author name" -}}
 {{- $gitEmail := promptStringOnce . "gitEmail" "Git author email (use your work email on work machines)" -}}
 {{- $publish := promptBoolOnce . "publishDotfiles" "Commit and push dotfile changes from this machine" false -}}
@@ -10,20 +31,29 @@ editor = "nvim"
     secrets = "error"
 
 [git]
+    # Only on the machine you publish from (publishDotfiles = true): commit every
+    # change that chezmoi commands such as `chezmoi add` make to the repository,
+    # and push it to GitHub.
     autoCommit = {{ $publish }}
     autoPush = {{ $publish }}
 {{- if lookPath "delta" }}
 
+# Show `chezmoi diff` through delta. This section is only written if delta was
+# installed when this file was generated, which is why install.sh runs
+# `chezmoi init` once more at the end, after Homebrew has installed delta.
 [diff]
     pager = "delta"
 {{- end }}
 {{- if lookPath "nvim" }}
 
+# `chezmoi merge` opens Neovim's side-by-side diff mode (nvim -d), if Neovim was
+# installed when this file was generated.
 [merge]
     command = "nvim"
     args = ["-d"]
 {{- end }}
 
+# Your answers to the setup questions, for the templates to use.
 [data]
 gitName = {{ $gitName | quote }}
 gitEmail = {{ $gitEmail | quote }}

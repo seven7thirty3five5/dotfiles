@@ -1,5 +1,11 @@
+# herdr's settings. herdr runs AI coding agents (and shells) side by side in one
+# terminal, like tmux, and shows which of them are working or waiting for you.
+# `herdr --default-config` prints every setting with its explanation.
+
+# Skip the first-run setup of notifications.
 onboarding = false
 
+# catppuccin is also herdr's default theme.
 [theme]
 name = "catppuccin"
 
@@ -7,6 +13,8 @@ name = "catppuccin"
 # Homebrew upgrades herdr; skip the background check of herdr.dev.
 version_check = false
 
+# Show each agent's state (blocked, working, done, idle) as a distinct symbol
+# rather than a colored dot.
 [ui]
 status_indicators = "symbols"
 
@@ -15,10 +23,13 @@ status_indicators = "symbols"
 [ui.toast]
 delivery = "terminal"
 
+# The prefix key: press Ctrl+Space, then another key, to give herdr a command.
+# (herdr's default is Ctrl+B, like tmux's.)
 [keys]
 prefix = "ctrl+space"
 
 # Lazygit in a popup over the current pane (the example in herdr --default-config).
+# Press the prefix, then Alt+G.
 [[keys.command]]
 key = "prefix+alt+g"
 type = "popup"

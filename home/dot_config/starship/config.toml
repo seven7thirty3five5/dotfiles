@@ -1,5 +1,12 @@
+# Starship's settings. Starship draws the prompt, the line before your cursor
+# with the folder, git branch and so on. STARSHIP_CONFIG in ~/.config/zsh/.zshenv
+# points it to this file. Settings not listed here keep Starship's defaults
+# (https://starship.rs/config/).
+#
 # Built-in Starship prompt, recolored with the Catppuccin Mocha palette.
 palette = "catppuccin_mocha"
+# A palette gives names to colors. Starship's parts ("modules") color themselves
+# by name, and a name defined here, such as red, means Catppuccin's version.
 
 [palettes.catppuccin_mocha]
 rosewater = "#f5e0dc"
@@ -32,6 +39,7 @@ cyan = "#89dceb"    # = sky; Starship's directory module asks for "cyan"
 purple = "#cba6f7"  # = mauve; its git_branch module asks for "purple"
 
 # Show how many commits the branch is ahead/behind its upstream (starship docs example).
+# ⇡ commits to push, ⇣ commits to pull, ⇕ both; ${count} is replaced by the number.
 [git_status]
 ahead = '⇡${count}'
 diverged = '⇕⇡${ahead_count}⇣${behind_count}'

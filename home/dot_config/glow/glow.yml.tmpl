@@ -1,3 +1,8 @@
+{{- /*
+  glow's settings. glow shows Markdown files nicely in the terminal. This file
+  is a template only so that the style line can hold this machine's full home
+  folder path.
+*/ -}}
 # Catppuccin Mocha JSON style (fetched via .chezmoiexternal.toml)
 style: {{ joinPath .chezmoi.homeDir ".config/glow/catppuccin-mocha.json" | quote }}
 # mouse support (TUI-mode only)

@@ -1,3 +1,12 @@
+# atuin's settings. atuin keeps your shell history in a searchable database and
+# opens it with Ctrl-R.
+#
+# This is atuin's own default settings file (`atuin default-config` prints it):
+# lines starting with ## explain a setting, and lines starting with a single #
+# show its default value without setting it. Only five settings are changed,
+# and they are the only settings not commented out: update_check, workspaces,
+# enter_accept, the theme's name and the ui columns.
+
 ## Base directory for Atuin data files (databases, keys, session, etc.)
 ## All data file paths default to being relative to this directory.
 ## linux/mac: ~/.local/share/atuin (or XDG_DATA_HOME/atuin)
@@ -168,7 +177,7 @@ workspaces = true  # adds a repo-wide filter to the Ctrl-R mode cycle
 ## whereas tab will put the command in the prompt for editing.
 ## If set to false, both enter and tab will place the command in the prompt for editing.
 ## This applies for new installs. Old installs will keep the old behaviour unless configured otherwise.
-enter_accept = false
+enter_accept = false  # review or edit the chosen command before running it
 
 ## Defaults to false. If enabled, when triggered after &&, || or |, Atuin will complete commands to chain rather than replace the current line.
 # command_chaining = false
@@ -316,7 +325,7 @@ enter_accept = false
 ##    https://ogeon.github.io/docs/palette/master/palette/named/index.html
 ## If you provide a custom theme file, it should be  called "NAME.toml" and the theme below
 ## should be the stem, i.e. `theme = "NAME"` for your chosen NAME.
-name = "catppuccin-mocha-blue"
+name = "catppuccin-mocha-blue"  # from themes/, downloaded via .chezmoiexternal.toml
 
 ## Whether the theme manager should output normal or extra information to help fix themes.
 ## Boolean, true or false. If unset, left up to the theme manager.

@@ -1,10 +1,22 @@
 # ~/.zshenv (Only zsh startup file residing in $HOME)
+#
+# zsh reads this file first whenever it starts, even just to run a script, so
+# it must only set variables and never print anything. It points zsh to
+# ~/.config/zsh, where all of zsh's other startup files live.
+
+# The XDG base directories: the standard folders where programs keep their
+# settings (config), data, state (such as history and logs) and cache.
+# "${XDG_CONFIG_HOME:-$HOME/.config}" means: the value XDG_CONFIG_HOME already
+# has, or ~/.config if it has none.
 export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 export XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
 
+# zsh looks for its other startup files (.zprofile, .zshrc and so on) in ZDOTDIR.
 export ZDOTDIR="$XDG_CONFIG_HOME/zsh"
 
-# Source the main zshenv inside ZDOTDIR
+# Source the main zshenv inside ZDOTDIR. zsh has already read its .zshenv (this
+# file), so it won't read ~/.config/zsh/.zshenv by itself. [[ -f FILE ]] checks
+# that the file exists, and && runs the rest only if it does.
 [[ -f "$ZDOTDIR/.zshenv" ]] && source "$ZDOTDIR/.zshenv"

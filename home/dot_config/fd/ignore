@@ -1,1 +1,4 @@
 # Global fd ignore patterns, one gitignore-style pattern per line.
+# fd (a simpler find) already skips hidden files and whatever .gitignore files
+# list; a pattern added here would be skipped in every folder as well. None are
+# needed so far.

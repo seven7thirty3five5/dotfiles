@@ -1,6 +1,14 @@
+# ~/.editorconfig: EditorConfig settings (editorconfig.org), which editors such as
+# Neovim follow when they save files. A project can have its own .editorconfig:
+# editors look for one in the file's folder and in each folder above it, and
+# root = true stops that search here, at your home folder.
 root = true
 
+# These settings apply to every file ([*] matches any file name):
 [*]
+# save text as UTF-8,
 charset = utf-8
+# with Unix line endings (LF, rather than Windows' CRLF),
 end_of_line = lf
+# and with a line break at the end of the last line.
 insert_final_newline = true

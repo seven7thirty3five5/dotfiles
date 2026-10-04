@@ -1,1 +1,3 @@
 # .zlogin is not used.
+# (zsh would run it at the end of starting a login shell, after .zshrc. Nothing
+# needs to happen then: .zprofile and .zshrc do all the setup.)

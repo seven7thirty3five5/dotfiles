@@ -1,7 +1,16 @@
+# Ghostty's settings (Ghostty is the terminal app on the Mac). Run
+# `ghostty +show-config --default --docs` to see every setting, explained.
+
+# JetBrains Mono is built into Ghostty, and Catppuccin Mocha is one of its
+# built-in themes.
 font-family = JetBrains Mono
 theme = Catppuccin Mocha
 # Left Option sends terminal Alt shortcuts; right Option enters macOS special characters.
 macos-option-as-alt = left
+# When you ssh to another computer, copy Ghostty's terminal description there if
+# it's missing (ssh-terminfo), and otherwise fall back to a common terminal type
+# that computer knows (ssh-env), so programs there draw the screen correctly.
+# Other shell integration features keep their defaults.
 shell-integration-features = ssh-env,ssh-terminfo
 
 # Quake-style drop-down terminal from any app (the example in Ghostty's toggle_quick_terminal

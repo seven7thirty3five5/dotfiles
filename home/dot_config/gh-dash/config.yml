@@ -1,3 +1,14 @@
+# gh-dash's settings. gh-dash is a dashboard in the terminal for your GitHub pull
+# requests (PRs), issues and notifications: run `gh dash` (after gh auth login).
+#
+# Most of this file is gh-dash's default configuration, written out in full. The
+# changes are the last two PR sections, the g key, repoPaths, the Catppuccin
+# colors under theme, and delta as the diff pager. Every setting is described at
+# https://www.gh-dash.dev/configuration/.
+
+# Each section is a tab showing the results of a GitHub search. The filters use
+# the same syntax as GitHub's search bar: is:open (still open), author:@me
+# (written by you), -author:@me (not written by you), and so on.
 prSections:
     - title: My Pull Requests
       filters: is:open author:@me
@@ -17,6 +28,7 @@ issuesSections:
       filters: is:open assignee:@me
     - title: Involved
       filters: is:open involves:@me -author:@me
+# Notification tabs, filtered by why GitHub notified you (reason:...).
 notificationsSections:
     - title: All
       filters: ""
@@ -34,9 +46,15 @@ notificationsSections:
       filters: reason:subscribed
     - title: Team Mentioned
       filters: reason:team-mention
+# How often, in seconds, gh-dash refreshes the branches and PRs in its view of a
+# repository.
 repo:
     branchesRefetchIntervalSeconds: 30
     prsRefetchIntervalSeconds: 60
+# Settings for every section: the preview pane (on the right, 45% of the width,
+# or below the list when the terminal is narrow), 20 items per section, "LGTM"
+# as the starting text when you approve a PR, the PR view first, and which
+# columns to show and how wide. PRs and issues are fetched again every 30 minutes.
 defaults:
     preview:
         open: true
@@ -86,12 +104,18 @@ defaults:
                 width: 20
                 hidden: true
     refetchIntervalMinutes: 30
+# Keys of your own. In any view, g opens lazygit in the selected item's local
+# copy of the repository (found through repoPaths below). {{.RepoPath}} is filled
+# in by gh-dash; `command cd` uses the shell's own cd, even where zoxide has
+# replaced cd.
 keybindings:
     universal:
         - key: g  # the maintainer's binding; Home still jumps to the top
           name: lazygit
           command: >
             command cd {{.RepoPath}} && lazygit
+# Where your local copies (clones) of GitHub repositories are: * matches any
+# repository name, so seven7thirty3five5/dotfiles would be ~/Projects/dotfiles.
 repoPaths:
     seven7thirty3five5/*: ~/Projects/*  # local clones, for checkout and {{.RepoPath}}
 theme:
@@ -111,6 +135,7 @@ theme:
             primary: "#89b4fa"
             secondary: "#45475a"
             faint: "#313244"
+    # Show how many items each tab has, and lines between table rows.
     ui:
         sectionsShowCount: true
         table:
@@ -118,6 +143,9 @@ theme:
             compact: false
 pager:
     diff: delta  # renders with your git [delta] settings (Catppuccin, line numbers)
+# q quits without asking; authors get icons; when started inside a repository's
+# folder, gh-dash first shows only that repository's items; and notifications you
+# have already read are listed too.
 confirmQuit: false
 showAuthorIcons: true
 smartFilteringAtLaunch: true

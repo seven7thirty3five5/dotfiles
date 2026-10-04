@@ -1,3 +1,6 @@
+# Formatting rules for StyLua, which LazyVim uses to tidy the Lua files in this
+# config when you save them: indent with 2 spaces, and keep lines up to 120
+# characters wide.
 indent_type = "Spaces"
 indent_width = 2
 column_width = 120

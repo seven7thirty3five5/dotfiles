@@ -1,3 +1,4 @@
+# superfile's keys. Only these change; every other key keeps its default.
 # File operations selected from the maintainer's Vim preset:
 # https://superfile.dev/configure/custom-hotkeys/
 copy_items = ["y"]                   # Copy selected items.

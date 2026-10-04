@@ -1,9 +1,28 @@
+{{- /*
+  .zshrc: zsh runs this for interactive shells, the ones you type commands into.
+  It sets up aliases, history, tab completion, key bindings and the prompt. It's
+  a template: chezmoi fills in the Homebrew parts for this machine.
+*/ -}}
 {{- $brewPrefix := includeTemplate "brew-prefix" . | trim -}}
+# How to read this file:
+#   (( $+commands[eza] ))  "is eza installed?" Settings for optional tools are
+#                          skipped when the tool is missing.
+#   alias l="eza ..."      typing l runs that command instead.
+#   name() { ...; }        defines a function: a small command of your own.
+#   setopt NAME            turns on one of zsh's options (see man zshoptions).
+#   zstyle ...             configures zsh's tab completion.
+#   bindkey KEYS ACTION    makes a key run an editing action. KEYS are what the
+#                          terminal sends for the key: ^[ is Escape, ^P is Ctrl-P.
+#   eval "$(tool init zsh)"  runs the setup code that a tool prints for zsh.
+
 # Interactive setup only.
+# (zsh only reads .zshrc for interactive shells anyway; this also stops it when
+# a script runs `source .zshrc`.)
 [[ -o interactive ]] || return
 
 {{ if and (eq .chezmoi.os "linux") $brewPrefix -}}
 # Homebrew shell initialization belongs to interactive shells on Linux.
+# (That's where Homebrew's installer puts it on Linux; macOS uses .zprofile.)
 eval "$({{ joinPath $brewPrefix "bin" "brew" | shellQuote }} shellenv zsh)"
 # Refresh the shared environment so ~/.local/bin stays ahead of Homebrew, as on macOS.
 [[ -f "$ZDOTDIR/.zshenv" ]] && source "$ZDOTDIR/.zshenv"
@@ -19,6 +38,8 @@ fi
 # spf (and ff): superfile, then cd to the folder you were in when you quit it (superfile docs,
 # "cd on quit"; needs cd_on_quit = true). spf pl --lastdir-file prints where superfile writes
 # that folder: the XDG state dir here, not the ~/Library path in the docs' macOS snippet.
+# `command spf` runs the spf program itself, not this function; source runs the cd
+# command that superfile wrote to that file.
 if (( $+commands[spf] )); then
   spf() {
     local lastdir_file="$(command spf pl --lastdir-file)"
@@ -82,6 +103,8 @@ fi
 
 # help <command>: colorized --help output (bat README), e.g. help git commit.
 # help() calls bat directly because zsh parses this whole if-block before the alias exists.
+# ("$@" stands for all the words after help; 2>&1 includes error output, where some
+# programs print their help.)
 if (( $+commands[bat] )); then
   alias bathelp='bat --plain --language=help'  # Highlight piped help text without headers or line numbers.
   alias bcat='bat --plain --paging=never'     # Print highlighted file contents without decorations or a pager.
@@ -116,6 +139,10 @@ fi
 # rge PATTERN [PATH...]: select a content match, preview it, and open its line in Neovim.
 # Adapted from github.com/junegunn/fzf/blob/master/ADVANCED.md (ripgrep integration).
 # Colon-separated results assume filenames do not contain colons.
+# rg prints file:line:text for each match. fzf lists them, keeping rg's colors
+# (--ansi); searches only the text, from the third :-separated field on; quits when
+# there are no matches (--exit-0); previews the file with bat, highlighting the
+# line; and on Enter turns into nvim, opened at that line.
 if (( $+commands[rg] && $+commands[fzf] && $+commands[bat] && $+commands[nvim] )); then
   rge() {
     rg --line-number --no-heading --color=always -- "$@" |
@@ -125,6 +152,9 @@ if (( $+commands[rg] && $+commands[fzf] && $+commands[bat] && $+commands[nvim] )
   }
 fi
 
+# Command history, kept in ~/.local/state/zsh/history: up to 10,000 commands in
+# memory (HISTSIZE) and in the file (SAVEHIST). mkdir -p creates the folders for
+# it and for zsh's caches if they're missing.
 mkdir -p -- "$XDG_STATE_HOME/zsh" "$XDG_CACHE_HOME/zsh"
 HISTFILE="$XDG_STATE_HOME/zsh/history"
 HISTSIZE=10000
@@ -146,6 +176,8 @@ setopt AUTO_CD                # type a directory's path (e.g. ..) to cd into it
 setopt AUTO_PUSHD             # cd pushes onto the dir stack (dirs -v, cd -N)
 setopt PUSHD_IGNORE_DUPS      # keep each directory once on the stack
 setopt PUSHD_MINUS            # cd -N matches dirs -v numbering
+# WORDCHARS lists the symbols that count as part of a word when you delete or move
+# by word; ${WORDCHARS//\/} is that list with / removed.
 WORDCHARS=${WORDCHARS//\/}    # Ctrl-W / Alt-B stop at '/'
 
 # Directory stack shortcuts: d lists recent directories, 1-9 jump to one of them,
@@ -157,6 +189,8 @@ alias -- -='cd -'          # Return to the previous working directory.
 alias ...='../..'          # Go up two directory levels using AUTO_CD.
 alias ....='../../..'      # Go up three directory levels using AUTO_CD.
 
+# Tab completion. fpath is the list of folders where zsh finds functions, including
+# the completion functions that know each command's options.
 # Keep fpath entries unique, so re-adding a folder that's already listed is harmless.
 typeset -U fpath
 {{ if $brewPrefix -}}
@@ -172,6 +206,10 @@ fpath=({{ joinPath $brewPrefix "share/zsh/site-functions" | shellQuote }} $fpath
 #   fpath=("$ZDOTDIR/completions" $fpath)
 # then e.g. `some-tool completion zsh > "$ZDOTDIR/completions/_some-tool"`.
 zmodload zsh/complist          # menu selection; must load before compinit
+# autoload -Uz loads a function from fpath the first time it's used. compinit turns
+# tab completion on; -d says where to save its index of completion functions (the
+# "dump"), which makes later shells start faster. There is one per zsh version,
+# because a dump made by a different version may not work.
 autoload -Uz compinit
 compinit -d "$XDG_CACHE_HOME/zsh/zcompdump-$ZSH_VERSION"
 # Let tools that only ship bash completions (complete -C ...; e.g. aws, terraform) work.
@@ -185,10 +223,15 @@ autoload -Uz bashcompinit && bashcompinit
 # and the Shift-Tab binding become unnecessary.
 setopt COMPLETE_IN_WORD        # complete at the cursor, not only at word end
 setopt ALWAYS_TO_END           # then move the cursor to the end of the word
+# Show matches in a menu you can move through with Tab and the arrow keys.
 zstyle ':completion:*' menu select
+# How typed text matches, tried in order until one finds something: exactly; then
+# with lowercase letters also matching uppercase ones; then anywhere in the name.
 zstyle ':completion:*' matcher-list '' 'm:{[:lower:]}={[:upper:]}' 'l:|=* r:|=*'
+# Group matches by kind (files, options, ...), each under a yellow heading.
 zstyle ':completion:*' group-name ''
 zstyle ':completion:*:descriptions' format '%F{yellow}-- %d --%f'
+# Cache the results of slow completions.
 zstyle ':completion:*' use-cache on
 zstyle ':completion:*' cache-path "$XDG_CACHE_HOME/zsh/zcompcache"
 
@@ -201,6 +244,9 @@ zstyle ':completion:*' list-colors ''
 zstyle ':completion:*' special-dirs true   # also complete . and .. (cd ..<Tab> -> ../)
 
 # Use Emacs editing even when EDITOR or VISUAL is nvim/vim.
+# (zsh would pick Vim-style editing by itself, because EDITOR contains "vi". Emacs
+# style means keys such as Ctrl-A for start of line, Ctrl-E for end, Ctrl-W to
+# delete a word.)
 bindkey -e
 
 # Up/Down and Ctrl-P/N: search history for lines starting with what's typed.
@@ -208,6 +254,7 @@ bindkey -e
 # Alternative: drop --disable-up-arrow from atuin init and delete these
 # bindings; Up then opens atuin's picker prefilled with the typed text
 # (tune via search_mode/filter_mode_shell_up_key_binding in atuin config).
+# (zle -N makes a function available as an editing action for bindkey.)
 autoload -Uz up-line-or-beginning-search down-line-or-beginning-search
 zle -N up-line-or-beginning-search
 zle -N down-line-or-beginning-search
@@ -271,6 +318,9 @@ fi
 (( $+commands[eza] )) && export FZF_ALT_C_OPTS="
   --walker-skip .git,node_modules,target
   --preview 'eza --tree --level=2 --color=always {} | head -200'"
+# Load fzf's key bindings (Ctrl-T, Alt-C) and its ** completion: fzf --zsh prints
+# them, and source <(...) runs that output. The empty FZF_CTRL_R_COMMAND= tells
+# fzf to leave Ctrl-R to atuin.
 (( $+commands[fzf] )) && FZF_CTRL_R_COMMAND= source <(fzf --zsh)
 # Autosuggestion sources: atuin init puts its history first; zsh history and Tab
 # completion are fallbacks (completion suggests e.g. branch or file names never typed).
@@ -280,6 +330,13 @@ ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20
 # Suggestion text uses Catppuccin Mocha's Overlay1 color.
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#7f849c'
+# Start the tools that hook into the shell:
+#   atuin     searchable history on Ctrl-R. --disable-up-arrow leaves the Up arrow
+#             to the history search bound above, and --disable-ai leaves ? alone
+#             instead of binding it to Atuin AI.
+#   zoxide    --cmd cd makes cd smarter: cd with part of a folder's name jumps to
+#             the matching folder you use most.
+#   starship  draws the prompt.
 (( $+commands[atuin] )) && eval "$(atuin init zsh --disable-up-arrow --disable-ai)"
 (( $+commands[zoxide] )) && eval "$(zoxide init zsh --cmd cd)"
 (( $+commands[starship] )) && eval "$(starship init zsh)"
@@ -295,6 +352,9 @@ ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#7f849c'
 
 {{ if $brewPrefix -}}
 # Homebrew zsh plugins. Autosuggestions wraps widgets created above.
+# zsh-autosuggestions shows a grey suggestion as you type (the Right arrow accepts
+# it); zsh-syntax-highlighting colors the command line as you type it. Each line
+# below loads one file, if it exists.
 # Syntax highlighting goes last; its Catppuccin theme (fetched via .chezmoiexternal.toml) must load before it.
 [[ -f {{ joinPath $brewPrefix "share/zsh-autosuggestions/zsh-autosuggestions.zsh" | shellQuote }} ]] && source {{ joinPath $brewPrefix "share/zsh-autosuggestions/zsh-autosuggestions.zsh" | shellQuote }}
 [[ -f "$ZDOTDIR/themes/catppuccin_mocha-zsh-syntax-highlighting.zsh" ]] && source "$ZDOTDIR/themes/catppuccin_mocha-zsh-syntax-highlighting.zsh"

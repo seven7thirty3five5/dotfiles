@@ -1,9 +1,12 @@
+# ripgrep's settings. ripgrep (rg) searches through file contents. It reads this
+# file only because RIPGREP_CONFIG_PATH in ~/.config/zsh/.zshenv points to it.
 # One ripgrep option per line (see GUIDE.md, "Configuration file").
 
 # Case-insensitive unless the pattern has an uppercase letter.
 --smart-case
 
 # Search hidden files and directories (e.g. dotfiles), but never inside .git.
+# (--glob=!PATTERN skips the files that match PATTERN.)
 --hidden
 --glob=!.git/*
 

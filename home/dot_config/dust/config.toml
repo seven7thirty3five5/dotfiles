@@ -1,2 +1,4 @@
+# dust's settings. dust shows which folders use the most disk space (the du2
+# alias in .zshrc runs it two levels deep).
 # Print the size tree upside down, with the biggest entries highest.
 reverse = true

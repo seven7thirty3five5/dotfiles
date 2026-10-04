@@ -1,3 +1,10 @@
+# Paths chezmoi leaves alone on this machine: it won't create or change them.
+# Each line is a path in your home folder, written without the ~/.
+#
+# This file is a template. The lines between `if` and `end` below are only
+# ignored when the condition is true: here, when this machine isn't a Mac
+# (chezmoi calls macOS "darwin", and ne means "not equal").
+
 # macOS-only: Ghostty's config, and .hushlogin, which hides the "Last login" banner
 # login(1) prints in every Ghostty tab (Linux keeps its SSH login message).
 {{ if ne .chezmoi.os "darwin" }}
@@ -5,5 +12,6 @@
 .hushlogin
 {{ end }}
 
-# NEVER track machine-specific zsh settings.
+# NEVER track machine-specific zsh settings. .zshrc loads this file, if it
+# exists, for settings that only make sense on one machine.
 .config/zsh/.zshrc.local

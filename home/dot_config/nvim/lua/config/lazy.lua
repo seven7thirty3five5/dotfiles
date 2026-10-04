@@ -1,3 +1,9 @@
+-- From LazyVim's starter template: install and start lazy.nvim, the plugin
+-- manager, which then loads LazyVim and the plugins.
+--
+-- If lazy.nvim isn't installed yet, download it with git into Neovim's data
+-- folder (~/.local/share/nvim/lazy/lazy.nvim). If that fails, show the error
+-- and quit.
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
   local lazyrepo = "https://github.com/folke/lazy.nvim.git"
@@ -12,8 +18,14 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
     os.exit(1)
   end
 end
+-- Add lazy.nvim to the runtimepath, the list of folders Neovim loads code from.
 vim.opt.rtp:prepend(lazypath)
 
+-- Start lazy.nvim with LazyVim's plugins and your own (the files in
+-- lua/plugins/). Two files next to this config can't hold comments, because
+-- they're JSON: lazy-lock.json, which lazy.nvim writes with the exact version of
+-- each plugin, and lazyvim.json, which lists the LazyVim "extras" (optional
+-- plugin bundles) turned on with :LazyExtras.
 require("lazy").setup({
   spec = {
     -- add LazyVim and import its plugins
@@ -30,6 +42,7 @@ require("lazy").setup({
     version = false, -- always use the latest git commit
     -- version = "*", -- try installing the latest stable version for plugins that support semver
   },
+  -- The colors to use while plugins are being installed on the first start.
   install = { colorscheme = { "catppuccin", "habamax" } },
   checker = {
     enabled = true, -- check for plugin updates periodically
@@ -38,6 +51,8 @@ require("lazy").setup({
   performance = {
     rtp = {
       -- disable some rtp plugins
+      -- (plugins that come with Neovim: for reading .gz, .tar and .zip files,
+      -- :TOhtml and :Tutor)
       disabled_plugins = {
         "gzip",
         -- "matchit",
