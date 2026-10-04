@@ -1,6 +1,8 @@
-# Ghostty config is macOS-only.
+# macOS-only: Ghostty's config, and .hushlogin, which hides the "Last login" banner
+# login(1) prints in every Ghostty tab (Linux keeps its SSH login message).
 {{ if ne .chezmoi.os "darwin" }}
 .config/ghostty
+.hushlogin
 {{ end }}
 
 # NEVER track machine-specific zsh settings.
