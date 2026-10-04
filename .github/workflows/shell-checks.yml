@@ -1,36 +1,69 @@
+# Shell checks: run the repository's two test scripts on macOS and on Linux.
+#
+#   scripts/check-bootstrap.py  tests install.sh and the Homebrew install script
+#                               using fake programs, without installing anything
+#   scripts/check-shell.py      renders the zsh startup files and starts zsh in
+#                               every mode to check the environment they set up
+#
+# Both scripts work in temporary folders, so they are quick (under a minute) and
+# also safe to run on your own computer. The slower, real installation is tested
+# by bootstrap.yml.
+
+# The name shown in the repository's Actions tab.
 name: Shell checks
 
+# When it runs: on every push, on pull requests, and on demand ("workflow_dispatch"
+# adds a "Run workflow" button in the Actions tab).
 on:
   push:
   pull_request:
   workflow_dispatch:
 
+# What the automatic GitHub token may do in this workflow: only read the repository.
+# Granting the least access needed limits the damage if a step were ever compromised.
 permissions:
   contents: read
 
 jobs:
   shell:
+    # The job's name in the Actions tab, e.g. "Zsh (macos-latest)".
     name: Zsh (${{ matrix.os }})
+    # Run on a fresh virtual machine of each operating system in the matrix below.
     runs-on: ${{ matrix.os }}
+    # Stop the job if it hangs; it normally finishes in about a minute.
     timeout-minutes: 10
     strategy:
+      # Let the other operating system finish even if one fails, so a single run
+      # shows whether a problem affects macOS, Linux, or both.
       fail-fast: false
+      # Run the job once per value: one Linux and one macOS virtual machine.
       matrix:
         os: [ubuntu-latest, macos-latest]
+    # Run every `run:` step with bash. GitHub then also stops a step at the first
+    # failing command, the same way on both operating systems.
     defaults:
       run:
         shell: bash
     steps:
+      # Download the repository into the virtual machine.
       - uses: actions/checkout@v7
         with:
+          # Don't leave GitHub's token in the downloaded repository's settings,
+          # where later steps could read it; nothing here needs to push.
           persist-credentials: false
 
+      # GitHub's Ubuntu machines don't come with zsh (macOS has it built in).
+      # --no-install-recommends skips optional extra packages to keep it quick.
       - name: Install Zsh on Linux
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install --no-install-recommends --yes zsh
 
+      # Get the newest chezmoi with its official installer, into a temporary folder
+      # GitHub provides ($RUNNER_TEMP), instead of using Homebrew, which is much
+      # slower. Adding the folder to the $GITHUB_PATH file puts chezmoi on PATH for
+      # the steps that follow.
       - name: Install chezmoi in the runner's temporary directory
         run: |
           curl -fsSL https://get.chezmoi.io -o "$RUNNER_TEMP/install-chezmoi.sh"

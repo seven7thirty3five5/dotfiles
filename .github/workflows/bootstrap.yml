@@ -1,54 +1,95 @@
+# Bootstrap: run the real install.sh on brand-new machines and check the result.
+#
+# This is the one test that installs everything for real (Homebrew, every package,
+# the dotfiles, LazyVim's plugins), the same way it happens on a new computer. It
+# tests the commit that was pushed, not whatever is on GitHub's main branch.
+#
+# It uses four machines:
+#   runner job     GitHub's own macOS and Ubuntu machines. These already have
+#                  Homebrew, so they test a machine where Homebrew exists.
+#   container job  A clean Ubuntu 24.04 with no Homebrew at all, twice: once as a
+#                  user with sudo (Homebrew installs in its default folder) and once
+#                  as a user without sudo, like a locked-down work computer
+#                  (Homebrew installs into the home folder).
+#
+# Each machine runs install.sh twice, because running it again must be safe, then
+# runs scripts/check-install.sh to verify the setup.
+
+# The name shown in the repository's Actions tab.
 name: Bootstrap
 
+# When it runs: on every push, on pull requests, and on demand ("workflow_dispatch"
+# adds a "Run workflow" button in the Actions tab).
 on:
   push:
   pull_request:
   workflow_dispatch:
 
+# What the automatic GitHub token may do in this workflow: only read the repository.
+# Granting the least access needed limits the damage if a step were ever compromised.
 permissions:
   contents: read
 
 jobs:
   # install.sh on GitHub's runners, which already ship Homebrew in its default prefix.
   runner:
+    # The job's name in the Actions tab, e.g. "install.sh (macos-latest)".
     name: install.sh (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    # Installing every package takes a few minutes; stop if it hangs far longer.
     timeout-minutes: 45
     strategy:
+      # Let the other machine finish even if one fails, so a single run shows
+      # whether a problem affects macOS, Linux, or both.
       fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-latest]
+    # Run every `run:` step with bash, which stops a step at its first failing command.
     defaults:
       run:
         shell: bash
     steps:
+      # Download the repository (this commit) into the virtual machine.
       - uses: actions/checkout@v7
         with:
+          # Don't leave GitHub's token in the downloaded repository's settings,
+          # where later steps could read it; nothing here needs to push.
           persist-credentials: false
 
-      # The Homebrew script installs zsh only alongside Homebrew, which this image has.
+      # Workaround: the Homebrew script installs zsh only when it installs Homebrew
+      # itself (on Linux, with sudo). This Ubuntu image already has Homebrew, so the
+      # script skips that, and zsh, which the image lacks, has to be added here.
       - name: Install zsh on Linux
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install --no-install-recommends --yes zsh
 
+      # install.sh normally downloads the repository from GitHub into
+      # ~/.local/share/chezmoi. Putting this commit there first makes it use the
+      # pushed code instead (chezmoi reuses a folder that already exists).
       - name: Use this commit as the dotfiles repository
         run: |
           mkdir -p "$HOME/.local/share"
           cp -R "$GITHUB_WORKSPACE" "$HOME/.local/share/chezmoi"
 
-      # chezmoi's prompt...Once functions don't ask when the config already has an answer.
+      # Workaround: on a real machine, chezmoi asks for your Git name and email and
+      # whether this machine publishes changes. CI can't answer questions, so this
+      # writes made-up answers into chezmoi's settings file in advance; chezmoi's
+      # promptStringOnce/promptBoolOnce skip any question that already has an answer.
       - name: Answer chezmoi's setup questions
         run: |
           mkdir -p "$HOME/.config/chezmoi"
           printf '[data]\ngitName = "CI"\ngitEmail = "ci@example.invalid"\npublishDotfiles = false\n' \
             > "$HOME/.config/chezmoi/chezmoi.toml"
 
-      # Twice, because re-running install.sh must be safe.
+      # Run the installer twice; the second run proves that running it again is safe.
       - name: Run install.sh twice
         env:
-          GH_TOKEN: ${{ github.token }} # avoids API rate limits on shared runner IPs
+          # Workaround: installing gh-dash asks GitHub's API about its releases. Many
+          # CI machines share a few IP addresses, so anonymous requests hit GitHub's
+          # rate limit; this run's token raises the limit. A real install needs no login.
+          GH_TOKEN: ${{ github.token }}
         run: |
           sh install.sh
           sh install.sh
@@ -59,32 +100,52 @@ jobs:
   # install.sh on a fresh Ubuntu without Homebrew, as a user with sudo and as one without,
   # like a locked-down work machine where Homebrew goes into the home folder.
   container:
+    # The job's name in the Actions tab, e.g. "install.sh (fresh Ubuntu, no-sudo)".
     name: install.sh (fresh Ubuntu, ${{ matrix.access }})
     runs-on: ubuntu-latest
+    # Run the steps inside a plain Ubuntu 24.04 container (a minimal, separate Linux
+    # system) instead of on GitHub's machine, which already has Homebrew installed.
     container: ubuntu:24.04
+    # Installing Homebrew from scratch plus every package takes a few minutes;
+    # stop if it hangs far longer.
     timeout-minutes: 60
     strategy:
+      # Let the other variant finish even if one fails.
       fail-fast: false
+      # Run the job twice: once for a user who may use sudo, once for one who may not.
       matrix:
         access: [sudo, no-sudo]
     steps:
+      # The container starts almost empty and runs as root (the administrator). Install
+      # the few programs a typical machine already has, then create a normal user,
+      # "tester", to run the installer: Homebrew refuses to run as root, and the
+      # point is to test what a normal person experiences.
       - name: Create a machine and a user
         run: |
           apt-get update
           apt-get install --no-install-recommends --yes ca-certificates curl git sudo
           if [ "${{ matrix.access }}" = no-sudo ]; then
-            # Without sudo, an administrator provides what Homebrew and LazyVim need.
+            # Without sudo, the installer can't install system packages, so this
+            # pretends an administrator already provided what Homebrew and LazyVim need.
             apt-get install --no-install-recommends --yes build-essential procps file zsh unzip
           fi
           useradd --create-home --shell /bin/bash tester
           if [ "${{ matrix.access }}" = sudo ]; then
+            # Let tester use sudo without a password (CI can't type one).
             echo 'tester ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/tester
           fi
 
+      # Download the repository (this commit) into the container.
       - uses: actions/checkout@v7
         with:
+          # Don't leave GitHub's token in the downloaded repository's settings,
+          # where later steps could read it; nothing here needs to push.
           persist-credentials: false
 
+      # Same two preparations as in the runner job above, but for tester: put this
+      # commit where install.sh looks for the repository, and answer chezmoi's
+      # questions in advance. `install -d -o tester -g tester` creates folders owned
+      # by tester, and chown hands the copied files to tester too.
       - name: Use this commit as the dotfiles repository, and answer chezmoi's questions
         run: |
           install -d -o tester -g tester /home/tester/.local /home/tester/.local/share \
@@ -94,6 +155,10 @@ jobs:
             > /home/tester/.config/chezmoi/chezmoi.toml
           chown -R tester:tester /home/tester/.local/share/chezmoi /home/tester/.config/chezmoi
 
+      # Run install.sh as tester, twice. `sudo --user=tester --login` switches to
+      # tester with a fresh login environment, as if tester had logged in.
+      # Workaround: the container has no language settings, and Homebrew needs a
+      # UTF-8 one, so LANG=C.UTF-8 provides it. GH_TOKEN is explained in the runner job.
       - name: Run install.sh twice as the user
         env:
           GH_TOKEN: ${{ github.token }}
@@ -103,6 +168,7 @@ jobs:
               sh /home/tester/.local/share/chezmoi/install.sh
           done
 
+      # Run the checks as tester as well. (`>-` joins the next lines into one command.)
       - name: Check the result
         run: >-
           sudo --user=tester --login env LANG=C.UTF-8
