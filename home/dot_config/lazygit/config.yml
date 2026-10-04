@@ -21,6 +21,7 @@ git:
 # Catppuccin Mocha (blue accent); diffs inherit delta's syntax-theme.
 gui:
   nerdFontsVersion: "3"  # file icons; Ghostty bundles the Nerd Font symbols
+
   theme:
     activeBorderColor:
       - "#89b4fa"
@@ -41,5 +42,6 @@ gui:
       - "#cdd6f4"
     searchingActiveBorderColor:
       - "#f9e2af"
+
   authorColors:
     "*": "#b4befe"  # every commit author's name in Catppuccin Lavender

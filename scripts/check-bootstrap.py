@@ -63,6 +63,7 @@ def executable(path, content):
     Mode 0o755 lets you read, change and run the file, and anyone else read and
     run it.
     """
+
     # About the Python text these programs are written from: \n is a line break
     # in the file, and \\n puts the two characters \n in the file, which the
     # program itself (printf, for example) turns into a line break when it runs.
@@ -73,18 +74,22 @@ def executable(path, content):
 class BootstrapChecks(unittest.TestCase):
     def setUp(self):
         """Before each test: a new temporary folder, home folder and environment."""
+
         # The folder is deleted after the test (addCleanup), even if the test fails.
         self.directory = tempfile.TemporaryDirectory(prefix="dotfiles-bootstrap-")
         self.addCleanup(self.directory.cleanup)
         self.temporary = Path(self.directory.name)
+
         # A pretend home folder. The space in its name catches any place in the
         # scripts that forgets to put quotes around a path.
         self.home = self.temporary / "home with spaces"
         self.home.mkdir()
+
         # The folder for the tests' fake programs. It comes first on PATH, so the
         # scripts find a fake program before a real one with the same name.
         self.bin = self.temporary / "bin"
         self.bin.mkdir()
+
         # The environment variables for every command, starting from almost
         # nothing so that no settings from this computer leak in. os.defpath is a
         # basic system PATH (such as /bin:/usr/bin), for standard commands like
@@ -106,6 +111,7 @@ class BootstrapChecks(unittest.TestCase):
         the exit status (returncode), output (stdout) and error output (stderr)
         for the test to check. timeout=30 stops a command that hangs.
         """
+
         return subprocess.run(
             command, input=input, env=self.env, cwd=self.home,
             text=True, capture_output=True, timeout=30,
@@ -132,8 +138,10 @@ class BootstrapChecks(unittest.TestCase):
         another, chezmoi stops with an error instead of guessing. json.dumps()
         writes each value in quotes, the same way templates write text.
         """
+
         chezmoi = shutil.which("chezmoi")
         self.assertIsNotNone(chezmoi, "chezmoi is required")
+
         # chezmoi's settings: a file made for this test, never yours. Automatic
         # commit and push are off, as a precaution.
         config = self.temporary / "chezmoi.toml"
@@ -144,6 +152,7 @@ class BootstrapChecks(unittest.TestCase):
             + json.dumps(str(self.home)) + ' "sourceDir" '
             + json.dumps(str(STATE)) + ') }}'
         )
+
         # --source: this repository. --destination: the pretend home folder.
         # --config, --cache and --persistent-state: chezmoi's settings, download
         # cache and record of what it has done, all temporary. --no-tty: never
@@ -155,6 +164,7 @@ class BootstrapChecks(unittest.TestCase):
             "--no-tty", "--no-pager", "execute-template",
             context + template + "{{ end }}",
         ])
+
         # If chezmoi failed, fail the test and show chezmoi's error message.
         self.assertEqual(result.returncode, 0, result.stderr)
         return result.stdout
@@ -165,6 +175,7 @@ class BootstrapChecks(unittest.TestCase):
         macOS: only /opt/homebrew. Linux: the default /home/linuxbrew/.linuxbrew
         (creating it needs sudo), then ~/.linuxbrew and ~/.brew (no sudo needed).
         """
+
         template = '{{ includeTemplate "brew-prefixes" . }}'
         self.assertEqual(self.render(template, "darwin").splitlines(), ["/opt/homebrew"])
         self.assertEqual(self.render(template, "linux").splitlines(), [
@@ -177,6 +188,7 @@ class BootstrapChecks(unittest.TestCase):
 
         `sh -n` reads a script and reports syntax errors without running any of it.
         """
+
         for system in ("darwin", "linux"):
             for script in sorted((STATE / ".chezmoiscripts").glob("*.tmpl")):
                 with self.subTest(system=system, script=script.name):
@@ -195,10 +207,12 @@ class BootstrapChecks(unittest.TestCase):
           curl   returns a one-line fake installer instead of downloading
                  Homebrew's real one. It only writes down how it was run.
         """
+
         executable(self.bin / "uname", '#!/bin/sh\nprintf "%s\\n" "$TEST_ARCH"\n')
         sudo = self.bin / "sudo"
         executable(sudo, '#!/bin/sh\n[ "$TEST_SUDO" = yes ] && exit 0\n'
                    'echo "tester is not in the sudoers file" >&2\nexit 1\n')
+
         # The fake installer writes "<number of arguments>:<$NONINTERACTIVE>" to
         # this log file. If the file exists, the installer ran. "0:1" means it got
         # no arguments, so no --path for a custom folder (it uses the default,
@@ -208,6 +222,7 @@ class BootstrapChecks(unittest.TestCase):
         installer = 'printf "%s:%s\\n" "$#" "$NONINTERACTIVE" > "$TEST_INSTALL_LOG"\n'
         executable(self.bin / "curl", "#!/bin/sh\nprintf '%s' " + shlex.quote(installer) + "\n")
         template = (STATE / ".chezmoiscripts/run_once_before_10-install-homebrew.sh.tmpl").read_text()
+
         # Change two things in the script itself, so that it never finds this
         # computer's Homebrew or uses its sudo: the line that looks for an
         # existing Homebrew becomes `brew=` (none found), and /usr/bin/sudo
@@ -238,6 +253,7 @@ class BootstrapChecks(unittest.TestCase):
                 result = self.run_command(["sh"], script)
                 self.assertEqual(result.returncode, expected, result.stderr)
                 self.assertIn(message, result.stderr)
+
                 # A refusal must come before the installer runs. A success must
                 # run the installer for the default folder.
                 if expected:
@@ -271,6 +287,7 @@ class BootstrapChecks(unittest.TestCase):
                                 and so the test, fail;
               anything else     fails, since install.sh shouldn't run it.
         """
+
         prefix = self.temporary / "mock homebrew"
         brew_bin = prefix / "bin"
         brew_bin.mkdir(parents=True)
@@ -284,8 +301,10 @@ class BootstrapChecks(unittest.TestCase):
                    + "printf '%s\\n' " + " ".join(map(shlex.quote, exports)) + "\n")
         for tool in ("delta", "nvim"):
             executable(brew_bin / tool, "#!/bin/sh\nexit 0\n")
+
         log = self.temporary / "calls.jsonl"
         self.env.update(TEST_PREFIX=str(prefix), TEST_CALLS=str(log))
+
         # The fake chezmoi's first line names the Python running these tests
         # (sys.executable), which then runs the program below.
         executable(self.bin / "chezmoi", "#!" + sys.executable + "\n" + '''
@@ -318,16 +337,20 @@ else:
         both `chezmoi init` calls. The fake chezmoi itself checks that Homebrew's
         programs were on PATH for the last call.
         """
+
         log = self.installer_fixture()
         result = self.run_command(["sh", str(SOURCE / "install.sh"), "--branch", "bootstrap"])
         self.assertEqual(result.returncode, 0, result.stderr)
+
         # Read the log back: one list of arguments per chezmoi call.
         calls = [json.loads(line) for line in log.read_text().splitlines()]
         self.assertEqual(calls, [
             # 1. Download the repository and apply the dotfiles.
             ["init", "--apply", "--use-builtin-git=true", "--branch", "bootstrap", "seven7thirty3five5"],
+
             # 2. Ask where Homebrew was installed.
             ["execute-template", '{{ includeTemplate "brew-prefix" . }}'],
+
             # 3. Refresh chezmoi's settings, now that delta and nvim exist.
             ["init", "--branch", "bootstrap"],
         ])
@@ -342,6 +365,7 @@ else:
         variable before running it so that this failure isn't missed). In each
         case the last `chezmoi init` must not run, and "Done." must not appear.
         """
+
         for overrides, expected in (
             ({"TEST_APPLY_STATUS": "9"}, 9),
             ({"TEST_PREFIX": ""}, 1),
@@ -353,9 +377,11 @@ else:
                 result = self.run_command(["sh", str(SOURCE / "install.sh")])
                 self.assertEqual(result.returncode, expected, result.stderr)
                 calls = [json.loads(line) for line in log.read_text().splitlines()]
+
                 # With no extra arguments, the last call would be just ["init"].
                 self.assertFalse(any(call == ["init"] for call in calls))
                 self.assertNotIn("Done.", result.stdout)
+
                 # Remove the fakes and the log so the next case starts fresh.
                 # installer_fixture() creates them again and resets TEST_PREFIX,
                 # so only the other two overrides need removing.

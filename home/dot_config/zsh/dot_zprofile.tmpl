@@ -3,8 +3,10 @@
   window, on Linux mainly SSH logins. It's a template: the macOS part is only
   written on macOS; on Linux the file only says where Homebrew is set up instead.
 */ -}}
+
 {{ if eq .chezmoi.os "darwin" -}}
 {{- $brewPrefix := includeTemplate "brew-prefix" . | trim -}}
+
 # /etc/zprofile has already run macOS path_helper.
 # (path_helper puts the system's folders, listed in /etc/paths, at the front of
 # PATH. Setting Homebrew up after it keeps Homebrew's programs in front of the
@@ -16,7 +18,9 @@
 # to brew, which the brew-prefix template found.
 {{ if $brewPrefix -}}
 eval "$({{ joinPath $brewPrefix "bin" "brew" | shellQuote }} shellenv zsh)"
+
 {{ end -}}
+
 # Refresh the shared environment and editor selection after Homebrew setup.
 # (Running .zshenv again puts ~/.local/bin back in front of Homebrew, and
 # chooses nvim as the editor now that Homebrew's programs can be found.)

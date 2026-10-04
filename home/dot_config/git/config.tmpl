@@ -4,11 +4,14 @@
   questions, and the delta settings are only written where Homebrew installed
   delta. `git help config` explains every setting.
 */ -}}
+
 {{- $brewPrefix := includeTemplate "brew-prefix" . | trim -}}
+
 # Who you are: git records this name and email as the author of your commits.
 [user]
-	name = {{ .gitName | quote }}
-	email = {{ .gitEmail | quote }}
+    name = {{ .gitName | quote }}
+    email = {{ .gitEmail | quote }}
+
 {{ if and $brewPrefix (isExecutable (joinPath $brewPrefix "bin" "delta")) -}}
 # delta only where Homebrew installed it; elsewhere git keeps its default pager (less).
 # (A pager shows long output one screen at a time. delta also colors diffs, with
@@ -22,6 +25,7 @@
     diffFilter = delta --color-only
 
 {{ end -}}
+
 # Read more settings from another file: the Catppuccin theme for delta.
 [include]
     path = ~/.config/delta/themes/catppuccin.gitconfig  # fetched via .chezmoiexternal.toml
@@ -41,30 +45,40 @@
 
 [init]
     defaultBranch = main         # new repos start on main instead of master
+
 [column]
     ui = auto                    # list branches and tags in columns when they fit
+
 [branch]
     sort = -committerdate        # most recently committed branches first
+
 [tag]
     sort = version:refname       # v1.10 sorts after v1.9 instead of after v1.1
+
 [push]
     autoSetupRemote = true       # first push of a new branch sets its upstream
     followTags = true            # also push annotated tags that point at pushed commits
+
 [pull]
     rebase = true                # replay local commits instead of merge commits
+
 [fetch]
     prune = true                 # drop local copies of branches deleted on the remote
     pruneTags = true             # likewise drop local tags deleted on the remote
     all = true                   # fetch every remote (e.g. origin and upstream), not one
+
 [rebase]
     autoSquash = true            # fixup!/squash! commits move into place in rebase -i
     autoStash = true             # stash uncommitted changes before a rebase, pop after
     updateRefs = true            # branches stacked on the rebased one move with it
+
 [rerere]
     enabled = true               # remember conflict resolutions and reuse them
     autoupdate = true            # stage files once rerere has resolved them
+
 [commit]
     verbose = true               # show the diff below the message while you write it
+
 [help]
     autocorrect = prompt         # on a typo, offer to run the closest git command
 
@@ -75,15 +89,18 @@
     tool = difftastic
     colorMoved = default         # moved lines get their own colors
     algorithm = histogram        # cleaner hunks when code is moved or reordered
+
 # How `git difftool` runs difft. It passes git's longer "external diff" format,
 # as difftastic's manual shows, so difft can show the file's real name ($MERGED)
 # rather than the names of the temporary copies it compares ($LOCAL, $REMOTE).
 # The commit hashes and file modes in that format are placeholders.
 [difftool "difftastic"]
-	cmd = difft \"$MERGED\" \"$LOCAL\" abcdef1 100644 \"$REMOTE\" abcdef2 100644
+    cmd = difft \"$MERGED\" \"$LOCAL\" abcdef1 100644 \"$REMOTE\" abcdef2 100644
+
 # Don't ask before showing each file.
 [difftool]
     prompt = false
+
 # Show difftool's output one screen at a time, like git diff's.
 [pager]
     difftool = true

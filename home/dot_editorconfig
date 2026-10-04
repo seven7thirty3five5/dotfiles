@@ -4,11 +4,13 @@
 # root = true stops that search here, at your home folder.
 root = true
 
-# These settings apply to every file ([*] matches any file name):
+# These settings apply to every file ([*] matches any file name).
 [*]
-# save text as UTF-8,
+# Save text as UTF-8.
 charset = utf-8
-# with Unix line endings (LF, rather than Windows' CRLF),
+
+# Use Unix line endings (LF), rather than Windows' (CRLF).
 end_of_line = lf
-# and with a line break at the end of the last line.
+
+# End the last line with a line break too.
 insert_final_newline = true

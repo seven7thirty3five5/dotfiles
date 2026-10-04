@@ -106,6 +106,7 @@ def run(command, env, cwd):
 
     timeout=30 stops a command that hangs, for example one waiting for input.
     """
+
     result = subprocess.run(
         command, env=env, cwd=cwd, text=True, capture_output=True, timeout=30
     )
@@ -116,10 +117,12 @@ def run(command, env, cwd):
         display = list(map(str, command))
         if "-c" in display:
             display[display.index("-c") + 1] = "<startup probe>"
+
         raise RuntimeError(
             f"Command failed ({result.returncode}): {shlex.join(display)}\n"
             f"{result.stdout}{result.stderr}"
         )
+
     return result.stdout
 
 
@@ -131,6 +134,7 @@ def environment(home, path, temporary):
     private variables. LC_ALL=C makes programs use plain, untranslated output, so
     results are the same everywhere; TERM tells zsh what kind of terminal it's in.
     """
+
     return {
         "HOME": str(home),
         "PATH": str(path),
@@ -147,8 +151,10 @@ def render(chezmoi, zsh, source, home, temporary, config, search_path):
     `chezmoi init`, which writes chezmoi's settings file and, unless told
     otherwise with --config-path, would overwrite the real one.
     """
+
     home.mkdir(parents=True)
     env = environment(home, search_path, temporary)
+
     # The options that point chezmoi at temporary copies of everything:
     #   --source              the repository to read (normally ~/.local/share/chezmoi)
     #   --destination         the home folder to write into (normally ~)
@@ -170,6 +176,7 @@ def render(chezmoi, zsh, source, home, temporary, config, search_path):
         "--no-tty",
         "--no-pager",
     ]
+
     # `chezmoi managed` lists every file chezmoi would put in the home folder. None
     # of the repository's own files (this script, the README, install.sh, the
     # GitHub workflows) may be among them: they live outside home/, the folder
@@ -180,12 +187,15 @@ def render(chezmoi, zsh, source, home, temporary, config, search_path):
     if any(path.split("/")[0] in (".github", "scripts", "README.md", "install.sh")
            for path in managed):
         raise RuntimeError("Repository files must stay outside the source state")
+
     for relative in STARTUP_FILES:
         target = home / relative
         target.parent.mkdir(parents=True, exist_ok=True)
+
         # `chezmoi cat FILE` prints what chezmoi would write to FILE, with its
         # template parts filled in. Save that into the fake home folder.
         target.write_text(run(command + ["cat", str(target)], env, home))
+
         # zsh -n only reads the file and reports syntax errors, without running
         # anything. -d and -f stop zsh from reading any other startup files first.
         run([zsh, "-d", "-f", "-n", str(target)], env, home)
@@ -239,6 +249,7 @@ def main():
         # leaves out .git, which isn't needed.
         fixture = temporary / "source"
         shutil.copytree(SOURCE, fixture, ignore=shutil.ignore_patterns(".git"))
+
         # The dotfiles live in the subdirectory named by .chezmoiroot (home/).
         state = fixture / (fixture / ".chezmoiroot").read_text().strip()
 
@@ -273,11 +284,13 @@ def main():
             origin = Path(directory)
             if not origin.is_dir():
                 continue
+
             target = function_root / str(index)
             target.mkdir(mode=0o700)
             for entry in origin.iterdir():
                 if entry.is_file():
                     shutil.copyfile(entry, target / entry.name)
+
             function_paths.append(str(target))
 
         # A pretend Homebrew: a tiny shell script at "mock homebrew/bin/brew".
@@ -306,9 +319,11 @@ def main():
 
         for with_brew in (False, True):
             scenario = "with Homebrew" if with_brew else "without Homebrew"
+
             # The space in the folder name is deliberate: it catches any place in
             # the startup files that forgets to put quotes around a path.
             home = temporary / scenario / "home with spaces"
+
             # The brew-prefix template normally finds the real Homebrew. Only in
             # this temporary copy, replace it with the pretend Homebrew's folder,
             # or with nothing to simulate a machine without Homebrew, so the test
@@ -323,13 +338,16 @@ def main():
             for interactive in (False, True):
                 for login in (False, True):
                     env = environment(home, shell_bin, temporary)
+
                     # The private copies of zsh's completion files (see above).
                     env["FPATH"] = os.pathsep.join(function_paths)
+
                     # Pretend this is an SSH session. SSH sets SSH_CONNECTION when
                     # you log in to a computer remotely, and programs can check
                     # it to behave differently. The startup files must still
                     # work there, silently (see run()).
                     env["SSH_CONNECTION"] = "127.0.0.1 12345 127.0.0.1 22"
+
                     # Which shells should load Homebrew: on macOS, login shells
                     # (.zprofile); on Linux, interactive shells (.zshrc). That is
                     # Homebrew's recommendation for each system.
@@ -337,6 +355,7 @@ def main():
                         login if sys.platform == "darwin" else interactive
                     )
                     env["DOTFILES_EXPECT_BREW"] = str(int(expected_brew))
+
                     # Start zsh: -d skips the system-wide startup files in /etc
                     # (all but zshenv, which zsh always reads), so only this
                     # repository's files are tested; -i makes it interactive;
@@ -344,11 +363,14 @@ def main():
                     command = [binaries["zsh"], "-d"]
                     if interactive:
                         command.append("-i")
+
                     if login:
                         command.append("-l")
+
                     output = run(command + ["-c", PROBE], env, home)
                     if output != "dotfiles-shell-ok\n":
                         raise RuntimeError(f"Unexpected startup output: {output!r}")
+
                     mode = "interactive" if interactive else "noninteractive"
                     kind = "login" if login else "non-login"
                     print(f"PASS: {scenario}, {mode} {kind} startup", flush=True)

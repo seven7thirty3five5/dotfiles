@@ -25,6 +25,7 @@ set -eu
 # command, or to nothing if Homebrew isn't installed (see find-brew.sh in
 # home/.chezmoitemplates).
 {{ template "find-brew.sh" . }}
+
 # -n: the text isn't empty, so Homebrew is already installed.
 if [ -n "$brew" ]; then
   exit 0
@@ -158,6 +159,7 @@ for tool in curl git file cc zsh; do
     missing="$missing $tool"
   fi
 done
+
 if [ -n "$missing" ]; then
   echo "warning: these need sudo to install, so ask an administrator:$missing" >&2
   echo "         (Homebrew itself needs curl and git)." >&2

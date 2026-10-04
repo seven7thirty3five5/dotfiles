@@ -2,11 +2,11 @@
 # with the folder, git branch and so on. STARSHIP_CONFIG in ~/.config/zsh/.zshenv
 # points it to this file. Settings not listed here keep Starship's defaults
 # (https://starship.rs/config/).
-#
+
 # Built-in Starship prompt, recolored with the Catppuccin Mocha palette.
-palette = "catppuccin_mocha"
 # A palette gives names to colors. Starship's parts ("modules") color themselves
 # by name, and a name defined here, such as red, means Catppuccin's version.
+palette = "catppuccin_mocha"
 
 [palettes.catppuccin_mocha]
 rosewater = "#f5e0dc"

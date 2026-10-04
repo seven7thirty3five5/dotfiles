@@ -92,6 +92,7 @@ done
 if [ ! -d "$data_dir/gh/extensions/gh-dash" ]; then
   fail "gh-dash is not installed"
 fi
+
 if [ ! -d "$data_dir/nvim/lazy/LazyVim" ]; then
   fail "LazyVim's plugins are not installed"
 fi

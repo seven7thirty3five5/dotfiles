@@ -28,22 +28,28 @@ jobs:
   shell:
     # The job's name in the Actions tab, e.g. "Zsh (macos-latest)".
     name: Zsh (${{ matrix.os }})
+
     # Run on a fresh virtual machine of each operating system in the matrix below.
     runs-on: ${{ matrix.os }}
+
     # Stop the job if it hangs; it normally finishes in about a minute.
     timeout-minutes: 10
+
     strategy:
       # Let the other operating system finish even if one fails, so a single run
       # shows whether a problem affects macOS, Linux, or both.
       fail-fast: false
+
       # Run the job once per value: one Linux and one macOS virtual machine.
       matrix:
         os: [ubuntu-latest, macos-latest]
+
     # Run every `run:` step with bash. GitHub then also stops a step at the first
     # failing command, the same way on both operating systems.
     defaults:
       run:
         shell: bash
+
     steps:
       # Download the repository into the virtual machine.
       - uses: actions/checkout@v7

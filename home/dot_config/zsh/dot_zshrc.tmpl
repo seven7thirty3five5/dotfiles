@@ -3,7 +3,9 @@
   It sets up aliases, history, tab completion, key bindings and the prompt. It's
   a template: chezmoi fills in the Homebrew parts for this machine.
 */ -}}
+
 {{- $brewPrefix := includeTemplate "brew-prefix" . | trim -}}
+
 # How to read this file:
 #   (( $+commands[eza] ))  "is eza installed?" Settings for optional tools are
 #                          skipped when the tool is missing.
@@ -24,17 +26,21 @@
 # Homebrew shell initialization belongs to interactive shells on Linux.
 # (That's where Homebrew's installer puts it on Linux; macOS uses .zprofile.)
 eval "$({{ joinPath $brewPrefix "bin" "brew" | shellQuote }} shellenv zsh)"
+
 # Refresh the shared environment so ~/.local/bin stays ahead of Homebrew, as on macOS.
 [[ -f "$ZDOTDIR/.zshenv" ]] && source "$ZDOTDIR/.zshenv"
 
 {{ end -}}
+
 # Default aliases and functions, only for programs that are installed.
 if (( $+commands[nvim] )); then
   alias vi="nvim"   # Open Neovim when invoking vi.
   alias vim="nvim"  # Open Neovim when invoking vim.
 fi
+
 # Open superfile and change to its last directory on exit.
 (( $+commands[spf] )) && alias ff="spf"
+
 # spf (and ff): superfile, then cd to the folder you were in when you quit it (superfile docs,
 # "cd on quit"; needs cd_on_quit = true). spf pl --lastdir-file prints where superfile writes
 # that folder: the XDG state dir here, not the ~/Library path in the docs' macOS snippet.
@@ -50,6 +56,7 @@ if (( $+commands[spf] )); then
     fi
   }
 fi
+
 # Open LazyGit's interactive Git interface (the alias suggested in its README).
 (( $+commands[lazygit] )) && alias lg='lazygit'
 
@@ -58,12 +65,16 @@ fi
 if (( $+commands[eza] )); then
   # List all files in detail with a header, icons, and Git status; folders first.
   alias l="eza -lah --group-directories-first --icons=auto --git"
+
   # List visible files in detail with icons and Git status; folders first.
   alias ll="eza -l --group-directories-first --icons=auto --git"
+
   # Include hidden files in the detailed listing with icons and Git status.
   alias la="eza -la --group-directories-first --icons=auto --git"
+
   # Show a directory tree two levels deep, with folders first and icons.
   alias lt="eza --tree --level=2 --group-directories-first --icons=auto"
+
   # Show repository status for listed directories, useful from ~/Projects.
   alias lrepos='eza -l --git-repos --group-directories-first --icons=auto'
 fi
@@ -72,12 +83,12 @@ fi
 if (( $+commands[git] )); then
   alias g='git'                       # Run Git.
   alias ga='git add'                  # Stage the specified paths.
-  alias gaa='git add --all'            # Stage all changes, including additions and deletions.
+  alias gaa='git add --all'           # Stage all changes, including additions and deletions.
   alias gb='git branch'               # List branches, or manage them with additional arguments.
   alias gc='git commit --verbose'     # Commit staged changes with their diff shown in the editor.
   alias gca='git commit --verbose --all'  # Stage tracked-file changes and commit with a diff in the editor.
   alias gco='git checkout'            # Check out a branch or restore specified paths.
-  alias gcb='git checkout -b'          # Create a branch and check it out.
+  alias gcb='git checkout -b'         # Create a branch and check it out.
   alias gd='git diff'                 # Show unstaged changes relative to the index.
   alias gds='git diff --staged'       # Show staged changes for the next commit.
   alias gl='git pull'                 # Fetch and integrate upstream changes using your rebase policy.
@@ -96,6 +107,7 @@ if (( $+commands[git] )); then
   alias gwtls='git worktree list'     # List worktree directories and their checked-out branches.
   alias gfixup='git commit --fixup'   # Commit staged corrections for a specified commit; autosquash folds them in later.
 fi
+
 if (( $+commands[git] && $+commands[delta] )); then
   # Show a side-by-side diff; append --staged to review staged changes.
   alias gdiffsplit='git -c delta.side-by-side=true diff'
@@ -107,7 +119,7 @@ fi
 # programs print their help.)
 if (( $+commands[bat] )); then
   alias bathelp='bat --plain --language=help'  # Highlight piped help text without headers or line numbers.
-  alias bcat='bat --plain --paging=never'     # Print highlighted file contents without decorations or a pager.
+  alias bcat='bat --plain --paging=never'      # Print highlighted file contents without decorations or a pager.
   help() { "$@" --help 2>&1 | bat --plain --language=help; }
 fi
 
@@ -116,24 +128,30 @@ if (( $+commands[chezmoi] )); then
   alias czs='chezmoi status'  # Show which managed dotfiles differ from their desired state.
   alias czd='chezmoi diff'    # Preview the changes chezmoi would apply to managed dotfiles.
 fi
+
 if (( $+commands[fd] )); then
   alias fdall='fd --hidden --no-ignore --exclude .git'  # Find hidden and ignored files, excluding .git directories.
 fi
+
 if (( $+commands[rg] )); then
   alias rgall='rg --no-ignore'  # Search ignored files too, retaining your hidden-file and .git settings.
 fi
+
 if (( $+commands[duf] )); then
   alias dfh='duf --only local'  # Show capacity and usage for local filesystems.
 fi
+
 if (( $+commands[dust] )); then
   alias du2='dust --depth 2'  # Show a directory-size tree limited to two levels.
 fi
+
 if (( $+commands[hyperfine] )); then
   alias bench='hyperfine --warmup 3'  # Benchmark steady-state performance after three warm-up runs.
 fi
+
 if (( $+commands[yq] )); then
   alias y2j='yq -o=json'              # Read YAML and emit JSON.
-  alias j2y='yq -p=json -o=yaml -P'    # Read JSON and emit formatted YAML.
+  alias j2y='yq -p=json -o=yaml -P'   # Read JSON and emit formatted YAML.
 fi
 
 # rge PATTERN [PATH...]: select a content match, preview it, and open its line in Neovim.
@@ -176,6 +194,7 @@ setopt AUTO_CD                # type a directory's path (e.g. ..) to cd into it
 setopt AUTO_PUSHD             # cd pushes onto the dir stack (dirs -v, cd -N)
 setopt PUSHD_IGNORE_DUPS      # keep each directory once on the stack
 setopt PUSHD_MINUS            # cd -N matches dirs -v numbering
+
 # WORDCHARS lists the symbols that count as part of a word when you delete or move
 # by word; ${WORDCHARS//\/} is that list with / removed.
 WORDCHARS=${WORDCHARS//\/}    # Ctrl-W / Alt-B stop at '/'
@@ -183,8 +202,10 @@ WORDCHARS=${WORDCHARS//\/}    # Ctrl-W / Alt-B stop at '/'
 # Directory stack shortcuts: d lists recent directories, 1-9 jump to one of them,
 # - returns to the previous one; ... and .... go up two and three levels (AUTO_CD).
 alias d='dirs -v | head -n 10'  # List the first ten directory-stack entries with their numbers.
+
 # Each generated alias 1-9 changes to the directory with that stack number.
 for i in {1..9}; do alias "$i"="cd -$i"; done; unset i
+
 alias -- -='cd -'          # Return to the previous working directory.
 alias ...='../..'          # Go up two directory levels using AUTO_CD.
 alias ....='../../..'      # Go up three directory levels using AUTO_CD.
@@ -193,25 +214,32 @@ alias ....='../../..'      # Go up three directory levels using AUTO_CD.
 # the completion functions that know each command's options.
 # Keep fpath entries unique, so re-adding a folder that's already listed is harmless.
 typeset -U fpath
+
 {{ if $brewPrefix -}}
 # Homebrew's completion folder. On macOS, .zprofile's brew shellenv adds it in
 # login shells (every terminal tab), and shells started from those inherit it via
 # FPATH. This line covers a non-login zsh started outside a terminal (e.g. by an
 # app opened from the Dock), which gets neither.
 fpath=({{ joinPath $brewPrefix "share/zsh/site-functions" | shellQuote }} $fpath)
+
 {{ end -}}
+
 # Docker Desktop's completions (its own setup lines go to ~/.zshrc, which zsh never reads here).
 [[ -d "$HOME/.docker/completions" ]] && fpath=("$HOME/.docker/completions" $fpath)
+
 # Completions not installed by Homebrew would go here, before compinit:
 #   fpath=("$ZDOTDIR/completions" $fpath)
 # then e.g. `some-tool completion zsh > "$ZDOTDIR/completions/_some-tool"`.
+
 zmodload zsh/complist          # menu selection; must load before compinit
+
 # autoload -Uz loads a function from fpath the first time it's used. compinit turns
 # tab completion on; -d says where to save its index of completion functions (the
 # "dump"), which makes later shells start faster. There is one per zsh version,
 # because a dump made by a different version may not work.
 autoload -Uz compinit
 compinit -d "$XDG_CACHE_HOME/zsh/zcompdump-$ZSH_VERSION"
+
 # Let tools that only ship bash completions (complete -C ...; e.g. aws, terraform) work.
 autoload -Uz bashcompinit && bashcompinit
 
@@ -223,14 +251,18 @@ autoload -Uz bashcompinit && bashcompinit
 # and the Shift-Tab binding become unnecessary.
 setopt COMPLETE_IN_WORD        # complete at the cursor, not only at word end
 setopt ALWAYS_TO_END           # then move the cursor to the end of the word
+
 # Show matches in a menu you can move through with Tab and the arrow keys.
 zstyle ':completion:*' menu select
+
 # How typed text matches, tried in order until one finds something: exactly; then
 # with lowercase letters also matching uppercase ones; then anywhere in the name.
 zstyle ':completion:*' matcher-list '' 'm:{[:lower:]}={[:upper:]}' 'l:|=* r:|=*'
+
 # Group matches by kind (files, options, ...), each under a yellow heading.
 zstyle ':completion:*' group-name ''
 zstyle ':completion:*:descriptions' format '%F{yellow}-- %d --%f'
+
 # Cache the results of slow completions.
 zstyle ':completion:*' use-cache on
 zstyle ':completion:*' cache-path "$XDG_CACHE_HOME/zsh/zcompcache"
@@ -302,34 +334,42 @@ if (( $+commands[fd] )); then
   export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix --hidden --follow --exclude .git'
   export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
   export FZF_ALT_C_COMMAND='fd --type d --strip-cwd-prefix --hidden --follow --exclude .git'
-  _fzf_compgen_path() { fd --hidden --follow --exclude .git . "$1"; }        # vim **<Tab>
-  _fzf_compgen_dir() { fd --type d --hidden --follow --exclude .git . "$1"; } # cd **<Tab>
+  _fzf_compgen_path() { fd --hidden --follow --exclude .git . "$1"; }          # vim **<Tab>
+  _fzf_compgen_dir() { fd --type d --hidden --follow --exclude .git . "$1"; }  # cd **<Tab>
 fi
-# Previews from fzf's README: Ctrl-T shows the file (Ctrl-/ moves or hides the preview),
-# Alt-C shows the directory tree.
+
+# Previews from fzf's README: Ctrl-T shows the file (Ctrl-/ moves or hides the preview).
 (( $+commands[bat] )) && export FZF_CTRL_T_OPTS="
   --walker-skip .git,node_modules,target
   --preview 'bat -n --color=always {}'
   --bind 'ctrl-/:change-preview-window(down|hidden|)'"
+
 # Ctrl-O opens selected files in Neovim, then returns to fzf.
 if (( $+commands[fzf] && $+commands[nvim] )); then
   export FZF_CTRL_T_OPTS="$FZF_CTRL_T_OPTS --bind 'ctrl-o:execute(nvim -- {+})'"
 fi
+
+# Alt-C shows the directory tree (also from fzf's README).
 (( $+commands[eza] )) && export FZF_ALT_C_OPTS="
   --walker-skip .git,node_modules,target
   --preview 'eza --tree --level=2 --color=always {} | head -200'"
+
 # Load fzf's key bindings (Ctrl-T, Alt-C) and its ** completion: fzf --zsh prints
 # them, and source <(...) runs that output. The empty FZF_CTRL_R_COMMAND= tells
 # fzf to leave Ctrl-R to atuin.
 (( $+commands[fzf] )) && FZF_CTRL_R_COMMAND= source <(fzf --zsh)
+
 # Autosuggestion sources: atuin init puts its history first; zsh history and Tab
 # completion are fallbacks (completion suggests e.g. branch or file names never typed).
 ZSH_AUTOSUGGEST_STRATEGY=(history completion)
+
 # Look up suggestions only while the line is short (the README's recommended value),
 # so large pastes don't run the slow completion strategy.
 ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20
+
 # Suggestion text uses Catppuccin Mocha's Overlay1 color.
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#7f849c'
+
 # Start the tools that hook into the shell:
 #   atuin     searchable history on Ctrl-R. --disable-up-arrow leaves the Up arrow
 #             to the history search bound above, and --disable-ai leaves ? alone
@@ -343,6 +383,7 @@ ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#7f849c'
 
 # Scope lazydocker's generic CONFIG_DIR variable to this one command.
 (( $+commands[lazydocker] )) && lazydocker() { CONFIG_DIR="$XDG_CONFIG_HOME/lazydocker" command lazydocker "$@"; }
+
 # Open LazyDocker's interactive Docker interface using the scoped config above.
 (( $+commands[lazydocker] )) && alias lzd='lazydocker'
 
@@ -359,6 +400,7 @@ ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#7f849c'
 [[ -f {{ joinPath $brewPrefix "share/zsh-autosuggestions/zsh-autosuggestions.zsh" | shellQuote }} ]] && source {{ joinPath $brewPrefix "share/zsh-autosuggestions/zsh-autosuggestions.zsh" | shellQuote }}
 [[ -f "$ZDOTDIR/themes/catppuccin_mocha-zsh-syntax-highlighting.zsh" ]] && source "$ZDOTDIR/themes/catppuccin_mocha-zsh-syntax-highlighting.zsh"
 [[ -f {{ joinPath $brewPrefix "share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" | shellQuote }} ]] && source {{ joinPath $brewPrefix "share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" | shellQuote }}
+
 # Also color matching (), [], {} pairs by nesting depth; appended after the plugin sets its defaults.
 ZSH_HIGHLIGHT_HIGHLIGHTERS+=(brackets)
 {{ end -}}

@@ -5,8 +5,10 @@
 # built-in themes.
 font-family = JetBrains Mono
 theme = Catppuccin Mocha
+
 # Left Option sends terminal Alt shortcuts; right Option enters macOS special characters.
 macos-option-as-alt = left
+
 # When you ssh to another computer, copy Ghostty's terminal description there if
 # it's missing (ssh-terminfo), and otherwise fall back to a common terminal type
 # that computer knows (ssh-env), so programs there draw the screen correctly.

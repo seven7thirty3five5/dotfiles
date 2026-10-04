@@ -3,6 +3,8 @@
 
 # Inherit built-in defaults (including hotkeys) for every setting not listed here.
 ignore_missing_fields = true
+
+# Catppuccin Mocha, one of the themes superfile installs in its theme folder.
 theme = "catppuccin-mocha"
 
 # z opens a zoxide jump prompt (superfile's open_zoxide hotkey).

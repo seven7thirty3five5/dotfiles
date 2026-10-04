@@ -35,19 +35,27 @@ jobs:
   runner:
     # The job's name in the Actions tab, e.g. "install.sh (macos-latest)".
     name: install.sh (${{ matrix.os }})
+
+    # Run on a fresh virtual machine of each operating system in the matrix below.
     runs-on: ${{ matrix.os }}
+
     # Installing every package takes a few minutes; stop if it hangs far longer.
     timeout-minutes: 45
+
     strategy:
       # Let the other machine finish even if one fails, so a single run shows
       # whether a problem affects macOS, Linux, or both.
       fail-fast: false
+
+      # Run the job once per value: one macOS and one Linux virtual machine.
       matrix:
         os: [macos-latest, ubuntu-latest]
+
     # Run every `run:` step with bash, which stops a step at its first failing command.
     defaults:
       run:
         shell: bash
+
     steps:
       # Download the repository (this commit) into the virtual machine.
       - uses: actions/checkout@v7
@@ -102,19 +110,26 @@ jobs:
   container:
     # The job's name in the Actions tab, e.g. "install.sh (fresh Ubuntu, no-sudo)".
     name: install.sh (fresh Ubuntu, ${{ matrix.access }})
+
+    # One of GitHub's Ubuntu virtual machines, which hosts the container below.
     runs-on: ubuntu-latest
+
     # Run the steps inside a plain Ubuntu 24.04 container (a minimal, separate Linux
     # system) instead of on GitHub's machine, which already has Homebrew installed.
     container: ubuntu:24.04
+
     # Installing Homebrew from scratch plus every package takes a few minutes;
     # stop if it hangs far longer.
     timeout-minutes: 60
+
     strategy:
       # Let the other variant finish even if one fails.
       fail-fast: false
+
       # Run the job twice: once for a user who may use sudo, once for one who may not.
       matrix:
         access: [sudo, no-sudo]
+
     steps:
       # The container starts almost empty and runs as root (the administrator). Install
       # the few programs a typical machine already has, then create a normal user,
@@ -124,12 +139,15 @@ jobs:
         run: |
           apt-get update
           apt-get install --no-install-recommends --yes ca-certificates curl git sudo
+
           if [ "${{ matrix.access }}" = no-sudo ]; then
             # Without sudo, the installer can't install system packages, so this
             # pretends an administrator already provided what Homebrew and LazyVim need.
             apt-get install --no-install-recommends --yes build-essential procps file zsh unzip
           fi
+
           useradd --create-home --shell /bin/bash tester
+
           if [ "${{ matrix.access }}" = sudo ]; then
             # Let tester use sudo without a password (CI can't type one).
             echo 'tester ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/tester

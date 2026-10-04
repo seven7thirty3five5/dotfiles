@@ -5,5 +5,6 @@
 # Claude Code's personal settings for a project, which aren't meant to be shared
 # (**/ matches any folder).
 **/.claude/settings.local.json
+
 # The file in which macOS's Finder remembers how a folder is displayed.
 .DS_Store

@@ -10,6 +10,7 @@
 # Where XDG programs look for system-wide settings and data, unless already set.
 export XDG_CONFIG_DIRS="${XDG_CONFIG_DIRS:-/etc/xdg}"
 export XDG_DATA_DIRS="${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+
 # XDG_RUNTIME_DIR belongs to the OS/session; do not invent a persistent path.
 
 # Ubuntu's /etc/zsh/zshrc runs its own compinit unless this is set; .zshrc runs ours.
@@ -22,6 +23,7 @@ skip_global_compinit=1
 # Homebrew's folders when this file runs again after Homebrew's setup.
 typeset -U path
 path=("$HOME/.local/bin" $path)
+
 # Docker Desktop's command-line tools, if it's installed (-d: the folder exists;
 # += adds to the end of the list).
 [[ -d "$HOME/.docker/bin" ]] && path+=("$HOME/.docker/bin")
@@ -41,6 +43,7 @@ export _ZO_DATA_DIR="$XDG_DATA_HOME/zoxide"
 # show colors instead of raw color codes.
 export PAGER="less"
 export LESS="-R"
+
 # The editor that programs open for you, such as git for commit messages: nvim
 # when it's installed, otherwise vi. $+commands[nvim] is 1 if nvim is on PATH,
 # and `A && B || C` runs B when A succeeds, otherwise C. Some programs read

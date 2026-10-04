@@ -10,6 +10,7 @@ local map = vim.keymap.set
 -- zz scrolls the view so the cursor line is in the middle of the window.
 map("n", "<C-d>", "<C-d>zz", { desc = "Scroll down and center" })
 map("n", "<C-u>", "<C-u>zz", { desc = "Scroll up and center" })
+
 -- n always searches forward and N backward, even after ?, as LazyVim's own n/N do
 -- (vim-galore's "saner behavior of n and N"); zz centers the match, zv opens its fold.
 -- expr = true: the action is an expression that works out which keys to press.

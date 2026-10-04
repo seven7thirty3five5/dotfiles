@@ -16,11 +16,13 @@ prSections:
       filters: is:open review-requested:@me
     - title: Involved
       filters: is:open involves:@me -author:@me
+
     # Approved, non-draft PRs with successful checks; other merge requirements may remain.
     - title: Approved & green
       filters: is:open author:@me review:approved status:success draft:false
     - title: Changes requested
       filters: is:open author:@me review:changes_requested
+
 issuesSections:
     - title: My Issues
       filters: is:open author:@me
@@ -28,6 +30,7 @@ issuesSections:
       filters: is:open assignee:@me
     - title: Involved
       filters: is:open involves:@me -author:@me
+
 # Notification tabs, filtered by why GitHub notified you (reason:...).
 notificationsSections:
     - title: All
@@ -46,11 +49,13 @@ notificationsSections:
       filters: reason:subscribed
     - title: Team Mentioned
       filters: reason:team-mention
+
 # How often, in seconds, gh-dash refreshes the branches and PRs in its view of a
 # repository.
 repo:
     branchesRefetchIntervalSeconds: 30
     prsRefetchIntervalSeconds: 60
+
 # Settings for every section: the preview pane (on the right, 45% of the width,
 # or below the list when the terminal is narrow), 20 items per section, "LGTM"
 # as the starting text when you approve a PR, the PR view first, and which
@@ -61,11 +66,13 @@ defaults:
         width: 0.45
         height: 0.6
         position: auto
+
     prsLimit: 20
     prApproveComment: LGTM
     issuesLimit: 20
     notificationsLimit: 20
     view: prs
+
     layout:
         prs:
             updatedAt:
@@ -89,6 +96,7 @@ defaults:
                 hidden: true
             lines:
                 width: 15
+
         issues:
             updatedAt:
                 width: 5
@@ -103,7 +111,9 @@ defaults:
             assignees:
                 width: 20
                 hidden: true
+
     refetchIntervalMinutes: 30
+
 # Keys of your own. In any view, g opens lazygit in the selected item's local
 # copy of the repository (found through repoPaths below). {{.RepoPath}} is filled
 # in by gh-dash; `command cd` uses the shell's own cd, even where zoxide has
@@ -114,10 +124,12 @@ keybindings:
           name: lazygit
           command: >
             command cd {{.RepoPath}} && lazygit
+
 # Where your local copies (clones) of GitHub repositories are: * matches any
 # repository name, so seven7thirty3five5/dotfiles would be ~/Projects/dotfiles.
 repoPaths:
     seven7thirty3five5/*: ~/Projects/*  # local clones, for checkout and {{.RepoPath}}
+
 theme:
     # Catppuccin Mocha, blue accent (from catppuccin/gh-dash).
     colors:
@@ -135,14 +147,17 @@ theme:
             primary: "#89b4fa"
             secondary: "#45475a"
             faint: "#313244"
+
     # Show how many items each tab has, and lines between table rows.
     ui:
         sectionsShowCount: true
         table:
             showSeparator: true
             compact: false
+
 pager:
     diff: delta  # renders with your git [delta] settings (Catppuccin, line numbers)
+
 # q quits without asking; authors get icons; when started inside a repository's
 # folder, gh-dash first shows only that repository's items; and notifications you
 # have already read are listed too.
