@@ -15,6 +15,9 @@ status_indicators = "symbols"
 [ui.toast]
 delivery = "terminal"
 
+[keys]
+prefix = "ctrl+space"
+
 # Lazygit in a popup over the current pane (the example in herdr --default-config).
 [[keys.command]]
 key = "prefix+alt+g"
