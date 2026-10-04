@@ -381,10 +381,8 @@ ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#7f849c'
 (( $+commands[zoxide] )) && eval "$(zoxide init zsh --cmd cd)"
 (( $+commands[starship] )) && eval "$(starship init zsh)"
 
-# Scope lazydocker's generic CONFIG_DIR variable to this one command.
-(( $+commands[lazydocker] )) && lazydocker() { CONFIG_DIR="$XDG_CONFIG_HOME/lazydocker" command lazydocker "$@"; }
-
-# Open LazyDocker's interactive Docker interface using the scoped config above.
+# Open LazyDocker's interactive Docker interface. Like lazygit, it reads its
+# settings from $XDG_CONFIG_HOME (~/.config/lazydocker/config.yml).
 (( $+commands[lazydocker] )) && alias lzd='lazydocker'
 
 # Machine-specific settings (not tracked by chezmoi), loaded last so they can

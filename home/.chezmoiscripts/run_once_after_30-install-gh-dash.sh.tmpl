@@ -13,14 +13,10 @@ set -eu
 
 # Find Homebrew; this sets $brew (see find-brew.sh in home/.chezmoitemplates).
 {{ template "find-brew.sh" . }}
-# Where gh keeps its extensions: $GH_DATA_DIR if you set it, otherwise
-# $XDG_DATA_HOME/gh, which is ~/.local/share/gh by default.
-# (${NAME:-default} means "the value of $NAME, or default when it isn't set".)
-if [ -n "${GH_DATA_DIR:-}" ]; then
-  gh_data=$GH_DATA_DIR
-else
-  gh_data=${XDG_DATA_HOME:-$HOME/.local/share}/gh
-fi
+# Where gh keeps its extensions: $XDG_DATA_HOME/gh, which is ~/.local/share/gh
+# by default. (${NAME:-default} means "the value of $NAME, or default when it
+# isn't set".)
+gh_data=${XDG_DATA_HOME:-$HOME/.local/share}/gh
 
 # Check for the extension's folder (-d) instead of asking `gh extension list`,
 # which prints nothing until you have logged in.

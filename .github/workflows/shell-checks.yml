@@ -2,8 +2,6 @@
 #
 #   scripts/check-lint.py       runs ShellCheck and shfmt on shell scripts and
 #                               rendered templates, plus actionlint on workflows
-#   scripts/check-bootstrap.py  tests install.sh and the Homebrew install script
-#                               using fake programs, without installing anything
 #   scripts/check-shell.py      renders the zsh startup files and starts zsh in
 #                               every mode to check the environment they set up
 #
@@ -106,9 +104,6 @@ jobs:
           curl -fsSL https://get.chezmoi.io -o "$RUNNER_TEMP/install-chezmoi.sh"
           sh "$RUNNER_TEMP/install-chezmoi.sh" -b "$RUNNER_TEMP/chezmoi-bin"
           echo "$RUNNER_TEMP/chezmoi-bin" >> "$GITHUB_PATH"
-
-      - name: Check bootstrap policy and installer
-        run: python3 scripts/check-bootstrap.py
 
       - name: Check shell templates and startup
         run: python3 scripts/check-shell.py

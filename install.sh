@@ -8,12 +8,15 @@
 #
 # What it does:
 #   1. Gets chezmoi, the tool that manages these dotfiles, if it isn't installed.
-#   2. Runs `chezmoi init --apply`. That downloads this repository, writes the
-#      dotfiles, and runs the scripts in home/.chezmoiscripts, which install
-#      Homebrew, the Brewfile's packages, gh-dash and LazyVim's plugins, and make
-#      zsh your login shell.
+#   2. Runs `chezmoi init --apply`. That downloads this repository, asks the
+#      setup questions, writes the dotfiles, and runs the scripts in
+#      home/.chezmoiscripts, which install Homebrew, the Brewfile's packages,
+#      gh-dash and LazyVim's plugins, and make zsh your login shell.
 #   3. Runs `chezmoi init` once more. chezmoi's own settings use delta (for diffs)
 #      and nvim (for merges) only if they exist, and they didn't before step 2.
+#   4. Lists what you still have to do by hand, such as asking an administrator
+#      to change your login shell. Where you answer no to "Use sudo on this
+#      machine", setup never runs sudo, so it never asks for a sudo password.
 #
 # It is safe to run again: an existing ~/.local/share/chezmoi is reused.
 # Any arguments you give this script are passed on to `chezmoi init`.
@@ -37,8 +40,11 @@ if command -v chezmoi >/dev/null 2>&1; then
   chezmoi=$(command -v chezmoi)
 else
   # Download chezmoi's official installer and let it put chezmoi in the
-  # temporary folder (-b). The Brewfile installs a permanent copy later.
-  sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$tmpdir"
+  # temporary folder (-b). The installer is saved in a variable first, so that
+  # if the download fails, this script stops right here instead of running an
+  # empty installer. The Brewfile installs a permanent copy of chezmoi later.
+  chezmoi_installer=$(curl -fsLS https://get.chezmoi.io)
+  sh -c "$chezmoi_installer" -- -b "$tmpdir"
   chezmoi=$tmpdir/chezmoi
 fi
 
@@ -69,5 +75,66 @@ eval "$brew_env"
 
 # delta and nvim are on PATH now, so this records them in chezmoi's settings.
 "$chezmoi" init "$@"
+
+# --- 4. List what's left to do by hand ---------------------------------------
+
+# Setup doesn't stop for steps that need an administrator. Instead, this checks
+# what's still missing and collects what you need to do in $todo, one step per
+# line, to print at the end.
+todo=
+
+# Ask chezmoi how you answered "Use sudo on this machine" (true or false) and
+# which system this is (darwin on macOS); the steps below depend on both.
+use_sudo=$("$chezmoi" execute-template '{{ .useSudo }}')
+os=$("$chezmoi" execute-template '{{ .chezmoi.os }}')
+
+# Is Homebrew's zsh your login shell yet? dscl (macOS) or getent (Linux) looks
+# it up, as in the login shell script.
+zsh=$prefix/bin/zsh
+user=$(id -un)
+if [ "$os" = darwin ]; then
+  login_shell=$(dscl . -read "/Users/$user" UserShell | awk '{print $2}')
+else
+  login_shell=$(getent passwd "$user" | cut -d: -f7)
+fi
+
+if [ "$login_shell" != "$zsh" ]; then
+  if [ "$use_sudo" = true ]; then
+    # Setup tried with sudo but couldn't, for example because sudo's password
+    # prompt timed out.
+    todo="$todo
+  - Make $zsh your login shell: run  sudo chsh -s $zsh $user
+    (if IT manages your account, ask them to change it instead)."
+  else
+    todo="$todo
+  - Ask IT (an administrator) to change your login shell to $zsh.
+    Until then, start zsh by typing $zsh"
+  fi
+fi
+
+# Programs that need sudo to install, so setup installs them only on Linux with
+# sudo: a C compiler (cc) builds Neovim's syntax highlighting, Homebrew uses
+# file, and Neovim's Mason uses unzip.
+missing=
+for tool in cc file unzip; do
+  if ! command -v "$tool" >/dev/null 2>&1; then
+    missing="$missing $tool"
+  fi
+done
+
+if [ -n "$missing" ]; then
+  if [ "$use_sudo" = true ]; then
+    todo="$todo
+  - Install with your system's package manager:$missing"
+  else
+    todo="$todo
+  - Ask IT (an administrator) to install:$missing"
+  fi
+fi
+
+# -n: the text isn't empty, so there is something left to do.
+if [ -n "$todo" ]; then
+  echo "Still to do:$todo"
+fi
 
 echo "Done. Open a new terminal to start using the new setup."

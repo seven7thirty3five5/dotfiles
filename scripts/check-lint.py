@@ -2,7 +2,8 @@
 """Lint shell scripts and GitHub workflows without running the setup scripts.
 
 Run with Python 3.8+, chezmoi, shellcheck, shfmt and actionlint on PATH.
-Chezmoi templates are rendered for macOS and Linux into temporary files before
+Chezmoi templates are rendered for macOS and Linux, with both answers to the
+"Use sudo on this machine" setup question, into temporary files before
 ShellCheck reads them. shfmt checks their rendered formatting using the original
 relative filenames in a temporary home with home/dot_editorconfig installed.
 Zsh startup files are checked separately by check-shell.py; ShellCheck does not
@@ -102,15 +103,22 @@ def main():
         failures = []
         for path in shell_files():
             template = path.suffix == ".tmpl" or ".chezmoitemplates" in path.parts
+            # A template keeps different parts on each kind of machine and for
+            # each answer to the setup question "Use sudo on this machine"
+            # (useSudo), so check every combination. Plain scripts are checked once.
             variants = (
-                (("darwin", "arm64"), ("darwin", "amd64"), ("linux", "amd64"))
-                if template else ((None, None),)
+                [
+                    (system, arch, use_sudo)
+                    for system, arch in (("darwin", "arm64"), ("darwin", "amd64"), ("linux", "amd64"))
+                    for use_sudo in (True, False)
+                ]
+                if template else [(None, None, None)]
             )
-            for system, arch in variants:
+            for system, arch, use_sudo in variants:
                 label = str(path.relative_to(SOURCE))
                 content = path.read_text()
                 if template:
-                    label += f" ({system}/{arch})"
+                    label += f" ({system}/{arch}, useSudo={json.dumps(use_sudo)})"
                     context = {
                         "os": system, "arch": arch,
                         "homeDir": str(home), "sourceDir": str(STATE),
@@ -119,9 +127,13 @@ def main():
                         f"{json.dumps(key)} {json.dumps(value)}"
                         for key, value in context.items()
                     )
+                    # Inside `with`, the template reads this made-up data instead
+                    # of chezmoi's real data: .chezmoi.os, .chezmoi.arch and so
+                    # on, and .useSudo (json.dumps writes true or false).
                     content = run(
                         chezmoi, env,
-                        '{{ with dict "chezmoi" (dict ' + fields + ') }}'
+                        '{{ with dict "chezmoi" (dict ' + fields + ') "useSudo" '
+                        + json.dumps(use_sudo) + ' }}'
                         + content + '{{ end }}',
                     )
 

@@ -72,14 +72,16 @@ jobs:
           mkdir -p "$HOME/.local/share"
           cp -R "$GITHUB_WORKSPACE" "$HOME/.local/share/chezmoi"
 
-      # Workaround: on a real machine, chezmoi asks for your Git name and email and
-      # whether this machine publishes changes. CI can't answer questions, so this
-      # writes made-up answers into chezmoi's settings file in advance; chezmoi's
-      # promptStringOnce/promptBoolOnce skip any question that already has an answer.
+      # Workaround: on a real machine, chezmoi asks for your Git name and email,
+      # whether this machine publishes changes, and whether it may use sudo. CI
+      # can't answer questions, so this writes the answers into chezmoi's settings
+      # file in advance; chezmoi's promptStringOnce/promptBoolOnce skip any
+      # question that already has an answer. GitHub's machines allow sudo without
+      # a password, so useSudo is true here.
       - name: Answer chezmoi's setup questions
         run: |
           mkdir -p "$HOME/.config/chezmoi"
-          printf '[data]\ngitName = "CI"\ngitEmail = "ci@example.invalid"\npublishDotfiles = false\n' \
+          printf '[data]\ngitName = "CI"\ngitEmail = "ci@example.invalid"\npublishDotfiles = false\nuseSudo = true\n' \
             > "$HOME/.config/chezmoi/chezmoi.toml"
 
       # Run the installer twice; the second run proves that running it again is safe.
@@ -153,14 +155,16 @@ jobs:
 
       # Same two preparations as in the runner job above, but for tester: put this
       # commit where install.sh looks for the repository, and answer chezmoi's
-      # questions in advance. `install -d -o tester -g tester` creates folders owned
-      # by tester, and chown hands the copied files to tester too.
+      # questions in advance. The answer to "Use sudo on this machine" matches the
+      # matrix: ${{ matrix.access == 'sudo' }} becomes true or false. `install -d
+      # -o tester -g tester` creates folders owned by tester, and chown hands the
+      # copied files to tester too.
       - name: Use this commit as the dotfiles repository, and answer chezmoi's questions
         run: |
           install -d -o tester -g tester /home/tester/.local /home/tester/.local/share \
             /home/tester/.config /home/tester/.config/chezmoi
           cp -R "$GITHUB_WORKSPACE" /home/tester/.local/share/chezmoi
-          printf '[data]\ngitName = "CI"\ngitEmail = "ci@example.invalid"\npublishDotfiles = false\n' \
+          printf '[data]\ngitName = "CI"\ngitEmail = "ci@example.invalid"\npublishDotfiles = false\nuseSudo = ${{ matrix.access == 'sudo' }}\n' \
             > /home/tester/.config/chezmoi/chezmoi.toml
           chown -R tester:tester /home/tester/.local/share/chezmoi /home/tester/.config/chezmoi
 

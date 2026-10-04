@@ -4,8 +4,12 @@ Chezmoi configurations for macOS (Apple silicon) and Linux.
 
 ## Set up a new machine
 
-Run one command. It asks for your Git name and email, and whether this machine should
-commit and push dotfile changes; answer yes only on the machine you publish from.
+Run one command. It asks for your Git name and email, whether this machine should
+commit and push dotfile changes (answer yes only on the machine you publish from), and
+whether it may use sudo. Answer no to the sudo question on a machine where you have no
+administrator rights, such as a locked-down work computer: setup then never runs sudo,
+so it never asks for a sudo password, and at the end it lists what you still need an
+administrator for.
 
 ```sh
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/seven7thirty3five5/dotfiles/main/install.sh)"
@@ -14,18 +18,17 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/seven7thirty3five5/dotfile
 [`install.sh`](install.sh) runs `chezmoi init --apply`, and the scripts in
 [`home/.chezmoiscripts`](home/.chezmoiscripts) set the machine up in this order:
 
-1. **Homebrew**, if it is missing:
-   - macOS (Apple silicon): `/opt/homebrew` is the only supported prefix. Installing
-     it requires sudo access; without it, setup stops and asks for an administrator
-     to install Homebrew there. An existing installation is reused without sudo.
-     Homebrew installs Apple's Command Line Tools when needed. Intel Macs are not
-     supported by these dotfiles.
-   - Linux with sudo: `/home/linuxbrew/.linuxbrew`. Setup first installs the build
+1. **Homebrew**, if it is missing (an existing installation is reused without sudo):
+   - macOS (Apple silicon): `/opt/homebrew` is the only supported prefix, and
+     installing it needs sudo. If you answered no, setup stops and says to ask an
+     administrator to install Homebrew there. Homebrew installs Apple's Command Line
+     Tools when needed. Intel Macs are not supported by these dotfiles.
+   - Linux, with sudo: `/home/linuxbrew/.linuxbrew`. Setup first installs the build
      tools Homebrew requires, plus unzip, with `apt-get`, `dnf` or `pacman`.
-   - Without sudo on Linux: `~/.linuxbrew`, or `~/.brew` when that path would be longer
+   - Linux, without sudo: `~/.linuxbrew`, or `~/.brew` when that path would be longer
      than the default. Homebrew uses its prebuilt bottles in a custom prefix only if it
      is no longer than the default ([support tiers](https://docs.brew.sh/Support-Tiers)).
-     A C compiler and `file` must then come from your administrator.
+     A C compiler, `file` and `unzip` must then come from your administrator.
 2. **The [Brewfile](home/dot_config/homebrew/Brewfile.tmpl)**, with `brew bundle --no-upgrade`.
    It includes zsh itself, so macOS and Linux run the same version. Mole, GNU tar and
    the Ghostty cask are macOS-only; the Brewfile is a template that leaves them out on
@@ -33,21 +36,40 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/seven7thirty3five5/dotfile
 3. **The dotfiles** themselves.
 4. **[gh-dash](https://www.gh-dash.dev/)**, the GitHub CLI extension.
 5. **LazyVim's plugins**, headless, at the versions in `lazy-lock.json`.
-6. **Homebrew's zsh as the login shell**: setup adds it to `/etc/shells` with sudo
-   (in a terminal, sudo asks for your password) and switches to it with `chsh`.
-   Without sudo, it says what to ask an administrator for.
+6. **Homebrew's zsh as the login shell**, only if you answered yes to sudo: setup
+   adds it to `/etc/shells` and switches to it with `chsh` (sudo asks for your
+   password). If that isn't possible, setup carries on.
 
 `install.sh` then initializes Homebrew in its own shell and runs `chezmoi init` once
-more so chezmoi's own config picks up `delta` and `nvim`. Re-running it is safe, and
-extra arguments are passed to `chezmoi init`.
+more so chezmoi's own config picks up `delta` and `nvim`. Finally it lists anything
+left to do by hand, such as asking an administrator (IT) to change your login shell
+or to install a C compiler, `file` or `unzip`. Re-running it is safe, and extra
+arguments are passed to `chezmoi init`. To change an answer later, edit it under
+`[data]` in `~/.config/chezmoi/chezmoi.toml`.
+
+### On a machine that already has dotfiles
+
+The install replaces any existing file that these dotfiles manage, and deletes the old
+files listed in [`home/.chezmoiremove`](home/.chezmoiremove), such as `~/.zshrc`,
+without asking and without a backup. To see what would change first, download chezmoi
+and the repository without applying anything, then compare:
+
+```sh
+sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin" init seven7thirty3five5
+"$HOME/.local/bin/chezmoi" diff --exclude=scripts
+```
+
+The first command also asks the setup questions. Copy anything you want to keep, such
+as machine-specific aliases, into `~/.config/zsh/.zshrc.local`, then run the
+one-command install above; it reuses the downloaded repository and your answers.
 
 ### After setup
 
 - Open a new terminal.
 - Run `gh auth login` before using `gh dash`; installing it needed no login.
 - In Neovim, `:LazyHealth` and `:checkhealth mason` report anything still missing.
-  Language servers that need Node use your pnpm-managed runtime; Node and pnpm are
-  not installed by the Brewfile.
+  Node isn't installed or put on PATH, so LazyVim extras whose language servers are
+  npm packages (such as `lang.json` or `lang.typescript`) can't install until it is.
 - Ghostty bundles JetBrains Mono and the Nerd Font symbols. Over SSH, LazyVim, lazygit,
   eza and gh-dash icons need a Nerd Font (v3 or newer) in the connecting terminal.
 - `lazydocker` and `act` need a working Docker installation, which you set up separately.
@@ -158,15 +180,15 @@ in which lazy.nvim records the exact version of each plugin.
 
 GitHub Actions runs three workflows on pushes and pull requests:
 
-- **Shell checks** run ShellCheck and shfmt on plain shell scripts and chezmoi
-  templates rendered for macOS and Linux, and actionlint on all workflows. They
-  also test the bootstrap prefix policy, sudo requirements and installer PATH
-  propagation with stand-ins, then run `scripts/check-shell.py` on macOS and Linux.
+- **Shell checks** run ShellCheck and shfmt on plain shell scripts and on chezmoi
+  templates rendered for macOS and Linux with both answers to the sudo question, and
+  actionlint on all workflows, then run `scripts/check-shell.py` on macOS and Linux.
 - **Bootstrap** runs `install.sh` against the pushed commit on GitHub's macOS and
   Ubuntu runners, and in fresh Ubuntu containers as a user with sudo and as one
-  without (Homebrew then goes into the home folder). `scripts/check-install.sh` then
-  checks the result: the tools on PATH, `chezmoi verify`, the Homebrew prefix, the
-  symlinks, gh-dash, LazyVim's plugins and, where sudo works, the login shell.
+  without, who answers no to the sudo question (Homebrew then goes into the home
+  folder). `scripts/check-install.sh` then checks the result: the tools on PATH,
+  `chezmoi verify`, the Homebrew prefix, the symlinks, gh-dash, LazyVim's plugins
+  and, where setup may use sudo, the login shell.
 - **Secret scan** runs gitleaks over the whole history, which also covers edits made
   without `chezmoi add` and its secret check.
 
@@ -175,11 +197,10 @@ You can also run the checks locally with Python 3.8+, `chezmoi`, `zsh`, `shellch
 
 ```sh
 python3 scripts/check-lint.py
-python3 scripts/check-bootstrap.py
 python3 scripts/check-shell.py
 ```
 
-The script renders the shell files and checks Zsh syntax, then tests login and
+`check-shell.py` renders the shell files and checks Zsh syntax, then tests login and
 non-login startup in interactive and noninteractive modes. It verifies quiet
 SSH-style startup, completion initialization, the editor fallback, PATH priority,
 and the macOS `.zprofile` / Linux `.zshrc` split for Homebrew initialization.

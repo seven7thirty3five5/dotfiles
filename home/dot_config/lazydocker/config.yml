@@ -1,5 +1,6 @@
 # lazydocker's settings. lazydocker (lzd) is a terminal interface for Docker. It
-# finds this file because .zshrc runs it with CONFIG_DIR set to this folder.
+# finds this file in $XDG_CONFIG_HOME/lazydocker, and ~/.zshenv sets
+# XDG_CONFIG_HOME to ~/.config.
 
 # Catppuccin Mocha (blue accent), reusing lazygit's official Catppuccin colors:
 # there is no lazydocker port, but lazydocker takes the same theme keys and hex values.
