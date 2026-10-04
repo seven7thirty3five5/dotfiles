@@ -114,7 +114,7 @@ class BootstrapChecks(unittest.TestCase):
                     self.assertEqual(log.read_text(), "0:1\n", "macOS must use the default prefix")
 
     def installer_fixture(self):
-        prefix = self.home / ".brew"
+        prefix = self.temporary / "mock homebrew"
         brew_bin = prefix / "bin"
         brew_bin.mkdir(parents=True)
         exports = [
@@ -139,32 +139,16 @@ import sys
 args = sys.argv[1:]
 with open(os.environ["TEST_CALLS"], "a") as log:
     log.write(json.dumps(args) + "\\n")
-command = next(arg for arg in args if arg in ("init", "managed", "execute-template"))
-if command == "execute-template":
-    template = args[args.index(command) + 1]
-    fields = {
-        "workingTree": ".local/share/chezmoi", "configFile": ".config/chezmoi/chezmoi.toml",
-        "cacheDir": ".cache/chezmoi", "destDir": "",
-    }
-    if "brew-prefix" in template:
-        print(os.environ["TEST_PREFIX"])
-    else:
-        field = template.split(".chezmoi.")[1].split()[0]
-        if field != "config.persistentState":
-            print(Path(os.environ["HOME"]) / fields[field], end="")
-elif command == "managed":
-    print(Path(os.environ["HOME"]) / ".zshenv")
-    print(Path(os.environ["HOME"]) / ".config/nvim/lazy-lock.json")
-elif command == "init" and "--apply" in args:
-    if "TEST_NEW_PACKAGE" in os.environ:
-        state = Path(os.environ["HOME"]) / ".local/state/dotfiles-bootstrap"
-        (state / "prerequisites-manager").write_text("apt\\n")
-        Path(os.environ["TEST_PACKAGES"]).write_text("base\\n" + os.environ["TEST_NEW_PACKAGE"] + "\\n")
+if args[0] == "execute-template":
+    print(os.environ["TEST_PREFIX"])
+elif args[0] == "init" and "--apply" in args:
     sys.exit(int(os.environ.get("TEST_APPLY_STATUS", "0")))
-elif command == "init" and "seven7thirty3five5" not in args:
+elif args[0] == "init":
     assert os.environ.get("TEST_BREW_LOADED") == "1", "Homebrew shellenv was not inherited"
     for tool in ("delta", "nvim"):
         assert shutil.which(tool) == str(Path(os.environ["TEST_PREFIX"]) / "bin" / tool), tool
+else:
+    sys.exit("unexpected chezmoi command: " + str(args))
 ''')
         return log
 
@@ -173,54 +157,12 @@ elif command == "init" and "seven7thirty3five5" not in args:
         result = self.run_command(["sh", str(SOURCE / "install.sh"), "--branch", "bootstrap"])
         self.assertEqual(result.returncode, 0, result.stderr)
         calls = [json.loads(line) for line in log.read_text().splitlines()]
-        self.assertEqual([call for call in calls if call[0] == "init"], [
-            ["init", "--use-builtin-git=true", "--branch", "bootstrap", "seven7thirty3five5"],
-            ["init", "--use-builtin-git=true", "--apply", "--branch", "bootstrap"],
+        self.assertEqual(calls, [
+            ["init", "--apply", "--use-builtin-git=true", "--branch", "bootstrap", "seven7thirty3five5"],
+            ["execute-template", '{{ includeTemplate "brew-prefix" . }}'],
             ["init", "--branch", "bootstrap"],
         ])
-        queries = [call for call in calls if call[0] != "init"]
-        self.assertTrue(all("--branch" not in call for call in queries))
-        inventory = self.home / ".local/state/dotfiles-bootstrap"
-        self.assertEqual((inventory / "homebrew-prefix").read_text().strip(), self.env["TEST_PREFIX"])
-        self.assertEqual((inventory / "workingTree").read_text(), str(self.home / ".local/share/chezmoi"))
-        self.assertIn(str(self.home / ".zshenv"), (inventory / "managed-files").read_text().splitlines())
         self.assertIn("Done.", result.stdout)
-
-    def test_repeat_install_preserves_inventory_and_forwards_paths(self):
-        log = self.installer_fixture()
-        args = ["--source", str(self.home / "source"), "--config", str(self.home / "config.toml")]
-        for _ in range(2):
-            result = self.run_command(["sh", str(SOURCE / "install.sh"), *args])
-            self.assertEqual(result.returncode, 0, result.stderr)
-            inventory = self.home / ".local/state/dotfiles-bootstrap/managed-files"
-            with inventory.open("a") as stream:
-                stream.write(str(self.home / "previously-managed") + "\n")
-        lines = inventory.read_text().splitlines()
-        self.assertIn(str(self.home / "previously-managed"), lines)
-        for call in [json.loads(line) for line in log.read_text().splitlines()]:
-            self.assertIn("--source", call)
-            self.assertIn("--config", call)
-
-    def test_failed_install_records_new_system_dependencies(self):
-        self.installer_fixture()
-        packages = self.temporary / "packages"
-        packages.write_text("base\n")
-        self.env.update(TEST_PACKAGES=str(packages), TEST_NEW_PACKAGE="new-dependency", TEST_APPLY_STATUS="9")
-        executable(self.bin / "uname", '#!/bin/sh\necho Linux\n')
-        executable(self.bin / "apt-get", '#!/bin/sh\nexit 0\n')
-        executable(self.bin / "dpkg-query", '#!/bin/sh\nwhile read -r package; do printf "%s\\tinstalled\\n" "$package"; done < "$TEST_PACKAGES"\n')
-        result = self.run_command(["sh", str(SOURCE / "install.sh")])
-        self.assertEqual(result.returncode, 9, result.stderr)
-        inventory = self.home / ".local/state/dotfiles-bootstrap"
-        self.assertEqual((inventory / "prerequisites-packages").read_text(), "new-dependency\n")
-        self.assertTrue((inventory / "managed-files").is_file())
-        # A later independent installation must not enter bootstrap's removal list.
-        packages.write_text("base\nnew-dependency\ninstalled-separately\n")
-        self.env.pop("TEST_NEW_PACKAGE")
-        self.env.pop("TEST_APPLY_STATUS")
-        result = self.run_command(["sh", str(SOURCE / "install.sh")])
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual((inventory / "prerequisites-packages").read_text(), "new-dependency\n")
 
     def test_installer_stops_after_failure(self):
         for overrides, expected in (
@@ -236,7 +178,7 @@ elif command == "init" and "seven7thirty3five5" not in args:
                 calls = [json.loads(line) for line in log.read_text().splitlines()]
                 self.assertFalse(any(call == ["init"] for call in calls))
                 self.assertNotIn("Done.", result.stdout)
-                shutil.rmtree(self.home / ".brew")
+                shutil.rmtree(self.temporary / "mock homebrew")
                 log.unlink()
                 for name in ("TEST_APPLY_STATUS", "TEST_SHELLENV_FAIL"):
                     self.env.pop(name, None)

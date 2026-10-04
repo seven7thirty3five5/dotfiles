@@ -40,8 +40,5 @@ jobs:
       - name: Check bootstrap policy and installer
         run: python3 scripts/check-bootstrap.py
 
-      - name: Check uninstall and repeat cleanup in isolated homes
-        run: python3 scripts/check-uninstall.py
-
       - name: Check shell templates and startup
         run: python3 scripts/check-shell.py

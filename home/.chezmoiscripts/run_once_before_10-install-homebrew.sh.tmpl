@@ -52,21 +52,14 @@ fi
 install_homebrew
 {{- else if eq .chezmoi.os "linux" -}}
 if have_sudo; then
-  install_state=${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles-bootstrap
-  umask 077
-  mkdir -p "$install_state"
   # Homebrew's Linux requirements, plus zsh for the login shell and unzip for Mason.
   if command -v apt-get >/dev/null 2>&1; then
-    printf '%s\n' apt > "$install_state/prerequisites-manager"
     sudo apt-get update
     sudo apt-get install -y build-essential procps curl file git ca-certificates zsh unzip
   elif command -v dnf >/dev/null 2>&1; then
-    printf '%s\n' dnf > "$install_state/prerequisites-manager"
-    printf '%s\n' development-tools > "$install_state/prerequisites-group"
     sudo dnf group install -y development-tools || sudo dnf group install -y 'Development Tools'
     sudo dnf install -y procps-ng curl file git zsh unzip
   elif command -v pacman >/dev/null 2>&1; then
-    printf '%s\n' pacman > "$install_state/prerequisites-manager"
     sudo pacman -S --needed --noconfirm base-devel procps-ng curl file git zsh unzip
   else
     echo "warning: unknown package manager; install a C compiler, curl, file, git, zsh and unzip." >&2
