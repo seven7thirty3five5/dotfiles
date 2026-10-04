@@ -1,0 +1,45 @@
+# Formulae for the tools configured by these dotfiles and companion CLI utilities.
+# Install manually with the commands in README.md.
+
+# Dotfile management.
+brew "chezmoi"
+
+# Interactive shell.
+brew "atuin"
+brew "eza"
+brew "fzf"
+brew "starship"
+brew "zoxide"
+brew "zsh-autosuggestions"
+brew "zsh-syntax-highlighting"
+
+# Git and GitHub. Install gh-dash separately as a gh extension (see README.md).
+brew "git"
+brew "git-delta"
+brew "difftastic"
+brew "gh"
+brew "lazygit"
+
+# Neovim and search. lazy.nvim installs LazyVim on first launch.
+brew "neovim"
+brew "ast-grep"
+brew "fd"
+brew "ripgrep"
+
+# Terminal utilities.
+brew "bat"
+brew "btop"
+brew "duf"
+brew "dust"
+brew "glow"
+brew "herdr"
+brew "hyperfine"
+brew "lazydocker"
+brew "superfile"
+brew "yq"
+
+# Mason needs GNU tar; Linux supplies it through the system package manager.
+brew "gnu-tar" if OS.mac?
+
+# Mole is macOS-only.
+brew "mole" if OS.mac?

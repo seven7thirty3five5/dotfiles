@@ -1,0 +1,41 @@
+name: Shell checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  shell:
+    name: Zsh (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install Zsh on Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends --yes zsh
+
+      - name: Install chezmoi in the runner's temporary directory
+        run: |
+          curl -fsSL https://get.chezmoi.io -o "$RUNNER_TEMP/install-chezmoi.sh"
+          sh "$RUNNER_TEMP/install-chezmoi.sh" -b "$RUNNER_TEMP/chezmoi-bin"
+          echo "$RUNNER_TEMP/chezmoi-bin" >> "$GITHUB_PATH"
+
+      - name: Check shell templates and startup
+        run: python3 scripts/check-shell.py

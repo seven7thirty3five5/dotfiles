@@ -119,13 +119,16 @@ bindkey '^N'   down-line-or-beginning-search
 # Keys emacs mode leaves unbound.
 bindkey '^[[H'    beginning-of-line    # Home
 bindkey '^[OH'    beginning-of-line
+bindkey '^[[1~'   beginning-of-line    # Home/End as VT220-style terminals send them
+bindkey '^[[7~'   beginning-of-line
 bindkey '^[[F'    end-of-line          # End
 bindkey '^[OF'    end-of-line
-bindkey '^[[1~'   beginning-of-line    # Home/End as VT220-style terminals send them
-bindkey '^[[4~'   end-of-line
-bindkey '^[[7~'   beginning-of-line    # Home/End as rxvt-style terminals send them
+bindkey '^[[4~'   end-of-line          # Home/End as rxvt-style terminals send them
 bindkey '^[[8~'   end-of-line
+bindkey '^[[5~'   up-line-or-history    # Page Up: previous history entry
+bindkey '^[[6~'   down-line-or-history  # Page Down: next history entry
 bindkey '^[[3~'   delete-char          # Delete (fn-Backspace on a Mac)
+bindkey '^[[3;5~' kill-word            # Ctrl-Delete: delete the word ahead
 bindkey '^[[1;5C' forward-word         # Ctrl-Right
 bindkey '^[[1;5D' backward-word        # Ctrl-Left
 bindkey '^[[1;3C' forward-word         # Alt/Option-Right

@@ -5,12 +5,11 @@
 .zshrc
 
 # Using XDG config directory.
-.gitconfig
 .config/starship.toml
 
 # LazyVim starter files no longer tracked.
 .config/nvim/lua/plugins/example.lua
-.config/nvim/.neoconf.json
 .config/nvim/LICENSE
 .config/nvim/README.md
+.config/nvim/.git
 .config/nvim/.gitignore

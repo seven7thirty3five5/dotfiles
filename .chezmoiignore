@@ -1,5 +1,7 @@
-# Repository documentation is not a home-directory dotfile.
+# Repository documentation and validation tooling are not home-directory dotfiles.
 README.md
+.github
+scripts
 
 # Ghostty config is macOS-only.
 {{ if ne .chezmoi.os "darwin" }}
@@ -8,14 +10,3 @@ README.md
 
 # NEVER track machine-specific zsh settings.
 .config/zsh/.zshrc.local
-
-# Secrets and private state: chezmoi refuses to add these, even by accident
-# (this repo is public).
-.ssh/id_*
-.ssh/known_hosts*
-.config/gh/hosts.yml
-.config/cagent
-.config/codex
-.config/codexbar
-.config/devin
-**/.DS_Store
