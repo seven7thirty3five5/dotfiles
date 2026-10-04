@@ -36,3 +36,12 @@ type = "popup"
 command = "lazygit"
 width = "80%"
 height = "80%"
+
+# GitHub's PRs, issues and notifications in a gh dash popup.
+# Press the prefix, then Alt+H.
+[[keys.command]]
+key = "prefix+alt+h"
+type = "popup"
+command = "gh dash"
+width = "80%"
+height = "80%"
