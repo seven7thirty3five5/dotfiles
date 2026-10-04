@@ -118,6 +118,28 @@ def main():
         shell_bin.mkdir()
         for name in utilities:
             (shell_bin / name).symlink_to(binaries[name])
+
+        # Shared runner completion directories can trigger compaudit's prompt.
+        # Copy their functions into private directories; keep compinit's checks
+        # enabled and avoid depending on host permissions or vendor symlinks.
+        native_fpath = run(
+            [binaries["zsh"], "-d", "-f", "-c", "print -rl -- $fpath"],
+            environment(temporary / "native home", search_path, temporary), temporary
+        ).splitlines()
+        function_root = temporary / "zsh-functions"
+        function_root.mkdir(mode=0o700)
+        function_paths = []
+        for index, directory in enumerate(native_fpath):
+            origin = Path(directory)
+            if not origin.is_dir():
+                continue
+            target = function_root / str(index)
+            target.mkdir(mode=0o700)
+            for entry in origin.iterdir():
+                if entry.is_file():
+                    shutil.copyfile(entry, target / entry.name)
+            function_paths.append(str(target))
+
         prefix = temporary / "mock homebrew"
         (prefix / "bin").mkdir(parents=True)
         (prefix / "share/zsh/site-functions").mkdir(parents=True)
@@ -148,6 +170,7 @@ def main():
             for interactive in (False, True):
                 for login in (False, True):
                     env = environment(home, shell_bin, temporary)
+                    env["FPATH"] = os.pathsep.join(function_paths)
                     env["SSH_CONNECTION"] = "127.0.0.1 12345 127.0.0.1 22"
                     expected_brew = with_brew and (
                         login if sys.platform == "darwin" else interactive

@@ -141,6 +141,8 @@ and the macOS `.zprofile` / Linux `.zshrc` split for Homebrew initialization.
 
 Checks use temporary homes and a temporary source copy with a Homebrew stand-in;
 optional shell tools are absent. System-wide profiles are skipped to focus the
-checks on this repository. They do not apply dotfiles, install packages,
+checks on this repository. Standard Zsh functions are copied into private
+temporary directories so shared runner permissions do not trigger completion
+security prompts. They do not apply dotfiles, install packages,
 download external themes, or use your local shell overrides. Application behavior
 and integration with installed plugins still need checking on a configured machine.
