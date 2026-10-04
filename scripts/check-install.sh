@@ -10,7 +10,12 @@ fail() { print -ru2 -- "FAIL: $1"; exit 1; }
 for tool in brew chezmoi git delta difft nvim fzf fd rg bat eza atuin zoxide starship lazygit gh; do
   (( $+commands[$tool] )) || fail "$tool is not on PATH"
 done
-chezmoi verify || fail "deployed files differ from the source state (chezmoi verify)"
+# Files only: verify also counts scripts that would run again, and the LazyVim script
+# re-runs whenever lazy.nvim updates lazy-lock.json (it adds newly enabled plugins).
+if ! chezmoi verify --exclude=scripts; then
+  chezmoi diff --no-pager --exclude=scripts >&2
+  fail "deployed files differ from the source state (chezmoi verify)"
+fi
 prefix=$(chezmoi execute-template "{{ includeTemplate \"brew-prefix\" . }}")
 [[ $prefix == $(brew --prefix) ]] || fail "the brew-prefix template found [$prefix], but brew is in $(brew --prefix)"
 [[ $(git config --get diff.algorithm) == histogram ]] || fail "the git config was not applied"
