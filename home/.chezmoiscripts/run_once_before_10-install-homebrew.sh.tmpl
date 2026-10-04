@@ -1,23 +1,48 @@
 #!/bin/sh
-# Install Homebrew before chezmoi writes any file: the shell and git templates
-# look for it.
 #
-# macOS  Homebrew goes in /opt/homebrew, which needs sudo the first time.
-# Linux  With sudo: the default prefix, plus the build tools Homebrew needs.
-#        Without sudo: ~/.linuxbrew or ~/.brew, whichever is no longer than the
-#        default, so Homebrew can still use its prebuilt bottles.
+# Install Homebrew, the package manager that installs everything else.
+#
+# How chezmoi runs this file:
+#   - "run_once_" in the name: chezmoi runs it once per machine (again only if
+#     this file changes).
+#   - "before_": it runs before chezmoi writes any dotfile, because the zsh and
+#     git configs need to know where Homebrew is.
+#   - ".tmpl": chezmoi first fills in the template parts (written between double
+#     braces). For example, it keeps only the macOS or the Linux section below.
+#
+# Where Homebrew goes:
+#   macOS  /opt/homebrew. Creating that folder needs sudo (an administrator).
+#   Linux  With sudo: /home/linuxbrew/.linuxbrew, after installing the build
+#          tools Homebrew needs. Without sudo: ~/.linuxbrew, or ~/.brew when that
+#          path is too long. Homebrew can only use its prebuilt packages
+#          ("bottles") in a folder whose path is no longer than the default one.
+
+# Stop at the first command that fails (-e), and treat an unset variable as an
+# error instead of quietly using an empty value (-u).
 set -eu
 
+# Look for an existing Homebrew. This sets $brew to the path of the brew
+# command, or to nothing if Homebrew isn't installed (see find-brew.sh in
+# home/.chezmoitemplates).
 {{ template "find-brew.sh" . }}
+# -n: the text isn't empty, so Homebrew is already installed.
 if [ -n "$brew" ]; then
-  exit 0 # already installed
+  exit 0
 fi
 
-# Whether this user can run sudo; the checks from have_sudo_access() in
-# Homebrew's own install.sh.
+# have_sudo: succeed if this user may use sudo, fail if not. These are the
+# same checks Homebrew's own installer makes (have_sudo_access in its
+# install.sh).
 have_sudo() {
-  [ -x /usr/bin/sudo ] || return 1
+  # No sudo program at all (-x: a program we can run).
+  if [ ! -x /usr/bin/sudo ]; then
+    return 1
+  fi
 
+  # Ask sudo what this user may run (-l), without a password prompt (-n) and
+  # without reusing a remembered password (-k). If the answer says the user
+  # may not use sudo at all, stop here instead of asking for a password.
+  # `case` compares $output with each pattern; * matches any text.
   if ! output=$(LC_ALL=C /usr/bin/sudo -n -k -l 2>&1); then
     case $output in
       *"is not in the sudoers file"*) return 1 ;;
@@ -29,23 +54,32 @@ have_sudo() {
     esac
   fi
 
+  # Otherwise sudo only needs a password. In a terminal (-t 0), ask for it
+  # once (sudo -v); later sudo commands reuse it. Then check that the user may
+  # run mkdir with sudo, which is what Homebrew's installer needs.
   if [ -t 0 ]; then
-    # Ask for the password once; later sudo calls reuse it.
     /usr/bin/sudo -v && /usr/bin/sudo -l mkdir >/dev/null 2>&1
   else
+    # Not in a terminal (for example in CI): only sudo without a password counts.
     /usr/bin/sudo -n -l mkdir >/dev/null 2>&1
   fi
 }
 
-# Run Homebrew's official installer. Arguments, such as --path, are passed to it.
+# install_homebrew: download Homebrew's official installer with curl and run it
+# with bash. NONINTERACTIVE=1 tells it not to ask questions. Any arguments,
+# such as --path FOLDER, are passed on to the installer.
 install_homebrew() {
   installer=https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
   NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL "$installer")" install.sh "$@"
 }
 
 {{ if eq .chezmoi.os "darwin" -}}
-# macOS ----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# macOS
+# ------------------------------------------------------------------------------
 
+# `uname -m` prints the processor type: arm64 on Apple silicon, x86_64 on Intel.
+# (>&2 prints the message as an error.)
 if [ "$(uname -m)" != arm64 ]; then
   echo "error: these dotfiles expect Homebrew in /opt/homebrew;" \
     "Intel Macs are not supported." >&2
@@ -53,6 +87,7 @@ if [ "$(uname -m)" != arm64 ]; then
 fi
 
 if ! have_sudo; then
+  # Print the lines up to MSG as an error.
   cat >&2 <<'MSG'
 error: installing Homebrew on macOS requires sudo access for /opt/homebrew.
        Use an administrator account or ask an administrator to install Homebrew
@@ -61,16 +96,26 @@ MSG
   exit 1
 fi
 
+# Install Homebrew in /opt/homebrew. The installer also installs Apple's
+# Command Line Tools (git, a C compiler) if they're missing.
 install_homebrew
 {{- else if eq .chezmoi.os "linux" -}}
-# Linux ----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Linux
+# ------------------------------------------------------------------------------
 
 if have_sudo; then
-  # Homebrew's requirements, plus zsh (the login shell) and unzip (for Mason).
+  # Install what Homebrew needs (a C compiler, curl, file, git, ...) plus zsh,
+  # the shell these dotfiles use, and unzip, which LazyVim's Mason needs. Use
+  # this Linux's package manager: apt-get (Debian, Ubuntu), dnf (Fedora, RHEL)
+  # or pacman (Arch). `command -v` checks whether a program exists.
   if command -v apt-get >/dev/null 2>&1; then
     sudo apt-get update
     sudo apt-get install -y build-essential procps curl file git ca-certificates zsh unzip
   elif command -v dnf >/dev/null 2>&1; then
+    # The build tools group is "development-tools" on newer Fedora and
+    # "Development Tools" on older Fedora and RHEL; || tries the second name if
+    # the first fails.
     sudo dnf group install -y development-tools ||
       sudo dnf group install -y 'Development Tools'
     sudo dnf install -y procps-ng curl file git zsh unzip
@@ -81,12 +126,15 @@ if have_sudo; then
       "install a C compiler, curl, file, git, zsh and unzip yourself." >&2
   fi
 
+  # Install Homebrew in its default folder, /home/linuxbrew/.linuxbrew.
   install_homebrew
   exit 0
 fi
 
-# No sudo: install into the home folder. Homebrew only uses its prebuilt bottles
-# in a custom prefix that is no longer than the default one.
+# No sudo: install Homebrew into a folder in your home directory instead.
+# Homebrew can only use its prebuilt packages there if the folder's path is no
+# longer than the default one, so use ~/.linuxbrew if it's short enough and
+# otherwise the shorter ~/.brew. (${#name} is the length of $name.)
 default_prefix=/home/linuxbrew/.linuxbrew
 prefix=
 for candidate in "$HOME/.linuxbrew" "$HOME/.brew"; do
@@ -103,15 +151,19 @@ if [ -z "$prefix" ]; then
   exit 1
 fi
 
+# Without sudo these tools can't be installed, so only warn about missing ones.
 missing=
 for tool in curl git file cc zsh; do
-  command -v "$tool" >/dev/null 2>&1 || missing="$missing $tool"
+  if ! command -v "$tool" >/dev/null 2>&1; then
+    missing="$missing $tool"
+  fi
 done
 if [ -n "$missing" ]; then
   echo "warning: these need sudo to install, so ask an administrator:$missing" >&2
   echo "         (Homebrew itself needs curl and git)." >&2
 fi
 
+# HOMEBREW_NO_SUDO=1 tells Homebrew's installer not to try sudo.
 export HOMEBREW_NO_SUDO=1
 install_homebrew --path "$prefix"
 {{- end }}

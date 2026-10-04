@@ -1,18 +1,34 @@
 #!/bin/sh
-# These dotfiles are zsh-only: make zsh the login shell when it isn't already.
+#
+# Make zsh your login shell: the shell a new terminal or SSH session starts.
+#
+# These dotfiles only configure zsh. chezmoi runs this once per machine
+# ("run_once_"), after writing the dotfiles ("after_").
+
+# Stop at the first command that fails (-e), and treat an unset variable as an
+# error instead of quietly using an empty value (-u).
 set -eu
 
+# Look up your current login shell; chezmoi keeps only this OS's line.
+#   macOS: dscl reads the UserShell setting from the user directory.
+#   Linux: getent prints your line from the user database; its 7th
+#          colon-separated field (cut -d: -f7) is the login shell.
 user=$(id -un)
 {{ if eq .chezmoi.os "darwin" -}}
 current=$(dscl . -read "/Users/$user" UserShell | awk '{print $2}')
 {{- else -}}
 current=$(getent passwd "$user" | cut -d: -f7)
 {{- end }}
+
+# Already zsh (the path ends in /zsh)? Then there's nothing to do.
+# `case` compares $current with the pattern; * matches any text.
 case $current in
   */zsh) exit 0 ;;
 esac
 
-# chsh only accepts shells listed in /etc/shells; use the system zsh listed there.
+# chsh only accepts shells listed in /etc/shells, so take the first zsh listed
+# there: grep finds lines that start with / and end with /zsh, head keeps the
+# first one, and `|| true` carries on (with an empty result) if there is none.
 zsh=$(grep -E '^/.*/zsh$' /etc/shells | head -n 1 || true)
 if [ -z "$zsh" ]; then
   echo "note: zsh is not listed in /etc/shells, so your login shell stays $current." >&2
@@ -22,9 +38,14 @@ fi
 
 echo "Changing your login shell from $current to $zsh."
 if /usr/bin/sudo -n true 2>/dev/null; then
+  # sudo works here without a password, so change it with sudo
+  # (&& exit 0: stop here if that worked).
   /usr/bin/sudo chsh -s "$zsh" "$user" && exit 0
 elif [ -t 0 ]; then
+  # Running in a terminal (-t 0): chsh asks for your password.
   chsh -s "$zsh" && exit 0
 fi
+
+# Neither worked, for example because there was no terminal to type a password in.
 echo "note: run 'chsh -s $zsh' yourself (it asks for your password)," \
   "or ask an administrator." >&2

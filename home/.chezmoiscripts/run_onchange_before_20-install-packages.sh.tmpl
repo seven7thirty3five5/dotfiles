@@ -1,15 +1,32 @@
 #!/bin/sh
-# Install the Brewfile before chezmoi writes any file, so templates see the packages.
-# chezmoi re-runs this whenever the Brewfile changes, which keeps every machine in sync.
+#
+# Install the packages listed in the Brewfile (home/dot_config/homebrew/Brewfile).
+#
+# How chezmoi runs this file:
+#   - "before_": before writing the dotfiles, so their templates can see the
+#     installed packages.
+#   - "run_onchange_": again whenever this file's text changes. The next line
+#     holds a fingerprint (hash) of the Brewfile, so editing the Brewfile changes
+#     this file too, and chezmoi installs the new packages on your next apply.
 # Brewfile hash: {{ include "dot_config/homebrew/Brewfile" | sha256sum }}
+
+# Stop at the first command that fails (-e), and treat an unset variable as an
+# error instead of quietly using an empty value (-u).
 set -eu
 
+# Find Homebrew; this sets $brew (see find-brew.sh in home/.chezmoitemplates).
 {{ template "find-brew.sh" . }}
+# -z: the text is empty, so Homebrew isn't installed. (>&2 prints an error.)
 if [ -z "$brew" ]; then
   echo "error: Homebrew not found; run install.sh from the dotfiles repository." >&2
   exit 1
 fi
 
+# chezmoi fills in where the Brewfile is inside the dotfiles repository.
 brewfile={{ joinPath .chezmoi.sourceDir "dot_config/homebrew/Brewfile" | shellQuote }}
+
+# Add Homebrew to this script's PATH (`brew shellenv sh` prints the commands
+# and `eval` runs them), then install whatever the Brewfile lists that isn't
+# installed yet. --no-upgrade leaves already installed packages as they are.
 eval "$("$brew" shellenv sh)"
 brew bundle --file="$brewfile" --no-upgrade

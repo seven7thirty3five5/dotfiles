@@ -1,3 +1,6 @@
+{{- /* Print the folder Homebrew is installed in, or nothing if it isn't yet.
+       Checks each folder listed in brew-prefixes, in order, and prints the first
+       one that contains bin/brew. Used by the zsh and git configs and install.sh. */ -}}
 {{- range $prefix := splitList "\n" (includeTemplate "brew-prefixes" . | trim) -}}
 {{- if isExecutable (joinPath $prefix "bin" "brew") -}}
 {{- $prefix -}}

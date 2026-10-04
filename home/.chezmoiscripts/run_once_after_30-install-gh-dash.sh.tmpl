@@ -1,11 +1,31 @@
 #!/bin/sh
-# gh-dash is a gh extension, not a formula. Installing it needs no GitHub login;
-# using it does (gh auth login). Check gh's extension folder directly, because
-# `gh extension list` prints nothing until you have logged in.
+#
+# Install gh-dash, a terminal dashboard for GitHub pull requests and issues.
+#
+# gh-dash is an extension for GitHub's command line tool (gh), not a Homebrew
+# package, so gh installs it. chezmoi runs this once per machine ("run_once_"),
+# after writing the dotfiles ("after_"). Installing it needs no GitHub login;
+# using it does (run `gh auth login`).
+
+# Stop at the first command that fails (-e), and treat an unset variable as an
+# error instead of quietly using an empty value (-u).
 set -eu
 
+# Find Homebrew; this sets $brew (see find-brew.sh in home/.chezmoitemplates).
 {{ template "find-brew.sh" . }}
-gh_data=${GH_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/gh}
+
+# Where gh keeps its extensions: $GH_DATA_DIR if you set it, otherwise
+# $XDG_DATA_HOME/gh, which is ~/.local/share/gh by default.
+# (${NAME:-default} means "the value of $NAME, or default when it isn't set".)
+if [ -n "${GH_DATA_DIR:-}" ]; then
+  gh_data=$GH_DATA_DIR
+else
+  gh_data=${XDG_DATA_HOME:-$HOME/.local/share}/gh
+fi
+
+# Check for the extension's folder (-d) instead of asking `gh extension list`,
+# which prints nothing until you have logged in.
 if [ ! -d "$gh_data/extensions/gh-dash" ]; then
+  # gh is in the same folder as brew: dirname turns .../bin/brew into .../bin.
   "$(dirname "$brew")/gh" extension install dlvhdr/gh-dash
 fi

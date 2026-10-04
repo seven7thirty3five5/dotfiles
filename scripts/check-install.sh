@@ -1,58 +1,99 @@
 #!/bin/sh
-# Check a machine that install.sh has just set up.
-# The Bootstrap workflow runs this as the user who ran install.sh.
+#
+# check-install.sh - check that install.sh set this machine up correctly.
+#
+# The Bootstrap workflow (.github/workflows/bootstrap.yml) runs this right after
+# install.sh, as the same user. If a check finds a problem, the script prints
+# "FAIL: ..." and stops. If every check passes, it prints "Install checks passed".
+
+# Stop at the first command that fails (-e), and treat an unset variable as an
+# error instead of quietly using an empty value (-u).
 set -eu
 
+# fail MESSAGE: print MESSAGE as an error (>&2) and stop with exit status 1.
 fail() {
   echo "FAIL: $1" >&2
   exit 1
 }
 
-# Use the PATH the dotfiles give an interactive login zsh. On Linux, Homebrew is
-# only set up in .zshrc, which other shells never read.
-PATH=$(zsh -lic 'print -r -- "$PATH"' 2>/dev/null | tail -n 1)
+# Use the same PATH a new terminal gets. We start zsh as an interactive login
+# shell (-l -i), the way a terminal does, and have it print its PATH. This
+# matters on Linux, where Homebrew is only added to PATH in .zshrc, a file
+# other shells never read. zsh's startup warnings are thrown away (2>/dev/null)
+# and only the last line of output, the PATH itself, is kept (tail -n 1).
+PATH=$(zsh -l -i -c 'echo "$PATH"' 2>/dev/null | tail -n 1)
 export PATH
 
+# Where the dotfiles keep config and data files. ${NAME:-default} means "the
+# value of $NAME, or default when NAME isn't set".
 config_dir=${XDG_CONFIG_HOME:-$HOME/.config}
 data_dir=${XDG_DATA_HOME:-$HOME/.local/share}
 
-# 1. The Brewfile's tools are on PATH.
-for tool in brew chezmoi git delta difft nvim fzf fd rg bat eza \
-  atuin zoxide starship lazygit gh; do
-  command -v "$tool" >/dev/null || fail "$tool is not on PATH"
+# --- 1. The Brewfile's tools are installed and on PATH ----------------------
+
+# The loop goes through the list one word at a time.
+tools="brew chezmoi git delta difft nvim fzf fd rg bat eza
+       atuin zoxide starship lazygit gh"
+for tool in $tools; do
+  if ! command -v "$tool" >/dev/null; then
+    fail "$tool is not on PATH"
+  fi
 done
 
-# 2. Every deployed file matches the repository. Scripts are left out because
-#    the LazyVim script runs again whenever lazy.nvim updates lazy-lock.json.
+# --- 2. Every deployed file matches the repository --------------------------
+
+# `chezmoi verify` succeeds when every file it manages matches the repository.
+# Scripts are left out, because the LazyVim script is due to run again whenever
+# lazy.nvim updates lazy-lock.json. If anything differs, show the differences.
 if ! chezmoi verify --exclude=scripts; then
   chezmoi diff --no-pager --exclude=scripts >&2
   fail "deployed files differ from the repository"
 fi
 
-# 3. The templates found Homebrew where it was installed.
+# --- 3. The templates found Homebrew where it was installed -----------------
+
+# The brew-prefix template is how the dotfiles find Homebrew; compare its answer
+# with Homebrew's own.
 template_prefix=$(chezmoi execute-template '{{ includeTemplate "brew-prefix" . }}')
 brew_prefix=$(brew --prefix)
 if [ "$template_prefix" != "$brew_prefix" ]; then
   fail "brew-prefix found $template_prefix, but Homebrew is in $brew_prefix"
 fi
 
-# 4. The git config was applied.
+# --- 4. The git config was applied ------------------------------------------
+
+# diff.algorithm = histogram is one of the settings in home/dot_config/git.
 if [ "$(git config --get diff.algorithm)" != histogram ]; then
   fail "the git config was not applied"
 fi
 
-# 5. install.sh's second `chezmoi init` found delta, so chezmoi's config has a pager.
+# --- 5. chezmoi's own settings found delta ----------------------------------
+
+# install.sh runs `chezmoi init` a second time so that chezmoi's settings
+# include delta as the pager for `chezmoi diff`, in a [diff] section.
+# grep -q only reports whether a line starts with "[diff]".
 if ! grep -q '^\[diff\]' "$config_dir/chezmoi/chezmoi.toml"; then
   fail "chezmoi's config has no [diff] pager; the second chezmoi init did not run"
 fi
 
-# 6. lazy-lock.json and gh's config.yml are symlinks into the repository.
+# --- 6. Two files are symlinks into the repository --------------------------
+
+# lazy.nvim and gh rewrite these files, so they link to the copies in the
+# repository instead (-L: the file is a symbolic link).
 for file in "$config_dir/nvim/lazy-lock.json" "$config_dir/gh/config.yml"; do
-  [ -L "$file" ] || fail "$file is not a symlink into the repository"
+  if [ ! -L "$file" ]; then
+    fail "$file is not a symlink into the repository"
+  fi
 done
 
-# 7. gh-dash and LazyVim's plugins are installed.
-[ -d "$data_dir/gh/extensions/gh-dash" ] || fail "gh-dash is not installed"
-[ -d "$data_dir/nvim/lazy/LazyVim" ] || fail "LazyVim's plugins are not installed"
+# --- 7. gh-dash and LazyVim's plugins are installed -------------------------
+
+# -d: the folder exists.
+if [ ! -d "$data_dir/gh/extensions/gh-dash" ]; then
+  fail "gh-dash is not installed"
+fi
+if [ ! -d "$data_dir/nvim/lazy/LazyVim" ]; then
+  fail "LazyVim's plugins are not installed"
+fi
 
 echo "Install checks passed (Homebrew in $brew_prefix)."
