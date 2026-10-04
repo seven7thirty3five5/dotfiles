@@ -1,11 +1,20 @@
+{{- /*
+  The Brewfile is a template: chezmoi fills in the parts between double braces
+  for each machine (this note is one, and is left out) and writes the result to
+  ~/.config/homebrew/Brewfile. Here that only keeps the macOS-only packages at
+  the end on a Mac: chezmoi calls macOS "darwin", and eq means "equals". The
+  dashes next to the braces remove the line breaks around the template code.
+  The install script in .chezmoiscripts (20-install-packages) fills it in the
+  same way and passes the result to brew bundle.
+*/ -}}
+
 # Packages for the tools configured by these dotfiles and companion CLI utilities.
 # install.sh and `chezmoi apply` install them (home/.chezmoiscripts) and re-run
 # `brew bundle` whenever this file changes.
 #
 # A Brewfile lists Homebrew packages for `brew bundle` to install. Each brew line
-# is a command-line package (a "formula"), and the cask line is an app. A line
-# ending in `if OS.mac?` only applies on macOS. (Brewfiles are written in Ruby,
-# the programming language Homebrew is written in.)
+# is a command-line package (a "formula"), and a cask line is an app. (Brewfiles
+# are written in Ruby, the programming language Homebrew is written in.)
 
 # Dotfile management.
 brew "chezmoi"                  # manages these dotfiles
@@ -44,14 +53,16 @@ brew "hyperfine"                # times commands precisely (benchmarks)
 brew "lazydocker"               # a terminal interface for Docker (lzd)
 brew "superfile"                # a file manager in the terminal (spf, or ff)
 brew "yq"                       # reads and edits YAML, JSON and other data files
+{{- if eq .chezmoi.os "darwin" }}
 
 # Mason needs GNU tar; Linux supplies it through the system package manager.
 # (Mason is the tool LazyVim uses to install language servers and formatters.)
-brew "gnu-tar" if OS.mac?
+brew "gnu-tar"
 
 # Mole is macOS-only.
-brew "mole" if OS.mac?          # mo: cleans caches and leftovers to free space on a Mac
+brew "mole"                     # mo: cleans caches and leftovers to free space on a Mac
 
 # Terminal (macOS). Ghostty bundles JetBrains Mono and the Nerd Font symbols. brew bundle
 # installs casks with --adopt, so an existing /Applications/Ghostty.app is taken over.
-cask "ghostty" if OS.mac?
+cask "ghostty"
+{{- end }}

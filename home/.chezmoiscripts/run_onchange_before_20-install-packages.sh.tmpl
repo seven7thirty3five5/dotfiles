@@ -1,14 +1,14 @@
 #!/bin/sh
 #
-# Install the packages listed in the Brewfile (home/dot_config/homebrew/Brewfile).
+# Install the packages listed in the Brewfile (home/dot_config/homebrew/Brewfile.tmpl).
 #
 # How chezmoi runs this file:
 #   - "before_": before writing the dotfiles, so their templates can see the
 #     installed packages.
-#   - "run_onchange_": again whenever this file's text changes. The next line
-#     holds a fingerprint (hash) of the Brewfile, so editing the Brewfile changes
-#     this file too, and chezmoi installs the new packages on your next apply.
-# Brewfile hash: {{ include "dot_config/homebrew/Brewfile" | sha256sum }}
+#   - "run_onchange_": again whenever this file's text changes. chezmoi writes
+#     this machine's Brewfile into it (at the end), so editing the Brewfile
+#     changes this file too, and chezmoi installs the new packages on your next
+#     apply.
 
 # Stop at the first command that fails (-e), and treat an unset variable as an
 # error instead of quietly using an empty value (-u).
@@ -23,11 +23,16 @@ if [ -z "$brew" ]; then
   exit 1
 fi
 
-# chezmoi fills in where the Brewfile is inside the dotfiles repository.
-brewfile={{ joinPath .chezmoi.sourceDir "dot_config/homebrew/Brewfile" | shellQuote }}
-
 # Add Homebrew to this script's PATH (`brew shellenv sh` prints the commands
 # and `eval` runs them), then install whatever the Brewfile lists that isn't
 # installed yet. --no-upgrade leaves already installed packages as they are.
+#
+# --file=- makes brew bundle read the Brewfile from its input: the lines up to
+# BREWFILE, where chezmoi writes in the Brewfile filled in for this machine
+# (includeTemplate). The quotes in <<'BREWFILE' make the shell pass those lines
+# on unchanged. (This script runs before chezmoi updates
+# ~/.config/homebrew/Brewfile, so that copy could still be the old one.)
 eval "$("$brew" shellenv sh)"
-brew bundle --file="$brewfile" --no-upgrade
+brew bundle --file=- --no-upgrade <<'BREWFILE'
+{{ includeTemplate "dot_config/homebrew/Brewfile.tmpl" . -}}
+BREWFILE

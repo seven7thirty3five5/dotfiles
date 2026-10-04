@@ -26,9 +26,10 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/seven7thirty3five5/dotfile
      than the default. Homebrew uses its prebuilt bottles in a custom prefix only if it
      is no longer than the default ([support tiers](https://docs.brew.sh/Support-Tiers)).
      A C compiler and `file` must then come from your administrator.
-2. **The [Brewfile](home/dot_config/homebrew/Brewfile)**, with `brew bundle --no-upgrade`.
+2. **The [Brewfile](home/dot_config/homebrew/Brewfile.tmpl)**, with `brew bundle --no-upgrade`.
    It includes zsh itself, so macOS and Linux run the same version. Mole, GNU tar and
-   the Ghostty cask are macOS-only; the cask adopts an existing Ghostty app.
+   the Ghostty cask are macOS-only; the Brewfile is a template that leaves them out on
+   Linux. The cask adopts an existing Ghostty app.
 3. **The dotfiles** themselves.
 4. **[gh-dash](https://www.gh-dash.dev/)**, the GitHub CLI extension.
 5. **LazyVim's plugins**, headless, at the versions in `lazy-lock.json`.
