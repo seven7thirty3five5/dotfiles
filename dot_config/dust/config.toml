@@ -1,1 +1,2 @@
-# Defaults; see dust --help for options.
+# Print the size tree upside down, with the biggest entries highest.
+reverse = true

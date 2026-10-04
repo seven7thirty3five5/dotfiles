@@ -5,6 +5,11 @@ prSections:
       filters: is:open review-requested:@me
     - title: Involved
       filters: is:open involves:@me -author:@me
+    # Approved, non-draft PRs with successful checks; other merge requirements may remain.
+    - title: Approved & green
+      filters: is:open author:@me review:approved status:success draft:false
+    - title: Changes requested
+      filters: is:open author:@me review:changes_requested
 issuesSections:
     - title: My Issues
       filters: is:open author:@me

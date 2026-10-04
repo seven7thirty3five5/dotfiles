@@ -11,3 +11,7 @@ gui:
       - "#313244"
     optionsTextColor:
       - "#89b4fa"
+
+# Include timestamps so events can be correlated across container logs.
+logs:
+  timestamps: true

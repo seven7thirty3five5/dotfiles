@@ -11,3 +11,10 @@ map("n", "<C-u>", "<C-u>zz", { desc = "Scroll up and center" })
 -- (vim-galore's "saner behavior of n and N"); zz centers the match, zv opens its fold.
 map("n", "n", "'Nn'[v:searchforward].'zzzv'", { expr = true, desc = "Next search result and center" })
 map("n", "N", "'nN'[v:searchforward].'zzzv'", { expr = true, desc = "Prev search result and center" })
+
+-- Keep the cursor and view steady when joining lines (J, 3J, etc.).
+map("n", "J", function()
+  local view = vim.fn.winsaveview()
+  vim.cmd.normal({ args = { tostring(vim.v.count1) .. "J" }, bang = true })
+  vim.fn.winrestview(view)
+end, { desc = "Join lines without moving cursor" })

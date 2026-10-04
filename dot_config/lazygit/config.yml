@@ -1,5 +1,9 @@
 # ~/.config/lazygit/config.yml
 
+# Homebrew manages upgrades; disable LazyGit's own update prompts.
+update:
+  method: never
+
 git:
   diffRenderers:
     - colorArg: always

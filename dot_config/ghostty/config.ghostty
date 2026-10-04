@@ -1,5 +1,7 @@
 font-family = JetBrains Mono
 theme = Catppuccin Mocha
+# Left Option sends terminal Alt shortcuts; right Option enters macOS special characters.
+macos-option-as-alt = left
 shell-integration-features = ssh-env,ssh-terminfo
 
 # Quake-style drop-down terminal from any app (the example in Ghostty's toggle_quick_terminal

@@ -36,3 +36,8 @@ purple = "#cba6f7"  # = mauve; its git_branch module asks for "purple"
 ahead = '⇡${count}'
 diverged = '⇕⇡${ahead_count}⇣${behind_count}'
 behind = '⇣${count}'
+
+# Show failed commands' exit codes; successful commands add no status segment.
+[status]
+disabled = false
+symbol = "✘"

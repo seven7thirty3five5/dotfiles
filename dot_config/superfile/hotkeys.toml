@@ -1,1 +1,9 @@
-# Built-in keybindings.
+# File operations selected from the maintainer's Vim preset:
+# https://superfile.dev/configure/custom-hotkeys/
+copy_items = ["y"]                   # Copy selected items.
+cut_items = ["x"]                    # Cut selected items for a subsequent paste.
+paste_items = ["p"]                  # Paste copied or cut items.
+file_panel_item_create = ["a"]       # Create a file or directory.
+file_panel_item_rename = ["r"]       # Rename the selected item.
+focus_on_process_bar = ["ctrl+p"]    # Focus background operations, freeing p for paste.
+copy_path = ["Y"]                    # Copy the selected item's path, freeing Ctrl-P.

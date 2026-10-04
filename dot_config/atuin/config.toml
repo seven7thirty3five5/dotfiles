@@ -168,7 +168,7 @@ workspaces = true  # adds a repo-wide filter to the Ctrl-R mode cycle
 ## whereas tab will put the command in the prompt for editing.
 ## If set to false, both enter and tab will place the command in the prompt for editing.
 ## This applies for new installs. Old installs will keep the old behaviour unless configured otherwise.
-enter_accept = true
+enter_accept = false
 
 ## Defaults to false. If enabled, when triggered after &&, || or |, Atuin will complete commands to chain rather than replace the current line.
 # command_chaining = false
@@ -356,6 +356,9 @@ name = "catppuccin-mocha-blue"
 # height = "60%"
 
 [ui]
+# Show exit status and working directory alongside each historical command.
+columns = ["exit", "duration", "time", "directory", "command"]
+
 ## Columns to display in the interactive search, from left to right.
 ## The selection indicator (" > ") is always shown first implicitly.
 ##

@@ -65,8 +65,8 @@
 [pager]
     difftool = true
 
-# Difftastic for any subcommand (git dlog -p, git dshow, git ddiff), per its manual.
+# Structural diffs for commit history, individual commits, and working-tree changes.
 [alias]
-    dlog = -c diff.external=difft log --ext-diff
+    dlog = -c diff.external=difft log -p --ext-diff
     dshow = -c diff.external=difft show --ext-diff
     ddiff = -c diff.external=difft diff
