@@ -4,8 +4,9 @@
 Run with Python 3.8+, chezmoi, shellcheck, shfmt and actionlint on PATH.
 Chezmoi templates are rendered for macOS and Linux into temporary files before
 ShellCheck reads them. shfmt checks their rendered formatting using the original
-filename, so the repository's EditorConfig applies. Zsh startup files are checked
-separately by check-shell.py; ShellCheck does not support Zsh.
+relative filenames in a temporary home with home/dot_editorconfig installed.
+Zsh startup files are checked separately by check-shell.py; ShellCheck does not
+support Zsh.
 """
 
 import json
@@ -71,6 +72,9 @@ def main():
         temporary = Path(directory)
         home = temporary / "home with spaces"
         home.mkdir()
+        # Use the deployed config layout without applying the real dotfiles or
+        # depending on an EditorConfig file in the checkout or runner's home.
+        shutil.copyfile(STATE / "dot_editorconfig", home / ".editorconfig")
         config = temporary / "chezmoi.toml"
         config.write_text(
             '[git]\nautoCommit = false\nautoPush = false\n'
@@ -136,9 +140,11 @@ def main():
                     shellcheck += ["--source-path", str(path.parent)]
                 if not content.startswith("#!") and rendered.suffix == ".sh":
                     shellcheck += ["--shell=sh"]
+                format_path = home / path.relative_to(SOURCE)
+                format_path.parent.mkdir(parents=True, exist_ok=True)
                 commands = [
                     (shellcheck + [str(rendered)], None),
-                    ([binaries["shfmt"], "--diff", "--filename", str(path)], content),
+                    ([binaries["shfmt"], "--diff", "--filename", str(format_path)], content),
                 ]
                 for command, input in commands:
                     try:

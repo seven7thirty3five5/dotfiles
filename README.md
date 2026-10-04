@@ -76,8 +76,6 @@ regenerate this machine's config; it only asks questions it hasn't asked before.
 - `~/.config/nvim/lazy-lock.json` and `~/.config/gh/config.yml` are symlinks to
   `.lazy-lock.json` and `.config.yml` in `home/`, because lazy.nvim and gh rewrite
   them. Their changes appear in this repository as ordinary git changes.
-- `.editorconfig` links to `home/dot_editorconfig`, so the repository and deployed
-  shell scripts use the same formatting settings.
 
 ### Shell and workflow tools
 
@@ -91,6 +89,8 @@ The Brewfile installs [ShellCheck](https://github.com/koalaman/shellcheck),
 - shfmt reads `~/.editorconfig`; it has no separate global config or shell init.
   Shell files use two spaces, indented case arms and continued operators at the
   start of the next line. Project EditorConfig settings take precedence.
+  The lint runner copies `home/dot_editorconfig` into its temporary home, so CI
+  uses the same settings without first applying the dotfiles.
 - act reads `$XDG_CONFIG_HOME/act/actrc`. It uses the upstream Medium Ubuntu images
   and, on Apple silicon, amd64 containers. Its caches follow `$XDG_CACHE_HOME`.
   Project `.actrc` files and CLI arguments can override these defaults. Homebrew
