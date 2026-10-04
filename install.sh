@@ -4,11 +4,11 @@
 #   sh -c "$(curl -fsSL https://raw.githubusercontent.com/seven7thirty3five5/dotfiles/main/install.sh)"
 #
 # `chezmoi init --apply` does the work: the scripts in home/.chezmoiscripts install
-# Homebrew (/opt/homebrew on macOS; a prefix chosen by sudo access on Linux),
-# the Brewfile, gh-dash and LazyVim's plugins, and make zsh the login shell.
-# `chezmoi init` then runs once more because
-# chezmoi's own config looks for delta and nvim, which did not exist the first time,
-# and a chezmoi script cannot run chezmoi itself.
+# Homebrew (/opt/homebrew on macOS; on Linux, a prefix chosen by sudo access), the
+# Brewfile, gh-dash and LazyVim's plugins, and make zsh the login shell.
+#
+# Then `chezmoi init` runs once more: chezmoi's own config looks for delta and nvim,
+# which did not exist the first time, and a chezmoi script cannot run chezmoi itself.
 #
 # Arguments are passed to `chezmoi init` (e.g. --branch). Re-running is safe:
 # an existing ~/.local/share/chezmoi is reused, not cloned again.

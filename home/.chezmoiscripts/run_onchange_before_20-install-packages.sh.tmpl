@@ -9,5 +9,7 @@ if [ -z "$brew" ]; then
   echo "error: Homebrew not found; run install.sh from the dotfiles repository." >&2
   exit 1
 fi
-eval "$("$brew" shellenv)"
-brew bundle --file={{ joinPath .chezmoi.sourceDir "dot_config/homebrew/Brewfile" | shellQuote }} --no-upgrade
+
+brewfile={{ joinPath .chezmoi.sourceDir "dot_config/homebrew/Brewfile" | shellQuote }}
+eval "$("$brew" shellenv sh)"
+brew bundle --file="$brewfile" --no-upgrade

@@ -26,4 +26,5 @@ if /usr/bin/sudo -n true 2>/dev/null; then
 elif [ -t 0 ]; then
   chsh -s "$zsh" && exit 0
 fi
-echo "note: run 'chsh -s $zsh' yourself (it asks for your password), or ask an administrator." >&2
+echo "note: run 'chsh -s $zsh' yourself (it asks for your password)," \
+  "or ask an administrator." >&2

@@ -5,7 +5,7 @@
 set -eu
 
 {{ template "find-brew.sh" . }}
-extension=${GH_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/gh}/extensions/gh-dash
-if [ ! -d "$extension" ]; then
+gh_data=${GH_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/gh}
+if [ ! -d "$gh_data/extensions/gh-dash" ]; then
   "$(dirname "$brew")/gh" extension install dlvhdr/gh-dash
 fi
