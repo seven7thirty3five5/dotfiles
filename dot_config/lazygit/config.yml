@@ -4,9 +4,12 @@ git:
   diffRenderers:
     - colorArg: always
       command: delta --dark --paging=never
+    - type: extDiff  # press | in lazygit to cycle to difftastic
+      command: difft --color=always --context={{diffContext}}
 
 # Catppuccin Mocha (blue accent); diffs inherit delta's syntax-theme.
 gui:
+  nerdFontsVersion: "3"  # file icons; Ghostty bundles the Nerd Font symbols
   theme:
     activeBorderColor:
       - "#89b4fa"

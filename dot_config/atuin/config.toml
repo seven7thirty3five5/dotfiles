@@ -27,7 +27,7 @@
 # auto_sync = true
 
 ## enable or disable automatic update checks
-# update_check = true
+update_check = false  # Homebrew upgrades atuin; skip the hourly check of api.atuin.sh
 
 ## which release channel to follow with `atuin update` and update checks
 ## "stable" for stable releases only, "nightly" to also receive prereleases
@@ -66,7 +66,7 @@
 ## To use workspace mode by default when available, set this to true and
 ## set filter_mode to "workspace" or leave it unspecified and
 ## set search.filters to include "workspace" before other filter modes.
-# workspaces = false
+workspaces = true  # adds a repo-wide filter to the Ctrl-R mode cycle
 
 ## which display style to use
 ## possible values: auto, full, compact

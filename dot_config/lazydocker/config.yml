@@ -1,2 +1,13 @@
-# Use lazydocker defaults.
-{}
+# Catppuccin Mocha (blue accent), reusing lazygit's official Catppuccin colors:
+# there is no lazydocker port, but lazydocker takes the same theme keys and hex values.
+gui:
+  theme:
+    activeBorderColor:
+      - "#89b4fa"
+      - bold
+    inactiveBorderColor:
+      - "#a6adc8"
+    selectedLineBgColor:
+      - "#313244"
+    optionsTextColor:
+      - "#89b4fa"

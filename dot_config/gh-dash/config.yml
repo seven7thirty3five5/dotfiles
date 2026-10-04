@@ -81,16 +81,38 @@ defaults:
                 width: 20
                 hidden: true
     refetchIntervalMinutes: 30
-keybindings: {}
-repoPaths: {}
+keybindings:
+    universal:
+        - key: g  # the maintainer's binding; Home still jumps to the top
+          name: lazygit
+          command: >
+            command cd {{.RepoPath}} && lazygit
+repoPaths:
+    seven7thirty3five5/*: ~/Projects/*  # local clones, for checkout and {{.RepoPath}}
 theme:
+    # Catppuccin Mocha, blue accent (from catppuccin/gh-dash).
+    colors:
+        text:
+            primary: "#cdd6f4"
+            secondary: "#89b4fa"
+            inverted: "#11111b"
+            faint: "#bac2de"
+            warning: "#f9e2af"
+            success: "#a6e3a1"
+            error: "#f38ba8"
+        background:
+            selected: "#313244"
+        border:
+            primary: "#89b4fa"
+            secondary: "#45475a"
+            faint: "#313244"
     ui:
         sectionsShowCount: true
         table:
             showSeparator: true
             compact: false
 pager:
-    diff: ""
+    diff: delta  # renders with your git [delta] settings (Catppuccin, line numbers)
 confirmQuit: false
 showAuthorIcons: true
 smartFilteringAtLaunch: true

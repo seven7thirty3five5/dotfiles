@@ -30,3 +30,9 @@ mantle = "#181825"
 crust = "#11111b"
 cyan = "#89dceb"    # = sky; Starship's directory module asks for "cyan"
 purple = "#cba6f7"  # = mauve; its git_branch module asks for "purple"
+
+# Show how many commits the branch is ahead/behind its upstream (starship docs example).
+[git_status]
+ahead = '⇡${count}'
+diverged = '⇕⇡${ahead_count}⇣${behind_count}'
+behind = '⇣${count}'

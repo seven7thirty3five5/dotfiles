@@ -1,1 +1,12 @@
-# One ripgrep option per line; defaults are unchanged.
+# One ripgrep option per line (see GUIDE.md, "Configuration file").
+
+# Case-insensitive unless the pattern has an uppercase letter.
+--smart-case
+
+# Search hidden files and directories (e.g. dotfiles), but never inside .git.
+--hidden
+--glob=!.git/*
+
+# Don't print huge lines (e.g. minified files); show a preview of them instead.
+--max-columns=150
+--max-columns-preview

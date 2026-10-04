@@ -1,3 +1,12 @@
-# Inherit built-in defaults (including hotkeys); only the theme is overridden.
+# Inherit built-in defaults (including hotkeys) for every setting not listed here.
 ignore_missing_fields = true
 theme = "catppuccin-mocha"
+
+# z opens a zoxide jump prompt (superfile's open_zoxide hotkey).
+zoxide_support = true
+
+# Write the last folder on quit; the spf shell function in .zshrc cds there.
+cd_on_quit = true
+
+# Homebrew upgrades superfile; skip its own update check.
+auto_check_update = false

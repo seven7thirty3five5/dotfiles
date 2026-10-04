@@ -15,13 +15,61 @@ if (( $+commands[nvim] )); then
   alias vim="nvim"
 fi
 (( $+commands[spf] )) && alias ff="spf"
+# spf (and ff): superfile, then cd to the folder you were in when you quit it (superfile docs,
+# "cd on quit"; needs cd_on_quit = true). spf pl --lastdir-file prints where superfile writes
+# that folder: the XDG state dir here, not the ~/Library path in the docs' macOS snippet.
+if (( $+commands[spf] )); then
+  spf() {
+    local lastdir_file="$(command spf pl --lastdir-file)"
+    command spf "$@"
+    if [[ -f $lastdir_file ]]; then
+      source "$lastdir_file"
+      rm -f -- "$lastdir_file"
+    fi
+  }
+fi
+(( $+commands[lazygit] )) && alias lg='lazygit'  # the alias lazygit's README suggests
 
-# eza listings; plain ls keeps its usual flags (ls -ltr etc.).
+# eza listings; plain ls keeps its usual flags (ls -ltr etc.). Folders first, icons, and
+# a git status column in long views, as Oh My Zsh's eza plugin options do.
 if (( $+commands[eza] )); then
-  alias l="eza -lah"               # long, hidden files, header row
-  alias ll="eza -l"                # long
-  alias la="eza -la"               # long + hidden files
-  alias lt="eza --tree --level=2"  # tree, two levels deep
+  alias l="eza -lah --group-directories-first --icons=auto --git"  # long, hidden files, header row
+  alias ll="eza -l --group-directories-first --icons=auto --git"   # long
+  alias la="eza -la --group-directories-first --icons=auto --git"  # long + hidden files
+  alias lt="eza --tree --level=2 --group-directories-first --icons=auto"  # tree, two levels deep
+fi
+
+# Git shortcuts, named and defined exactly as in Oh My Zsh's git plugin.
+if (( $+commands[git] )); then
+  alias g='git'
+  alias ga='git add'
+  alias gaa='git add --all'
+  alias gb='git branch'
+  alias gc='git commit --verbose'
+  alias gca='git commit --verbose --all'
+  alias gco='git checkout'
+  alias gcb='git checkout -b'
+  alias gd='git diff'
+  alias gds='git diff --staged'
+  alias gl='git pull'
+  alias glog='git log --oneline --decorate --graph'
+  alias gloga='git log --oneline --decorate --graph --all'
+  alias gp='git push'
+  alias gpf='git push --force-with-lease --force-if-includes'
+  alias grb='git rebase'
+  alias grbi='git rebase --interactive'
+  alias gst='git status'
+  alias gsta='git stash push'
+  alias gstp='git stash pop'
+  alias gsw='git switch'
+  alias gswc='git switch --create'
+fi
+
+# help <command>: colorized --help output (bat README), e.g. help git commit.
+# help() calls bat directly because zsh parses this whole if-block before the alias exists.
+if (( $+commands[bat] )); then
+  alias bathelp='bat --plain --language=help'
+  help() { "$@" --help 2>&1 | bat --plain --language=help; }
 fi
 
 mkdir -p -- "$XDG_STATE_HOME/zsh" "$XDG_CACHE_HOME/zsh"
@@ -148,16 +196,37 @@ zle -N self-insert url-quote-magic
 zle -N bracketed-paste bracketed-paste-magic
 
 # Atuin owns Ctrl-R; fzf keeps its default file/directory selection.
+# List candidates with fd so fzf respects .gitignore (fzf README, "Respecting .gitignore").
+if (( $+commands[fd] )); then
+  export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix --hidden --follow --exclude .git'
+  export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+  export FZF_ALT_C_COMMAND='fd --type d --strip-cwd-prefix --hidden --follow --exclude .git'
+  _fzf_compgen_path() { fd --hidden --follow --exclude .git . "$1"; }        # vim **<Tab>
+  _fzf_compgen_dir() { fd --type d --hidden --follow --exclude .git . "$1"; } # cd **<Tab>
+fi
+# Previews from fzf's README: Ctrl-T shows the file (Ctrl-/ moves or hides the preview),
+# Alt-C shows the directory tree.
+(( $+commands[bat] )) && export FZF_CTRL_T_OPTS="
+  --walker-skip .git,node_modules,target
+  --preview 'bat -n --color=always {}'
+  --bind 'ctrl-/:change-preview-window(down|hidden|)'"
+(( $+commands[eza] )) && export FZF_ALT_C_OPTS="
+  --walker-skip .git,node_modules,target
+  --preview 'eza --tree --level=2 --color=always {} | head -200'"
 (( $+commands[fzf] )) && FZF_CTRL_R_COMMAND= source <(fzf --zsh)
 # Autosuggestion sources: atuin init puts its history first; zsh history and Tab
 # completion are fallbacks (completion suggests e.g. branch or file names never typed).
 ZSH_AUTOSUGGEST_STRATEGY=(history completion)
+# Look up suggestions only while the line is short (the README's recommended value),
+# so large pastes don't run the slow completion strategy.
+ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20
 (( $+commands[atuin] )) && eval "$(atuin init zsh --disable-up-arrow --disable-ai)"
 (( $+commands[zoxide] )) && eval "$(zoxide init zsh --cmd cd)"
 (( $+commands[starship] )) && eval "$(starship init zsh)"
 
 # Scope lazydocker's generic CONFIG_DIR variable to this one command.
 (( $+commands[lazydocker] )) && lazydocker() { CONFIG_DIR="$XDG_CONFIG_HOME/lazydocker" command lazydocker "$@"; }
+(( $+commands[lazydocker] )) && alias lzd='lazydocker'  # the alias lazydocker's README suggests
 
 # Machine-specific settings (not tracked by chezmoi), loaded last so they can
 # override the defaults above and use compdef; the plugins below must still follow.
@@ -169,4 +238,6 @@ ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 [[ -f {{ joinPath $brewPrefix "share/zsh-autosuggestions/zsh-autosuggestions.zsh" | shellQuote }} ]] && source {{ joinPath $brewPrefix "share/zsh-autosuggestions/zsh-autosuggestions.zsh" | shellQuote }}
 [[ -f "$ZDOTDIR/themes/catppuccin_mocha-zsh-syntax-highlighting.zsh" ]] && source "$ZDOTDIR/themes/catppuccin_mocha-zsh-syntax-highlighting.zsh"
 [[ -f {{ joinPath $brewPrefix "share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" | shellQuote }} ]] && source {{ joinPath $brewPrefix "share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" | shellQuote }}
+# Also color matching (), [], {} pairs by nesting depth; appended after the plugin sets its defaults.
+ZSH_HIGHLIGHT_HIGHLIGHTERS+=(brackets)
 {{ end -}}

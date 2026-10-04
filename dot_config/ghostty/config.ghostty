@@ -1,3 +1,13 @@
 font-family = JetBrains Mono
 theme = Catppuccin Mocha
 shell-integration-features = ssh-env,ssh-terminfo
+
+# Quake-style drop-down terminal from any app (the example in Ghostty's toggle_quick_terminal
+# docs). macOS asks once for Accessibility access. Takes over macOS's Cmd-` (cycle an app's windows).
+keybind = global:cmd+backquote=toggle_quick_terminal
+
+# Hide the mouse pointer while typing; it comes back when the mouse moves.
+mouse-hide-while-typing = true
+
+# Reopen windows, tabs, and splits (with their directories) after quitting Ghostty.
+window-save-state = always

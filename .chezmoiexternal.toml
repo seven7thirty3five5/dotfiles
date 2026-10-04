@@ -26,3 +26,8 @@
     type = "file"
     url = "https://raw.githubusercontent.com/catppuccin/zsh-syntax-highlighting/main/themes/catppuccin_mocha-zsh-syntax-highlighting.zsh"
     refreshPeriod = "168h"
+
+[".config/delta/themes/catppuccin.gitconfig"]
+    type = "file"
+    url = "https://raw.githubusercontent.com/catppuccin/delta/main/catppuccin.gitconfig"
+    refreshPeriod = "168h"

@@ -1,2 +1,8 @@
 # One bat command-line option per line; defaults are unchanged.
 --theme="Catppuccin Mocha"
+
+# Use the theme's italics (comments, functions, parameters); Ghostty renders them.
+--italic-text=always
+
+# Show line numbers, Git modifications and file header (but no grid).
+--style="numbers,changes,header"

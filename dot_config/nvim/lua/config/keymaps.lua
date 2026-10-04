@@ -7,5 +7,7 @@ local map = vim.keymap.set
 -- 2. Keep Cursor Centered While Scrolling and Searching
 map("n", "<C-d>", "<C-d>zz", { desc = "Scroll down and center" })
 map("n", "<C-u>", "<C-u>zz", { desc = "Scroll up and center" })
-map("n", "n", "nzzzv", { desc = "Next search match and center" })
-map("n", "N", "Nzzzv", { desc = "Prev search match and center" })
+-- n always searches forward and N backward, even after ?, as LazyVim's own n/N do
+-- (vim-galore's "saner behavior of n and N"); zz centers the match, zv opens its fold.
+map("n", "n", "'Nn'[v:searchforward].'zzzv'", { expr = true, desc = "Next search result and center" })
+map("n", "N", "'nN'[v:searchforward].'zzzv'", { expr = true, desc = "Prev search result and center" })
