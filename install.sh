@@ -9,7 +9,7 @@
 # chezmoi's own config looks for delta and nvim, which did not exist the first time,
 # and a chezmoi script cannot run chezmoi itself.
 #
-# Arguments are passed to `chezmoi init` (CI uses --promptDefaults). Re-running is safe:
+# Arguments are passed to `chezmoi init` (e.g. --branch). Re-running is safe:
 # an existing ~/.local/share/chezmoi is reused, not cloned again.
 set -eu
 

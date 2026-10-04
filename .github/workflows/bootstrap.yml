@@ -38,10 +38,17 @@ jobs:
           mkdir -p "$HOME/.local/share"
           cp -R "$GITHUB_WORKSPACE" "$HOME/.local/share/chezmoi"
 
+      # chezmoi's prompt...Once functions don't ask when the config already has an answer.
+      - name: Answer chezmoi's setup questions
+        run: |
+          mkdir -p "$HOME/.config/chezmoi"
+          printf '[data]\ngitName = "CI"\ngitEmail = "ci@example.invalid"\npublishDotfiles = false\n' \
+            > "$HOME/.config/chezmoi/chezmoi.toml"
+
       - name: Run install.sh
         env:
           GH_TOKEN: ${{ github.token }} # avoids API rate limits on shared runner IPs
-        run: sh install.sh --promptDefaults
+        run: sh install.sh
 
       - name: Check the result
         run: sh scripts/check-install.sh
@@ -75,18 +82,21 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Use this commit as the dotfiles repository
+      - name: Use this commit as the dotfiles repository, and answer chezmoi's questions
         run: |
-          install -d -o tester -g tester /home/tester/.local /home/tester/.local/share
+          install -d -o tester -g tester /home/tester/.local /home/tester/.local/share \
+            /home/tester/.config /home/tester/.config/chezmoi
           cp -R "$GITHUB_WORKSPACE" /home/tester/.local/share/chezmoi
-          chown -R tester:tester /home/tester/.local/share/chezmoi
+          printf '[data]\ngitName = "CI"\ngitEmail = "ci@example.invalid"\npublishDotfiles = false\n' \
+            > /home/tester/.config/chezmoi/chezmoi.toml
+          chown -R tester:tester /home/tester/.local/share/chezmoi /home/tester/.config/chezmoi
 
       - name: Run install.sh as the user
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
           sudo --user=tester --login env LANG=C.UTF-8 GH_TOKEN="$GH_TOKEN"
-          sh /home/tester/.local/share/chezmoi/install.sh --promptDefaults
+          sh /home/tester/.local/share/chezmoi/install.sh
 
       - name: Check the result
         run: >-
