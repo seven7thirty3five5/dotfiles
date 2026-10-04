@@ -11,7 +11,8 @@ commit and push dotfile changes; answer yes only on the machine you publish from
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/seven7thirty3five5/dotfiles/main/install.sh)"
 ```
 
-[`install.sh`](install.sh) runs `chezmoi init --apply`, and the scripts in
+[`install.sh`](install.sh) initializes chezmoi, records its targets, and applies the
+dotfiles. The scripts in
 [`home/.chezmoiscripts`](home/.chezmoiscripts) set the machine up in this order:
 
 1. **Homebrew**, if it is missing:
@@ -37,7 +38,44 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/seven7thirty3five5/dotfile
 
 `install.sh` then initializes Homebrew in its own shell and runs `chezmoi init` once
 more so chezmoi's own config picks up `delta` and `nvim`. Re-running it is safe, and
-extra arguments are passed to `chezmoi init`.
+extra arguments are passed to `chezmoi init`. Chezmoi stays in the Brewfile: the
+bootstrap download is temporary; Homebrew supplies the everyday executable.
+
+### Remove the setup
+
+Review the plan, then run the uninstaller as your normal user:
+
+```sh
+sh ~/.local/share/chezmoi/uninstall.sh --dry-run
+sh ~/.local/share/chezmoi/uninstall.sh --yes
+```
+
+[`uninstall.sh`](uninstall.sh) permanently removes the complete Homebrew prefix and
+all its packages, Ghostty, chezmoi's repository/configuration/cache/state, every
+managed file or symlink, and the tools' configuration, plugins, caches, logs,
+history and local credentials. This includes untracked local configuration inside
+those tool directories. It also removes Homebrew services, macOS Command Line
+Tools and their receipts, and Linux prerequisite packages/dependencies installed
+by bootstrap. macOS ends with `/bin/zsh`; Linux ends with `/bin/bash`. Sudo is needed
+for system files and packages. Previous configuration is not restored.
+
+The inventory in `~/.local/state/dotfiles-bootstrap` is written before applying
+dotfiles and survives a failed cleanup so it can be retried. Older installations
+use the repository's known artifact locations and Linux prerequisite package list.
+Uninstall works without chezmoi or a working Homebrew binary for the packages in
+this Brewfile. Paths under custom XDG roots must be inside your home directory.
+
+The uninstaller removes its own repository. To repeat it after that, download a
+standalone copy outside the repository:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/seven7thirty3five5/dotfiles/main/uninstall.sh -o /tmp/dotfiles-uninstall.sh
+sh /tmp/dotfiles-uninstall.sh --yes
+```
+
+Repeated installs reuse the setup; repeated uninstalls succeed when it is already
+gone. On Linux, `--prefix` can select one supported Homebrew prefix; by default,
+all supported prefixes are removed. On macOS, only `/opt/homebrew` is accepted.
 
 ### After setup
 
@@ -69,7 +107,7 @@ regenerate this machine's config; it only asks questions it hasn't asked before.
 ## Repository layout
 
 - `home/` is the chezmoi source state, as named in `.chezmoiroot`. Everything outside it
-  (this README, `install.sh`, `scripts/`, `.github/`) is never deployed.
+  (this README, `install.sh`, `uninstall.sh`, `scripts/`, `.github/`) is never deployed.
 - `.chezmoiversion` sets the oldest chezmoi that can read the source state.
 - `~/.config/nvim/lazy-lock.json` and `~/.config/gh/config.yml` are symlinks to
   `.lazy-lock.json` and `.config.yml` in `home/`, because lazy.nvim and gh rewrite
@@ -80,13 +118,15 @@ regenerate this machine's config; it only asks questions it hasn't asked before.
 GitHub Actions runs three workflows on pushes and pull requests:
 
 - **Shell checks** test the bootstrap prefix policy, sudo requirements and installer
-  PATH propagation with stand-ins, then run `scripts/check-shell.py` on macOS and
+  PATH propagation and uninstall with stand-ins, then run `scripts/check-shell.py` on macOS and
   Linux, as described below.
 - **Bootstrap** runs `install.sh` against the pushed commit on GitHub's macOS and
   Ubuntu runners, and in fresh Ubuntu containers as a user with sudo and as one
   without (Homebrew then goes into the home folder). `scripts/check-install.sh` then
   checks the result: the tools on PATH, `chezmoi verify`, the Homebrew prefix, the
-  symlinks, gh-dash and LazyVim's plugins.
+  symlinks, gh-dash and LazyVim's plugins. Runner jobs install twice; disposable
+  Linux containers also uninstall twice, reinstall and check the setup, and
+  uninstall twice again.
 - **Secret scan** runs gitleaks over the whole history, which also covers edits made
   without `chezmoi add` and its secret check.
 
@@ -95,6 +135,7 @@ available:
 
 ```sh
 python3 scripts/check-bootstrap.py
+python3 scripts/check-uninstall.py
 python3 scripts/check-shell.py
 ```
 

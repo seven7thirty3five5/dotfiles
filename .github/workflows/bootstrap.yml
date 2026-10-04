@@ -48,7 +48,9 @@ jobs:
       - name: Run install.sh
         env:
           GH_TOKEN: ${{ github.token }} # avoids API rate limits on shared runner IPs
-        run: sh install.sh
+        run: |
+          sh install.sh
+          sh install.sh
 
       - name: Check the result
         run: sh scripts/check-install.sh
@@ -59,7 +61,7 @@ jobs:
     name: install.sh (fresh Ubuntu, ${{ matrix.access }})
     runs-on: ubuntu-latest
     container: ubuntu:24.04
-    timeout-minutes: 60
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
@@ -102,3 +104,10 @@ jobs:
         run: >-
           sudo --user=tester --login env LANG=C.UTF-8
           sh /home/tester/.local/share/chezmoi/scripts/check-install.sh
+
+      - name: Check repeat install, uninstall and reinstall
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          sudo --user=tester --login env LANG=C.UTF-8 GH_TOKEN="$GH_TOKEN"
+          sh "$GITHUB_WORKSPACE/scripts/check-lifecycle.sh"
