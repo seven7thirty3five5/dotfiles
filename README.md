@@ -99,8 +99,15 @@ chezmoi update
 This pulls the repository and applies it. When the Brewfile changes, the scripts also
 install the new packages. If chezmoi warns that the config file template has changed,
 run `chezmoi init` to regenerate this machine's config; it only asks questions it
-hasn't asked before. Neovim's plugins are updated inside Neovim with `:Lazy update`;
-each machine keeps its own record of their versions in `~/.config/nvim/lazy-lock.json`.
+hasn't asked before.
+
+To update everything at once, run `update`, an alias in `.zshrc`. It runs
+`brew update` and `brew upgrade`, `chezmoi upgrade` and `chezmoi update`, then upgrades
+gh's extensions. Neovim's plugins are updated inside Neovim, when you choose, with
+`:Lazy update`; LazyVim's statusline shows how many updates are available, and each
+machine keeps its own record of plugin versions in `~/.config/nvim/lazy-lock.json`.
+Mason's tools (language servers and formatters) are updated there too: open `:Mason`
+and press `U`.
 
 ## Use these dotfiles yourself
 

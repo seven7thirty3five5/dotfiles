@@ -129,6 +129,21 @@ if (( $+commands[chezmoi] )); then
   alias czd='chezmoi diff'    # Preview the changes chezmoi would apply to managed dotfiles.
 fi
 
+# update: update everything these dotfiles install, one step after another. Each
+# && runs the next step only if the one before it succeeded.
+#   brew update, brew upgrade    Homebrew's package list, then every outdated package
+#                                (apps that update themselves, like Ghostty, are left alone)
+#   chezmoi upgrade              chezmoi itself, which install.sh put in ~/.local/bin
+#   chezmoi update               pull the dotfiles repository and apply it, which also
+#                                installs packages newly added to the Brewfile
+#   gh extension upgrade --all   gh's extensions, such as gh-dash
+# Neovim's plugins are updated inside Neovim, when you choose: run :Lazy update
+# (LazyVim's statusline shows how many updates are available). Mason's tools
+# (language servers and formatters) too: open :Mason and press U.
+if (( $+commands[brew] && $+commands[chezmoi] && $+commands[gh] )); then
+  alias update='brew update && brew upgrade && chezmoi upgrade && chezmoi update && gh extension upgrade --all'
+fi
+
 if (( $+commands[fd] )); then
   alias fdall='fd --hidden --no-ignore --exclude .git'  # Find hidden and ignored files, excluding .git directories.
 fi
