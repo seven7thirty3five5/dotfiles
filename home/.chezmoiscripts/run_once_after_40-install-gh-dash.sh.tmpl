@@ -4,8 +4,9 @@
 #
 # gh-dash is an extension for GitHub's command line tool (gh), not a Homebrew
 # package, so gh installs it. chezmoi runs this once per machine ("run_once_"),
-# after writing the dotfiles ("after_"). Installing it needs no GitHub login;
-# using it does (run `gh auth login`).
+# after writing the dotfiles and installing the Brewfile's packages ("after_",
+# number 40). If it fails, chezmoi tries it again on the next apply. Installing
+# it needs no GitHub login; using it does (run `gh auth login`).
 
 # Stop at the first command that fails (-e), and treat an unset variable as an
 # error instead of quietly using an empty value (-u).
@@ -13,6 +14,12 @@ set -eu
 
 # Find Homebrew; this sets $brew (see find-brew.sh in home/.chezmoitemplates).
 {{ template "find-brew.sh" . }}
+# -z: the text is empty, so Homebrew isn't installed. (>&2 prints an error.)
+if [ -z "$brew" ]; then
+  echo "error: Homebrew not found, so gh, which installs gh-dash, is missing." >&2
+  exit 1
+fi
+
 # Where gh keeps its extensions: $XDG_DATA_HOME/gh, which is ~/.local/share/gh
 # by default. (${NAME:-default} means "the value of $NAME, or default when it
 # isn't set".)

@@ -1,16 +1,19 @@
 # Bootstrap: run the real install.sh on brand-new machines and check the result.
 #
 # This is the one test that installs everything for real (Homebrew, every package,
-# the dotfiles, LazyVim's plugins), the same way it happens on a new computer. It
-# tests the commit that was pushed, not whatever is on GitHub's main branch.
+# the dotfiles), the same way it happens on a new computer. It tests the commit
+# that was pushed, not whatever is on GitHub's main branch.
 #
-# It uses four machines:
-#   runner job     GitHub's own macOS and Ubuntu machines. These already have
-#                  Homebrew, so they test a machine where Homebrew exists.
-#   container job  A clean Ubuntu 24.04 with no Homebrew at all, twice: once as a
-#                  user with sudo (Homebrew installs in its default folder) and once
-#                  as a user without sudo, like a locked-down work computer
-#                  (Homebrew installs into the home folder).
+# It uses seven machines:
+#   runner job     GitHub's own machines: macOS, and Ubuntu on x86_64 and on
+#                  ARM64. The macOS and x86_64 Ubuntu machines already have
+#                  Homebrew, so they test a machine where Homebrew exists; the
+#                  ARM64 one has none, so setup installs it there with sudo.
+#   container job  A clean Ubuntu 24.04 with no Homebrew at all, on x86_64 and on
+#                  ARM64, each twice: once as a user with sudo (Homebrew installs
+#                  in its default folder) and once as a user without sudo, like a
+#                  locked-down work computer (Homebrew installs into the home
+#                  folder).
 #
 # Each machine runs install.sh twice, because running it again must be safe, then
 # runs scripts/check-install.sh to verify the setup.
@@ -47,9 +50,10 @@ jobs:
       # whether a problem affects macOS, Linux, or both.
       fail-fast: false
 
-      # Run the job once per value: one macOS and one Linux virtual machine.
+      # Run the job once per value: one macOS and two Linux virtual machines,
+      # x86_64 (ubuntu-latest) and ARM64 (ubuntu-24.04-arm).
       matrix:
-        os: [macos-latest, ubuntu-latest]
+        os: [macos-latest, ubuntu-latest, ubuntu-24.04-arm]
 
     # Run every `run:` step with bash, which stops a step at its first failing command.
     defaults:
@@ -98,17 +102,21 @@ jobs:
       - name: Check the result
         run: sh scripts/check-install.sh
 
-  # install.sh on a fresh Ubuntu without Homebrew, as a user with sudo and as one without,
-  # like a locked-down work machine where Homebrew goes into the home folder.
+  # install.sh on a fresh Ubuntu without Homebrew, on x86_64 and ARM64, as a user with
+  # sudo and as one without, like a locked-down work machine where Homebrew goes into
+  # the home folder.
   container:
-    # The job's name in the Actions tab, e.g. "install.sh (fresh Ubuntu, no-sudo)".
-    name: install.sh (fresh Ubuntu, ${{ matrix.access }})
+    # The job's name in the Actions tab, e.g.
+    # "install.sh (fresh Ubuntu, ubuntu-24.04-arm, no-sudo)".
+    name: install.sh (fresh Ubuntu, ${{ matrix.runner }}, ${{ matrix.access }})
 
-    # One of GitHub's Ubuntu virtual machines, which hosts the container below.
-    runs-on: ubuntu-latest
+    # One of GitHub's Ubuntu virtual machines, x86_64 or ARM64, which hosts the
+    # container below.
+    runs-on: ${{ matrix.runner }}
 
     # Run the steps inside a plain Ubuntu 24.04 container (a minimal, separate Linux
-    # system) instead of on GitHub's machine, which already has Homebrew installed.
+    # system) instead of on GitHub's machine, which comes with many extra programs
+    # (on x86_64, Homebrew too) and where everyone may use sudo.
     container: ubuntu:24.04
 
     # Installing Homebrew from scratch plus every package takes a few minutes;
@@ -119,8 +127,11 @@ jobs:
       # Let the other variant finish even if one fails.
       fail-fast: false
 
-      # Run the job twice: once for a user who may use sudo, once for one who may not.
+      # Run the job four times: on x86_64 (ubuntu-latest) and on ARM64
+      # (ubuntu-24.04-arm), each once for a user who may use sudo and once for
+      # one who may not.
       matrix:
+        runner: [ubuntu-latest, ubuntu-24.04-arm]
         access: [sudo, no-sudo]
 
     steps:
@@ -135,8 +146,9 @@ jobs:
 
           if [ "${{ matrix.access }}" = no-sudo ]; then
             # Without sudo, the installer can't install system packages, so this
-            # pretends an administrator already provided what Homebrew and LazyVim need.
-            apt-get install --no-install-recommends --yes build-essential procps file unzip
+            # pretends an administrator already provided what Homebrew, LazyVim and
+            # the dotfiles need, zsh included.
+            apt-get install --no-install-recommends --yes build-essential procps file unzip zsh
           fi
 
           useradd --create-home --shell /bin/bash tester

@@ -13,10 +13,10 @@ export XDG_DATA_DIRS="${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
 
 # XDG_RUNTIME_DIR belongs to the OS/session; do not invent a persistent path.
 
-# Ubuntu's own zsh (/usr/bin/zsh) reads /etc/zsh/zshrc, which runs its own
-# compinit (the tab completion setup) unless this is set; .zshrc runs ours.
-# Homebrew's zsh never reads that file, but Ubuntu's zsh still runs these
-# files if, for example, an administrator sets it as your login shell.
+# Ubuntu's zsh (/usr/bin/zsh, the login shell these dotfiles set up there)
+# reads /etc/zsh/zshrc, which runs its own compinit (the tab completion setup)
+# unless this is set. .zshrc runs ours, which keeps its cache in ~/.cache/zsh
+# instead of leaving a .zcompdump file in your home folder.
 skip_global_compinit=1
 
 # Unique entries make repeated sourcing safe; restore the same PATH priorities.

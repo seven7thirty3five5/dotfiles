@@ -15,12 +15,13 @@
 # A Brewfile lists Homebrew packages for `brew bundle` to install. Each brew line
 # is a command-line package (a "formula"), and a cask line is an app. (Brewfiles
 # are written in Ruby, the programming language Homebrew is written in.)
+#
+# Two tools the dotfiles need don't come from here: install.sh puts chezmoi in
+# ~/.local/bin (upgrade it with `chezmoi upgrade`), and zsh is the system's own
+# (macOS's, or one that Linux's package manager installs), because only an
+# administrator can make a shell your login shell.
 
-# Dotfile management.
-brew "chezmoi"                  # manages these dotfiles
-
-# Interactive shell. A chezmoi script makes Homebrew's zsh your login shell.
-brew "zsh"                      # the shell itself, the same version on macOS and Linux
+# Interactive shell plugins and tools.
 brew "atuin"                    # shell history in a searchable database (Ctrl-R)
 brew "eza"                      # a modern ls, with colors, icons and git status
 brew "fzf"                      # fuzzy finder: pick from a list by typing part of an entry
@@ -42,7 +43,7 @@ brew "actionlint"               # checks GitHub Actions workflows, including the
 brew "shellcheck"               # finds bugs and portability issues in sh and bash scripts
 brew "shfmt"                    # formats sh and bash scripts consistently
 
-# Neovim and search. A chezmoi script installs LazyVim's plugins from lazy-lock.json.
+# Neovim and search. LazyVim installs its plugins the first time you start nvim.
 brew "neovim"                   # the editor (nvim) that LazyVim runs in
 brew "ast-grep"                 # searches and rewrites code by its structure
 brew "fd"                       # a simpler, faster find

@@ -1,6 +1,6 @@
 # Portable XDG dotfiles
 
-Chezmoi configurations for macOS (Apple silicon) and Linux.
+Chezmoi configurations for macOS (Apple silicon) and Linux (x86_64 and ARM64).
 
 ## Set up a new machine
 
@@ -15,47 +15,55 @@ administrator for.
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/seven7thirty3five5/dotfiles/main/install.sh)"
 ```
 
-[`install.sh`](install.sh) runs `chezmoi init --apply`, and the scripts in
-[`home/.chezmoiscripts`](home/.chezmoiscripts) set the machine up in this order:
+[`install.sh`](install.sh) first checks that it can run: it stops if you run it as root,
+on an Intel Mac or another unsupported system, or if `~/.local/share/chezmoi` already
+holds other dotfiles. It installs chezmoi in `~/.local/bin`, where it stays (update it
+with `chezmoi upgrade`), and runs `chezmoi init --apply`. That writes the dotfiles, then
+runs the scripts in [`home/.chezmoiscripts`](home/.chezmoiscripts) in this order:
 
-1. **Homebrew**, if it is missing (an existing installation is reused without sudo):
+1. **System packages**, on Linux with sudo only: what Homebrew needs (build tools,
+   `curl`, `file`, `git`), plus `unzip` and zsh, with `apt-get`, `dnf` or `pacman`.
+2. **Homebrew**, if it is missing (an existing installation is reused without sudo):
    - macOS (Apple silicon): `/opt/homebrew` is the only supported prefix, and
-     installing it needs sudo. If you answered no, setup stops and says to ask an
-     administrator to install Homebrew there. Homebrew installs Apple's Command Line
-     Tools when needed. Intel Macs are not supported by these dotfiles.
-   - Linux, with sudo: `/home/linuxbrew/.linuxbrew`. Setup first installs the build
-     tools Homebrew requires, plus unzip, with `apt-get`, `dnf` or `pacman`.
+     installing it needs sudo. If you answered no, this step fails and the list at
+     the end says to ask an administrator to install Homebrew there. Homebrew
+     installs Apple's Command Line Tools when needed.
+   - Linux, with sudo: `/home/linuxbrew/.linuxbrew`.
    - Linux, without sudo: `~/.linuxbrew`, or `~/.brew` when that path would be longer
      than the default. Homebrew uses its prebuilt bottles in a custom prefix only if it
      is no longer than the default ([support tiers](https://docs.brew.sh/Support-Tiers)).
-     A C compiler, `file` and `unzip` must then come from your administrator.
-2. **The [Brewfile](home/dot_config/homebrew/Brewfile.tmpl)**, with `brew bundle --no-upgrade`.
-   It includes zsh itself, so macOS and Linux run the same version. Mole, GNU tar and
-   the Ghostty cask are macOS-only; the Brewfile is a template that leaves them out on
-   Linux. The cask adopts an existing Ghostty app.
-3. **The dotfiles** themselves.
+     A C compiler, `file`, `git` and `unzip` must then come from your administrator.
+3. **The [Brewfile](home/dot_config/homebrew/Brewfile.tmpl)**, with `brew bundle --no-upgrade`.
+   Mole, GNU tar and the Ghostty cask are macOS-only; the Brewfile is a template that
+   leaves them out on Linux. The cask adopts an existing Ghostty app.
 4. **[gh-dash](https://www.gh-dash.dev/)**, the GitHub CLI extension.
-5. **LazyVim's plugins**, headless, at the versions in `lazy-lock.json`.
-6. **Homebrew's zsh as the login shell**, only if you answered yes to sudo: setup
-   adds it to `/etc/shells` and switches to it with `chsh` (sudo asks for your
-   password). If that isn't possible, setup carries on.
+5. **zsh as the login shell**, only if you answered yes to sudo: the system's own zsh,
+   `/bin/zsh` on macOS (already the default there) or `/usr/bin/zsh` on Linux, set
+   with `chsh` (sudo asks for your password). If that isn't possible, setup carries on.
 
-`install.sh` then initializes Homebrew in its own shell and runs `chezmoi init` once
-more so chezmoi's own config picks up `delta` and `nvim`. Finally it lists anything
-left to do by hand, such as asking an administrator (IT) to change your login shell
-or to install a C compiler, `file` or `unzip`. Re-running it is safe, and extra
-arguments are passed to `chezmoi init`. To change an answer later, edit it under
-`[data]` in `~/.config/chezmoi/chezmoi.toml`.
+Because the dotfiles are written first, a machine where a script fails, for example
+because Homebrew can't be installed there, still gets them. chezmoi tries a failed
+script again on the next `chezmoi apply` or `chezmoi update`, and `install.sh` runs
+chezmoi with `--keep-going`, so one failed script doesn't stop the others.
+
+Once Homebrew is installed, `install.sh` runs `chezmoi init` and `chezmoi apply` once
+more, so that chezmoi's own config picks up `delta` and `nvim`, and the zsh and git
+configs pick up Homebrew. Finally it lists anything left to do by hand, such as asking
+an administrator (IT) to install zsh and make it your login shell, and it ends with an
+error if a step failed. Re-running it is safe, and extra arguments are passed to
+`chezmoi init`. To change an answer later, edit it under `[data]` in
+`~/.config/chezmoi/chezmoi.toml`.
 
 ### On a machine that already has dotfiles
 
-The install replaces any existing file that these dotfiles manage, and deletes the old
-files listed in [`home/.chezmoiremove`](home/.chezmoiremove), such as `~/.zshrc`,
-without asking and without a backup. To see what would change first, download chezmoi
-and the repository without applying anything, then compare:
+The install replaces every existing file that these dotfiles manage, such as
+`~/.config/git/config` or `~/.config/nvim/init.lua`, and leaves other files alone.
+zsh stops reading the startup files in your home folder, such as `~/.zshrc`, because
+these dotfiles move them to `~/.config/zsh`. To see what would change first, download
+chezmoi and the repository without applying anything, then compare:
 
 ```sh
-sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin" init seven7thirty3five5
+sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin" init --use-builtin-git=true seven7thirty3five5
 "$HOME/.local/bin/chezmoi" diff --exclude=scripts
 ```
 
@@ -66,15 +74,18 @@ one-command install above; it reuses the downloaded repository and your answers.
 ### After setup
 
 - Open a new terminal.
+- Start Neovim (`nvim`): the first time, LazyVim installs its plugins, which takes a
+  minute and needs internet access. Then `:LazyHealth` and `:checkhealth mason`
+  report anything still missing. Node isn't installed or put on PATH, so LazyVim
+  extras whose language servers are npm packages (such as `lang.json` or
+  `lang.typescript`) can't install until it is.
 - Run `gh auth login` before using `gh dash`; installing it needed no login.
-- In Neovim, `:LazyHealth` and `:checkhealth mason` report anything still missing.
-  Node isn't installed or put on PATH, so LazyVim extras whose language servers are
-  npm packages (such as `lang.json` or `lang.typescript`) can't install until it is.
 - Ghostty bundles JetBrains Mono and the Nerd Font symbols. Over SSH, LazyVim, lazygit,
   eza and gh-dash icons need a Nerd Font (v3 or newer) in the connecting terminal.
 - `lazydocker` and `act` need a working Docker installation, which you set up separately.
 - `~/.config/zsh/.zshrc.local` (optional) holds per-machine zsh settings such as
-  aliases and functions. It is not tracked by chezmoi.
+  aliases and functions. It is not tracked by chezmoi. Lines that installers (Docker
+  Desktop, conda, nvm and so on) offer to add to `~/.zshrc` belong there too.
 
 **Rule:** Follow the [XDG Base Directory Specification](https://specifications.freedesktop.org/basedir/latest/)
 wherever supported, using its standard paths.
@@ -85,19 +96,27 @@ wherever supported, using its standard paths.
 chezmoi update
 ```
 
-This pulls the repository and applies it. When the Brewfile, `lazy-lock.json` or the
-LazyVim extras change, the scripts also install the new packages and plugin versions.
-If chezmoi warns that the config file template has changed, run `chezmoi init` to
-regenerate this machine's config; it only asks questions it hasn't asked before.
+This pulls the repository and applies it. When the Brewfile changes, the scripts also
+install the new packages. If chezmoi warns that the config file template has changed,
+run `chezmoi init` to regenerate this machine's config; it only asks questions it
+hasn't asked before. Neovim's plugins are updated inside Neovim with `:Lazy update`;
+each machine keeps its own record of their versions in `~/.config/nvim/lazy-lock.json`.
+
+## Use these dotfiles yourself
+
+Fork this repository instead of installing it directly: `install.sh` and
+`chezmoi update` install whatever is on the repository's `main` branch. In your fork,
+change `repo` at the top of `install.sh` and the username in the commands above to
+yours, and change `repoPaths` in [`gh-dash/config.yml`](home/dot_config/gh-dash/config.yml)
+to your GitHub username.
 
 ## Repository layout
 
 - `home/` is the chezmoi source state, as named in `.chezmoiroot`. Everything outside it
-  (this README, `install.sh`, `scripts/`, `.github/`) is never deployed.
+  (this README, `LICENSE`, `install.sh`, `scripts/`, `.github/`) is never deployed.
 - `.chezmoiversion` sets the oldest chezmoi that can read the source state.
-- `~/.config/nvim/lazy-lock.json` and `~/.config/gh/config.yml` are symlinks to
-  `.lazy-lock.json` and `.config.yml` in `home/`, because lazy.nvim and gh rewrite
-  them. Their changes appear in this repository as ordinary git changes.
+- `~/.config/gh/config.yml` is a symlink to `.config.yml` in `home/dot_config/gh/`,
+  because gh rewrites it. Its changes appear in this repository as ordinary git changes.
 
 ### Shell and workflow tools
 
@@ -159,8 +178,8 @@ The names starting with `.chezmoi` control chezmoi itself:
 
 - `.chezmoi.toml.tmpl` asks the setup questions and writes each machine's chezmoi
   settings.
-- `.chezmoiignore` lists files not to install on some machines, and `.chezmoiremove`
-  lists old files to delete.
+- `.chezmoiignore` lists files chezmoi leaves alone: some only on some machines, and
+  some, such as Neovim's `lazy-lock.json`, everywhere.
 - `.chezmoiexternal.toml` lists files that chezmoi downloads instead of keeping them
   here: the Catppuccin themes.
 - `.chezmoitemplates/` holds template pieces that several files share, such as how
@@ -168,27 +187,29 @@ The names starting with `.chezmoi` control chezmoi itself:
 - `.chezmoiscripts/` holds the setup scripts. A `run_once_` script runs once per
   machine (and again if it changes), a `run_onchange_` script again whenever its
   contents change, and `before_` or `after_` says whether it runs before or after
-  chezmoi writes the files. The numbers set the order.
+  chezmoi writes the files. The numbers set the order. A script that fails runs
+  again on the next apply.
 
 Most files explain themselves in comments. A few can't hold any: `.chezmoiroot` (just
-the folder name, `home`), `.chezmoiversion` (just a version number),
-`empty_dot_hushlogin`, and two JSON files that Neovim's plugins write themselves:
-`lazyvim.json`, the LazyVim extras turned on with `:LazyExtras`, and `.lazy-lock.json`,
-in which lazy.nvim records the exact version of each plugin.
+the folder name, `home`), `.chezmoiversion` (just a version number), `LICENSE` (the
+standard MIT license text), `empty_dot_hushlogin`, and `lazyvim.json`, the LazyVim
+extras turned on with `:LazyExtras`, which LazyVim writes itself.
 
 ## Validate
 
 GitHub Actions runs three workflows on pushes and pull requests:
 
 - **Shell checks** run ShellCheck and shfmt on plain shell scripts and on chezmoi
-  templates rendered for macOS and Linux with both answers to the sudo question, and
-  actionlint on all workflows, then run `scripts/check-shell.py` on macOS and Linux.
-- **Bootstrap** runs `install.sh` against the pushed commit on GitHub's macOS and
-  Ubuntu runners, and in fresh Ubuntu containers as a user with sudo and as one
-  without, who answers no to the sudo question (Homebrew then goes into the home
-  folder). `scripts/check-install.sh` then checks the result: the tools on PATH,
-  `chezmoi verify`, the Homebrew prefix, the symlinks, gh-dash, LazyVim's plugins
-  and, where setup may use sudo, the login shell.
+  templates rendered for macOS and Linux (x86_64 and ARM64) with both answers to the
+  sudo question, and actionlint on all workflows, then run `scripts/check-shell.py`
+  on macOS and Linux.
+- **Bootstrap** runs `install.sh` against the pushed commit on GitHub's macOS runner
+  and its x86_64 and ARM64 Ubuntu runners, and in fresh Ubuntu containers on both
+  architectures, as a user with sudo and as one without, who answers no to the sudo
+  question (Homebrew then goes into the home folder). `scripts/check-install.sh` then
+  checks the result: the tools on PATH, `chezmoi verify`, that setup left the
+  repository unchanged, the Homebrew prefix, the gh config symlink, gh-dash and,
+  where setup may use sudo, the login shell.
 - **Secret scan** runs gitleaks over the whole history, which also covers edits made
   without `chezmoi add` and its secret check.
 
@@ -212,3 +233,10 @@ temporary directories so shared runner permissions do not trigger completion
 security prompts. They do not apply dotfiles, install packages,
 download external themes, or use your local shell overrides. Application behavior
 and integration with installed plugins still need checking on a configured machine.
+
+## License
+
+[MIT](LICENSE). The Neovim config in `home/dot_config/nvim` started from
+[LazyVim's starter](https://github.com/LazyVim/starter) (Apache-2.0), and the atuin,
+btop and gh-dash configs start from the default settings those tools generate; those
+parts remain under their projects' licenses.

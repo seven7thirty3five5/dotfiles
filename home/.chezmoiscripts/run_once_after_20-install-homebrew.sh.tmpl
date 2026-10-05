@@ -4,22 +4,26 @@
 #
 # How chezmoi runs this file:
 #   - "run_once_" in the name: chezmoi runs it once per machine (again only if
-#     this file changes).
-#   - "before_": it runs before chezmoi writes any dotfile, because the zsh and
-#     git configs need to know where Homebrew is.
+#     this file changes). If it fails, chezmoi tries it again on the next
+#     `chezmoi apply` or `chezmoi update`.
+#   - "after_": it runs after chezmoi has written the dotfiles, so a machine
+#     where Homebrew can't be installed still gets them. (The zsh and git
+#     configs only set up Homebrew once it's installed, which is why install.sh
+#     applies the dotfiles once more at the end.)
 #   - ".tmpl": chezmoi first fills in the template parts (written between double
 #     braces). For example, it keeps only the part for your answer to the setup
 #     question "Use sudo on this machine" (.useSudo).
 #
 # Where Homebrew goes:
 #   With sudo     Its default folder: /opt/homebrew on macOS, and
-#                 /home/linuxbrew/.linuxbrew on Linux, after installing the
-#                 build tools Homebrew needs there.
+#                 /home/linuxbrew/.linuxbrew on Linux, where the
+#                 install-system-packages script (10) has already installed the
+#                 build tools Homebrew needs.
 #   Without sudo  (you answered no) On Linux: ~/.linuxbrew, or ~/.brew when that
 #                 path is too long, and sudo is never run. Homebrew can only use
 #                 its prebuilt packages ("bottles") in a folder whose path is no
-#                 longer than the default one. On macOS, setup stops: Homebrew
-#                 is only supported in /opt/homebrew, which needs sudo.
+#                 longer than the default one. On macOS this fails: Homebrew is
+#                 only supported in /opt/homebrew, which needs sudo.
 
 # Stop at the first command that fails (-e), and treat an unset variable as an
 # error instead of quietly using an empty value (-u).
@@ -35,16 +39,17 @@ if [ -n "$brew" ]; then
 fi
 
 {{ if and (eq .chezmoi.os "darwin") (ne .chezmoi.arch "arm64") -}}
-# chezmoi only writes this part on an Intel Mac. Refuse before including
-# commands that cannot run on this unsupported machine.
+# chezmoi only writes this part on an Intel Mac, which install.sh already
+# refuses. Fail before including commands that cannot run on this machine.
 echo "error: these dotfiles expect Homebrew in /opt/homebrew;" \
   "Intel Macs are not supported." >&2
 exit 1
 {{- else if and (eq .chezmoi.os "darwin") (not .useSudo) -}}
 # chezmoi only writes this part on a Mac where you answered no to "Use sudo on
-# this machine". Homebrew can only go in /opt/homebrew, which needs sudo, and
-# every later step needs Homebrew, so stop here. (Print the lines up to MSG as
-# an error.)
+# this machine". Homebrew can only go in /opt/homebrew, which needs sudo, so
+# fail with an explanation. Your dotfiles are already in place, and chezmoi
+# tries this script again on your next apply. (Print the lines up to MSG as an
+# error.)
 cat >&2 <<'MSG'
 error: on macOS, Homebrew must be installed in /opt/homebrew, which needs sudo.
        Ask an administrator to install Homebrew there, then run install.sh again.
@@ -59,30 +64,6 @@ exit 1
 installer=$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)
 
 {{ if .useSudo -}}
-{{ if eq .chezmoi.os "linux" -}}
-# Install what Homebrew needs (a C compiler, curl, file, git, ...) plus unzip,
-# which LazyVim's Mason needs. (zsh comes from the Brewfile, as on macOS.) Use
-# this Linux's package manager: apt-get (Debian, Ubuntu), dnf (Fedora, RHEL)
-# or pacman (Arch). `command -v` checks whether a program exists. sudo asks
-# for your password if it doesn't remember it yet.
-if command -v apt-get >/dev/null 2>&1; then
-  sudo apt-get update
-  sudo apt-get install -y build-essential procps curl file git ca-certificates unzip
-elif command -v dnf >/dev/null 2>&1; then
-  # The build tools group is "development-tools" on newer Fedora and
-  # "Development Tools" on older Fedora and RHEL; || tries the second name if
-  # the first fails.
-  sudo dnf group install -y development-tools \
-    || sudo dnf group install -y 'Development Tools'
-  sudo dnf install -y procps-ng curl file git unzip
-elif command -v pacman >/dev/null 2>&1; then
-  sudo pacman -S --needed --noconfirm base-devel procps-ng curl file git unzip
-else
-  echo "warning: unknown package manager;" \
-    "install a C compiler, curl, file, git and unzip yourself." >&2
-fi
-
-{{ end -}}
 # Homebrew's installer asks no questions (NONINTERACTIVE=1 below), so it can
 # only use sudo while sudo still remembers your password. sudo -v asks for your
 # password now if sudo doesn't remember it.
@@ -119,8 +100,8 @@ fi
 # Run the installer with bash (install.sh is just the name it runs under),
 # without questions (NONINTERACTIVE=1), in that folder (--path).
 # HOMEBREW_NO_SUDO=1 tells it never to use sudo. It needs curl and git, and
-# says so if they're missing; install.sh lists the other programs that only an
-# administrator can install (a C compiler, file, unzip) at the end.
+# says so if they're missing; install.sh lists the programs that only an
+# administrator can install (a C compiler, file, git, unzip) at the end.
 HOMEBREW_NO_SUDO=1 NONINTERACTIVE=1 /bin/bash -c "$installer" install.sh --path "$prefix"
 {{- end }}
 {{- end }}

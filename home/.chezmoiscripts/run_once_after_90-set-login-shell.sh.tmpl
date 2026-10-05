@@ -1,11 +1,13 @@
 #!/bin/sh
 #
-# Make Homebrew's zsh your login shell: the shell a new terminal or SSH session
-# starts.
+# Make zsh your login shell: the shell a new terminal or SSH session starts.
 #
-# These dotfiles only configure zsh, and the Brewfile installs it on macOS and
-# Linux alike, so both run the same zsh. chezmoi runs this once per machine
-# ("run_once_"), after writing the dotfiles ("after_").
+# These dotfiles only configure zsh, and they use the system's own zsh: on
+# macOS /bin/zsh, which has been the default login shell since macOS 10.15, and
+# on Linux /usr/bin/zsh, which the install-system-packages script installs.
+# Installing zsh also lists it in /etc/shells, the list of shells chsh accepts.
+# chezmoi runs this once per machine ("run_once_"), after writing the dotfiles
+# ("after_").
 #
 # Changing the login shell needs sudo, so this only does something where you
 # answered yes to the setup question "Use sudo on this machine" (.useSudo).
@@ -21,17 +23,18 @@ set -eu
 # You answered no to "Use sudo on this machine": leave the login shell as it is.
 exit 0
 {{- else -}}
-# Find Homebrew; this sets $brew (see find-brew.sh in home/.chezmoitemplates).
-{{ template "find-brew.sh" . }}
-# Homebrew's zsh is in the same folder as brew: dirname turns .../bin/brew into
-# .../bin. This path stays the same when Homebrew updates zsh.
-zsh=$(dirname "$brew")/zsh
+# The system's zsh; chezmoi keeps only this OS's line.
+{{ if eq .chezmoi.os "darwin" -}}
+zsh=/bin/zsh
+{{- else -}}
+zsh=/usr/bin/zsh
+{{- end }}
 
 # A login shell that can't start would lock you out of new terminals and SSH
 # logins, so first check that this zsh starts: -f skips its startup files, and
-# -c true runs a command that does nothing. (-z "$brew": Homebrew wasn't found.)
-if [ -z "$brew" ] || ! "$zsh" -f -c true; then
-  echo "error: Homebrew's zsh is missing or doesn't start; the Brewfile installs it." >&2
+# -c true runs a command that does nothing. (! -x: not a program we can run.)
+if [ ! -x "$zsh" ] || ! "$zsh" -f -c true; then
+  echo "error: $zsh is missing or doesn't start." >&2
   exit 1
 fi
 
@@ -46,27 +49,15 @@ current=$(dscl . -read "/Users/$user" UserShell | awk '{print $2}')
 current=$(getent passwd "$user" | cut -d: -f7)
 {{- end }}
 
-# Already Homebrew's zsh? Then there's nothing to do.
+# Already the system's zsh? Then there's nothing to do.
 if [ "$current" = "$zsh" ]; then
   exit 0
 fi
 
-# chsh only accepts shells listed in /etc/shells, and only an administrator may
-# change that file, so add Homebrew's zsh to it first. grep checks for a line
-# that is exactly this path (-F: plain text, -x: the whole line, -q: just
-# succeed or fail, printing nothing); tee -a adds the line it reads to the end
-# of the file. sudo asks for your password if it doesn't remember it. If that
-# fails, stop here without an error: install.sh lists the step at the end.
-if ! grep -Fqx "$zsh" /etc/shells; then
-  echo "Adding $zsh to /etc/shells, the list of allowed login shells."
-  if ! echo "$zsh" | sudo tee -a /etc/shells >/dev/null; then
-    exit 0
-  fi
-fi
-
-# Change the login shell. On an account that only an administrator can change
-# (one from a company directory, for example) chsh fails; `|| true` then carries
-# on without an error, and install.sh lists the step at the end.
+# Change the login shell. sudo asks for your password if it doesn't remember
+# it. On an account that only an administrator can change (one from a company
+# directory, for example) chsh fails; `|| true` then carries on without an
+# error, and install.sh lists the step at the end.
 echo "Changing your login shell from $current to $zsh."
 sudo chsh -s "$zsh" "$user" || true
 {{- end }}

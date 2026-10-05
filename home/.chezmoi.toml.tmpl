@@ -15,10 +15,12 @@
 
   useSudo: answer no on a machine where you have no administrator rights, such
   as a locked-down work computer. Setup then never runs sudo there, so it never
-  asks for a sudo password: on Linux it installs Homebrew in your home folder,
-  it leaves your login shell alone, and install.sh lists at the end what you
-  still need an administrator for. (sudo can't tell whether you're allowed to
-  use it without first asking for your password, so setup asks you instead.)
+  asks for a sudo password: on Linux it installs Homebrew in your home folder
+  (on macOS it can't install Homebrew at all), it leaves your login shell
+  alone, and install.sh lists at the end what you still need an administrator
+  for. The dotfiles themselves are installed either way. (sudo can't tell
+  whether you're allowed to use it without first asking for your password, so
+  setup asks you instead.)
   To change an answer later, edit it under [data] in
   ~/.config/chezmoi/chezmoi.toml.
 

@@ -23,10 +23,12 @@ end
 vim.opt.rtp:prepend(lazypath)
 
 -- Start lazy.nvim with LazyVim's plugins and your own (the files in
--- lua/plugins/). Two files next to this config can't hold comments, because
--- they're JSON: lazy-lock.json, which lazy.nvim writes with the exact version of
--- each plugin, and lazyvim.json, which lists the LazyVim "extras" (optional
--- plugin bundles) turned on with :LazyExtras.
+-- lua/plugins/); the first time Neovim starts, lazy.nvim installs them all.
+-- Two JSON files next to this config can't hold comments: lazyvim.json, which
+-- lists the LazyVim "extras" (optional plugin bundles) turned on with
+-- :LazyExtras, and lazy-lock.json, in which lazy.nvim records the exact version
+-- of each plugin on this machine. The dotfiles track lazyvim.json, but each
+-- machine keeps its own lazy-lock.json (see .chezmoiignore).
 require("lazy").setup({
   spec = {
     -- add LazyVim and import its plugins

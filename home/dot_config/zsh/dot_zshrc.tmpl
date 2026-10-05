@@ -227,9 +227,11 @@ fpath=({{ joinPath $brewPrefix "share/zsh/site-functions" | shellQuote }} $fpath
 # Docker Desktop's completions (its own setup lines go to ~/.zshrc, which zsh never reads here).
 [[ -d "$HOME/.docker/completions" ]] && fpath=("$HOME/.docker/completions" $fpath)
 
-# Completions not installed by Homebrew would go here, before compinit:
-#   fpath=("$ZDOTDIR/completions" $fpath)
-# then e.g. `some-tool completion zsh > "$ZDOTDIR/completions/_some-tool"`.
+# Completions that don't come from Homebrew, such as chezmoi's (install.sh puts
+# chezmoi in ~/.local/bin, and chezmoi writes its own completion file here).
+# Another tool's can go here too, e.g.
+# `some-tool completion zsh > "$ZDOTDIR/completions/_some-tool"`.
+fpath=("$ZDOTDIR/completions" $fpath)
 
 zmodload zsh/complist          # menu selection; must load before compinit
 

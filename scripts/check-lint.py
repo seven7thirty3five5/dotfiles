@@ -2,7 +2,8 @@
 """Lint shell scripts and GitHub workflows without running the setup scripts.
 
 Run with Python 3.8+, chezmoi, shellcheck, shfmt and actionlint on PATH.
-Chezmoi templates are rendered for macOS and Linux, with both answers to the
+Chezmoi templates are rendered for macOS (Apple silicon, and Intel, which the
+scripts refuse) and Linux (x86_64 and ARM64), with both answers to the
 "Use sudo on this machine" setup question, into temporary files before
 ShellCheck reads them. shfmt checks their rendered formatting using the original
 relative filenames in a temporary home with home/dot_editorconfig installed.
@@ -109,7 +110,10 @@ def main():
             variants = (
                 [
                     (system, arch, use_sudo)
-                    for system, arch in (("darwin", "arm64"), ("darwin", "amd64"), ("linux", "amd64"))
+                    for system, arch in (
+                        ("darwin", "arm64"), ("darwin", "amd64"),
+                        ("linux", "amd64"), ("linux", "arm64"),
+                    )
                     for use_sudo in (True, False)
                 ]
                 if template else [(None, None, None)]
@@ -136,6 +140,12 @@ def main():
                         + json.dumps(use_sudo) + ' }}'
                         + content + '{{ end }}',
                     )
+
+                    # A script that comes out empty on this kind of machine (for
+                    # example a Linux-only one on macOS) is one chezmoi skips, so
+                    # there is nothing to check.
+                    if not content.strip():
+                        continue
 
                 # Keep ordinary scripts in place so relative source statements
                 # resolve correctly. Templates need a temporary rendered copy.

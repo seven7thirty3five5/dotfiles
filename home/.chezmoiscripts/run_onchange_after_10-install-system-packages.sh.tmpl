@@ -1,0 +1,56 @@
+{{- /*
+  Install the programs that Homebrew and these dotfiles need from Linux's own
+  package manager: a C compiler and the other build tools, procps, curl, file
+  and git (Homebrew's requirements, from docs.brew.sh/Homebrew-on-Linux), plus
+  unzip, which LazyVim's Mason needs, and zsh, the shell these dotfiles
+  configure.
+
+  This file is a template that chezmoi only fills in on Linux where you
+  answered yes to "Use sudo on this machine" (.useSudo). Everywhere else it
+  comes out empty, and chezmoi skips a script with nothing in it: macOS gets
+  these programs from macOS itself and from Apple's Command Line Tools, which
+  Homebrew installs, and without sudo only an administrator can install them
+  (install.sh lists the missing ones at the end).
+
+  How chezmoi runs this file:
+    - "run_onchange_": again whenever this file's text changes, for example
+      when a package is added below. If it fails, chezmoi tries it again on
+      the next `chezmoi apply` or `chezmoi update`.
+    - "after_": after chezmoi has written the dotfiles, so a failure here
+      never keeps them from being installed. Scripts run in the order of their
+      numbers, so this one comes before the Homebrew script (20).
+*/ -}}
+
+{{ if and (eq .chezmoi.os "linux") .useSudo -}}
+#!/bin/sh
+
+# Stop at the first command that fails (-e), and treat an unset variable as an
+# error instead of quietly using an empty value (-u).
+set -eu
+
+# Use this Linux's package manager: apt-get (Debian, Ubuntu), dnf (Fedora, RHEL,
+# Rocky, Alma) or pacman (Arch). `command -v` checks whether a program exists.
+# sudo asks for your password if it doesn't remember it yet.
+if command -v apt-get >/dev/null 2>&1; then
+  sudo apt-get update
+  sudo apt-get install -y build-essential procps curl file git ca-certificates unzip zsh
+elif command -v dnf >/dev/null 2>&1; then
+  # The build tools group is "development-tools" on newer Fedora and
+  # "Development Tools" on older Fedora and RHEL; || tries the second name if
+  # the first fails.
+  sudo dnf group install -y development-tools \
+    || sudo dnf group install -y 'Development Tools'
+
+  # Workaround: RHEL 9 and its relatives (Rocky, Alma) ship the curl command
+  # in a package called curl-minimal, which conflicts with the curl package
+  # that Homebrew's documentation lists. --allowerasing lets dnf swap the two,
+  # as dnf's own error message suggests. util-linux-user provides chsh, which
+  # the login shell script uses; Fedora and RHEL don't install it by default.
+  sudo dnf install -y --allowerasing procps-ng curl file git unzip zsh util-linux-user
+elif command -v pacman >/dev/null 2>&1; then
+  sudo pacman -S --needed --noconfirm base-devel procps-ng curl file git unzip zsh
+else
+  echo "warning: unknown package manager;" \
+    "install a C compiler, curl, file, git, unzip and zsh yourself." >&2
+fi
+{{ end -}}

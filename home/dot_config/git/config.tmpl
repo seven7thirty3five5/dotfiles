@@ -39,9 +39,11 @@
     line-numbers = true
 
 # In a merge conflict, also show the original version both sides started from.
-# (zdiff3 is diff3 with the lines both sides share moved out of the conflict.)
+# (diff3 works with every git. Its tidier variant, zdiff3, needs git 2.35 or
+# newer, and older gits refuse to run checkout, switch or rebase at all when
+# they see it, for example Ubuntu 22.04's system git.)
 [merge]
-    conflictStyle = zdiff3
+    conflictStyle = diff3
 
 [init]
     defaultBranch = main         # new repos start on main instead of master

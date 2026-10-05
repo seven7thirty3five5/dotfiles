@@ -1,0 +1,9 @@
+{{- /*
+  zsh's tab completion for chezmoi: what Tab offers after you type `chezmoi `.
+  Homebrew's packages bring their completions with them, but install.sh puts
+  chezmoi in ~/.local/bin instead, so chezmoi writes its own here with its
+  `completion` template function. .zshrc adds this folder to fpath, the list
+  of folders zsh looks in. chezmoi rewrites the file on `chezmoi apply` when a
+  newer chezmoi's completion differs, so it always matches the installed one.
+*/ -}}
+{{- completion "zsh" -}}
