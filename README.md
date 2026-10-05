@@ -241,6 +241,14 @@ security prompts. They do not apply dotfiles, install packages,
 download external themes, or use your local shell overrides. Application behavior
 and integration with installed plugins still need checking on a configured machine.
 
+## To do
+
+These dotfiles don't set up the following yet:
+
+- Language runtimes: Node.js with pnpm, and Python with uv, most likely installed and
+  managed with [mise](https://mise.jdx.dev/).
+- Docker, which `lazydocker` and `act` need.
+
 ## License
 
 [MIT](LICENSE). The Neovim config in `home/dot_config/nvim` started from
