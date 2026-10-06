@@ -107,26 +107,40 @@ the scripts also install the new packages or runtimes. If chezmoi warns that the
 config file template has changed, run `chezmoi init` to regenerate this machine's
 config; it only asks questions it hasn't asked before.
 
-To update everything at once, run `update`, an alias in `.zshrc`:
+To update everything at once, run `update`, a function in `.zshrc`. It prints
+separate Homebrew, chezmoi and mise headings, with distinct colors in a terminal
+and plain text when redirected (or when `NO_COLOR` is set). It runs these steps
+in order and stops at the first failure:
 
 ```sh
-brew update && brew upgrade && chezmoi upgrade && mise self-update --yes && chezmoi update && mise upgrade && gh extension upgrade --all
+brew update
+brew upgrade --no-ask
+chezmoi upgrade
+mise self-update --yes
+chezmoi update --force --no-tty
+mise upgrade --yes
+gh extension upgrade --all
 ```
+
+The function sets `HOMEBREW_NO_ASK=1` and `MISE_YES=1` for itself and its child
+setup scripts, so updates accept confirmations automatically. chezmoi's `--force`
+also accepts replacing locally changed managed files with their repository copies.
 
 `mise self-update` comes before `chezmoi update`, so the same run regenerates mise's
 tab completion with the updated program. `mise upgrade` upgrades the configured
-tools and automatically prunes replaced versions after its grace period. The `&&`
-between commands stops the update at the first failure.
+tools and automatically prunes replaced versions after its grace period.
 
-Run `doctor` to check all three managers:
+Run `doctor` to check all three managers with the same headings:
 
 ```sh
-brew doctor; chezmoi doctor; mise doctor
+brew doctor
+chezmoi doctor
+mise doctor
 ```
 
-The semicolons let every check run: Homebrew reports even warnings with an error
-exit status, which would stop a chain joined with `&&`. Both aliases are defined
-only when their required commands are installed.
+The commands run separately, as with semicolons, so every check runs: Homebrew
+reports even warnings with an error exit status, which would stop a chain joined
+with `&&`. Both functions are defined only when their required commands exist.
 
 Neovim's plugins are updated inside Neovim, when you choose, with
 `:Lazy update`; LazyVim's statusline shows how many updates are available, and each

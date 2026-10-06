@@ -129,31 +129,78 @@ if (( $+commands[chezmoi] )); then
   alias czd='chezmoi diff'    # Preview the changes chezmoi would apply to managed dotfiles.
 fi
 
-# update: update everything these dotfiles install, one step after another. Each
-# && runs the next step only if the one before it succeeded.
-#   brew update, brew upgrade    Homebrew's package list, then every outdated package
-#                                (apps that update themselves, like Ghostty, are left alone)
-#   chezmoi upgrade              chezmoi itself, which install.sh put in ~/.local/bin
-#   mise self-update --yes       mise itself; --yes skips its confirmation question
-#                                before chezmoi regenerates mise's tab completion
-#   chezmoi update               pull the dotfiles repository and apply it, which also
-#                                installs new Brewfile packages and mise tools
-#   mise upgrade                 upgrade the runtimes and package managers; mise
-#                                automatically prunes replaced versions later
-#   gh extension upgrade --all   gh's extensions, such as gh-dash
+# Print a heading before each manager's output. `print -P` understands zsh's
+# prompt formatting: %B is bold, %F{color} selects a color, and %f/%b reset them.
+# -t checks whether output is a terminal; plain headings keep redirected logs
+# readable, and NO_COLOR lets you request the same plain output in a terminal.
+_dotfiles_section() {
+  local name=$1 color=$2
+  if [[ -t 1 && -z ${NO_COLOR:-} ]]; then
+    print -P -- "\n%B%F{$color}== $name ==%f%b"
+  else
+    printf '\n== %s ==\n' "$name"
+  fi
+}
+
+# update: update everything these dotfiles install, with headings for the three
+# managers. A function lets each step have its own line; `|| return` stops at the
+# first failure, just as the old alias's && chain did. `function update` also
+# works if you reload this file while the old update alias still exists.
 # Neovim's plugins are updated inside Neovim, when you choose: run :Lazy update
 # (LazyVim's statusline shows how many updates are available). Mason's tools
 # (language servers and formatters) too: open :Mason and press U.
 if (( $+commands[brew] && $+commands[chezmoi] && $+commands[mise] && $+commands[gh] )); then
-  alias update='brew update && brew upgrade && chezmoi upgrade && mise self-update --yes && chezmoi update && mise upgrade && gh extension upgrade --all'
+  # Remove the former alias on reload so typing update reaches this function.
+  # Ignore the message (2>/dev/null) when there is no old alias to remove.
+  unalias update 2>/dev/null
+
+  function update {
+    # Export these only while this function runs, including to setup scripts
+    # called by chezmoi: Homebrew and mise should accept confirmation questions.
+    local -x HOMEBREW_NO_ASK=1 MISE_YES=1
+
+    _dotfiles_section Homebrew cyan
+
+    # Refresh Homebrew's package list, then upgrade its outdated packages.
+    # --no-ask accepts the upgrade; apps that update themselves stay excluded.
+    brew update || return
+    brew upgrade --no-ask || return
+
+    _dotfiles_section chezmoi yellow
+
+    # Upgrade chezmoi itself. Refresh mise before applying the dotfiles so its
+    # generated completion matches the updated binary. --force accepts file
+    # replacements and --no-tty prevents chezmoi from opening a prompt.
+    chezmoi upgrade || return
+    mise self-update --yes || return
+    chezmoi update --force --no-tty || return
+
+    _dotfiles_section mise magenta
+
+    # Upgrade the configured runtimes without asking; mise later prunes replaced
+    # versions automatically. Finally update gh's extensions, such as gh-dash.
+    mise upgrade --yes || return
+    gh extension upgrade --all
+  }
 fi
 
-# Check the three managers. Semicolons run every doctor even if an earlier one
-# fails: `brew doctor` reports warnings with an error exit status, which would
-# stop a chain joined with &&. The command check only defines this alias when
-# all three managers are installed.
+# Check all three managers with the same headings. Separate commands (as with
+# semicolons) let every doctor run: brew doctor returns an error for warnings,
+# so && would skip the remaining checks. Define this only when all three exist.
 if (( $+commands[brew] && $+commands[chezmoi] && $+commands[mise] )); then
-  alias doctor='brew doctor; chezmoi doctor; mise doctor'
+  # Remove the former alias on reload, as with update above.
+  unalias doctor 2>/dev/null
+
+  function doctor {
+    _dotfiles_section Homebrew cyan
+    brew doctor
+
+    _dotfiles_section chezmoi yellow
+    chezmoi doctor
+
+    _dotfiles_section mise magenta
+    mise doctor
+  }
 fi
 
 if (( $+commands[fd] )); then
