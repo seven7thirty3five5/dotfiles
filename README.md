@@ -115,12 +115,14 @@ in order and stops at the first failure:
 ```sh
 brew update
 brew upgrade --no-ask
+gh extension upgrade --all
 chezmoi upgrade
 mise self-update --yes
 chezmoi update --force --no-tty
 mise upgrade --yes
-gh extension upgrade --all
 ```
+
+gh's extensions are updated in the Homebrew section alongside the shell tools.
 
 The function sets `HOMEBREW_NO_ASK=1` and `MISE_YES=1` for itself and its child
 setup scripts, so updates accept confirmations automatically. chezmoi's `--force`

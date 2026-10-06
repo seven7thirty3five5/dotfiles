@@ -166,6 +166,9 @@ if (( $+commands[brew] && $+commands[chezmoi] && $+commands[mise] && $+commands[
     brew update || return
     brew upgrade --no-ask || return
 
+    # gh is a Homebrew shell tool; update its extensions, such as gh-dash, here.
+    gh extension upgrade --all || return
+
     _dotfiles_section chezmoi yellow
 
     # Upgrade chezmoi itself. Refresh mise before applying the dotfiles so its
@@ -178,9 +181,8 @@ if (( $+commands[brew] && $+commands[chezmoi] && $+commands[mise] && $+commands[
     _dotfiles_section mise magenta
 
     # Upgrade the configured runtimes without asking; mise later prunes replaced
-    # versions automatically. Finally update gh's extensions, such as gh-dash.
+    # versions automatically.
     mise upgrade --yes || return
-    gh extension upgrade --all
   }
 fi
 
