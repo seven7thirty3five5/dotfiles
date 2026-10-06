@@ -1,0 +1,13 @@
+{{- /*
+  zsh's tab completion for mise: what Tab offers after you type `mise `.
+  mise lives in ~/.local/bin, which might not be on chezmoi's PATH during setup.
+  findExecutable searches that folder explicitly, then output runs the full path
+  with `completion zsh`. Until mise exists, this template writes an empty file.
+  install.sh applies again after installing mise, even without Homebrew, so the
+  completion arrives on the first setup. Later applies regenerate it to match
+  the installed mise; no separate usage program is needed.
+*/ -}}
+{{- $mise := findExecutable "mise" (list (joinPath .chezmoi.homeDir ".local/bin")) -}}
+{{- if $mise -}}
+{{- output $mise "completion" "zsh" -}}
+{{- end -}}

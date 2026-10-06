@@ -91,10 +91,13 @@ jobs:
       # Run the installer twice; the second run proves that running it again is safe.
       - name: Run install.sh twice
         env:
-          # Workaround: installing gh-dash asks GitHub's API about its releases. Many
+          # Workaround: gh-dash and mise ask GitHub's API about tool releases. Many
           # CI machines share a few IP addresses, so anonymous requests hit GitHub's
-          # rate limit; this run's token raises the limit. A real install needs no login.
+          # rate limit; this run's token raises the limit. gh reads GH_TOKEN; mise
+          # reads MISE_GITHUB_TOKEN (also GITHUB_TOKEN), so give both the same token.
+          # A real install needs no GitHub login.
           GH_TOKEN: ${{ github.token }}
+          MISE_GITHUB_TOKEN: ${{ github.token }}
         run: |
           sh install.sh
           sh install.sh
@@ -183,14 +186,16 @@ jobs:
       # Run install.sh as tester, twice. `sudo --user=tester --login` switches to
       # tester with a fresh login environment, as if tester had logged in.
       # Workaround: the container has no language settings, and Homebrew needs a
-      # UTF-8 one, so LANG=C.UTF-8 provides it. GH_TOKEN is explained in the runner job.
+      # UTF-8 one, so LANG=C.UTF-8 provides it. The tokens are explained in the runner job.
       - name: Run install.sh twice as the user
         env:
           GH_TOKEN: ${{ github.token }}
+          MISE_GITHUB_TOKEN: ${{ github.token }}
         run: |
           for run in 1 2; do # twice, because re-running install.sh must be safe
             echo "Installation pass $run"
             sudo --user=tester --login env LANG=C.UTF-8 GH_TOKEN="$GH_TOKEN" \
+              MISE_GITHUB_TOKEN="$MISE_GITHUB_TOKEN" \
               sh /home/tester/.local/share/chezmoi/install.sh
           done
 

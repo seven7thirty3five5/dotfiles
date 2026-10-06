@@ -38,11 +38,12 @@ export PATH
 config_dir=${XDG_CONFIG_HOME:-$HOME/.config}
 data_dir=${XDG_DATA_HOME:-$HOME/.local/share}
 
-# --- 1. The Brewfile's tools are installed and on PATH ----------------------
+# --- 1. The shell tools and runtimes are installed and on PATH -------------
 
-# The loop goes through the list one word at a time. chezmoi itself comes from
-# ~/.local/bin, where install.sh puts it.
-tools="brew chezmoi git delta difft nvim fzf fd rg bat eza
+# The loop goes through the list one word at a time. chezmoi and mise come
+# from ~/.local/bin; mise provides node (with npm), pnpm, python and uv.
+# All of them must resolve from the new zsh's PATH, just as in a terminal.
+tools="brew chezmoi mise node pnpm python uv git delta difft nvim fzf fd rg bat eza
        atuin zoxide starship lazygit gh shellcheck shfmt act actionlint"
 for tool in $tools; do
   if ! command -v "$tool" >/dev/null; then

@@ -14,13 +14,13 @@
 #      x86_64 or ARM64) and that chezmoi's folder holds no other dotfiles.
 #   4. Runs `chezmoi init --apply`. That downloads this repository, asks the
 #      setup questions and writes the dotfiles. Then it runs the scripts in
-#      home/.chezmoiscripts, which install Homebrew, the Brewfile's packages
-#      and gh-dash, and make zsh your login shell. If one of them fails, for
-#      example because Homebrew can't be installed, the dotfiles are still in
-#      place.
-#   5. If Homebrew is installed now, runs `chezmoi init` and `chezmoi apply`
-#      once more: the dotfiles and chezmoi's own settings only set up Homebrew
-#      and its programs once they exist.
+#      home/.chezmoiscripts, which install Homebrew, the Brewfile's packages,
+#      gh-dash and mise's runtimes, and make zsh your login shell. If one of
+#      them fails, for example because Homebrew can't be installed, the
+#      dotfiles are still in place.
+#   5. Runs `chezmoi init` and `chezmoi apply` once more: the dotfiles and
+#      chezmoi's own settings pick up newly installed tools. This also writes
+#      mise's completion on machines where Homebrew cannot be installed.
 #   6. Lists what you still have to do by hand, such as asking an administrator
 #      to change your login shell. Where you answer no to "Use sudo on this
 #      machine", setup never runs sudo, so it never asks for a sudo password.
@@ -124,7 +124,7 @@ if [ ! -d "$source_dir" ]; then
   error "chezmoi couldn't download the dotfiles; see the error above."
 fi
 
-# --- 5. Pick up Homebrew ----------------------------------------------------
+# --- 5. Pick up the newly installed tools -----------------------------------
 
 # Ask chezmoi where Homebrew is: the brew-prefix template prints its folder,
 # or nothing if Homebrew isn't installed. (-n: the text isn't empty.)
@@ -135,16 +135,16 @@ if [ -n "$prefix" ]; then
   # saved in a variable first, so that if brew fails, the script stops there.
   brew_env=$("$prefix/bin/brew" shellenv sh)
   eval "$brew_env"
-
-  # The dotfiles only set up Homebrew and its programs once they exist, and
-  # step 4 wrote them before its scripts installed Homebrew, so write them
-  # again. `chezmoi init` first records delta and nvim in chezmoi's own
-  # settings; `chezmoi apply` also retries any setup script that failed. This
-  # second round decides whether setup failed.
-  failed=0
-  "$chezmoi" init "$@" || failed=1
-  "$chezmoi" apply --keep-going || failed=1
 fi
+
+# Step 4 rendered the dotfiles before its scripts installed the tools, so
+# render them again. `chezmoi init` picks up delta and nvim in chezmoi's own
+# settings; `chezmoi apply` writes mise's completion and retries failed scripts.
+# Do this even without Homebrew: mise installs independently and its completion
+# would otherwise stay empty. This second round decides whether setup failed.
+failed=0
+"$chezmoi" init "$@" || failed=1
+"$chezmoi" apply --keep-going || failed=1
 
 # --- 6. List what's left to do by hand --------------------------------------
 
@@ -158,8 +158,8 @@ todo=
 use_sudo=$("$chezmoi" execute-template '{{ .useSudo }}')
 os=$("$chezmoi" execute-template '{{ .chezmoi.os }}')
 
-# Homebrew installs everything else, so without it setup has failed. On a Mac,
-# only an administrator can install it.
+# Homebrew installs the Brewfile's packages, so without it that part of setup
+# has failed. On a Mac, only an administrator can install it.
 if [ -z "$prefix" ]; then
   failed=1
   if [ "$os" = darwin ] && [ "$use_sudo" != true ]; then

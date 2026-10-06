@@ -37,7 +37,12 @@ runs the scripts in [`home/.chezmoiscripts`](home/.chezmoiscripts) in this order
    Mole, GNU tar and the Ghostty cask are macOS-only; the Brewfile is a template that
    leaves them out on Linux. The cask adopts an existing Ghostty app.
 4. **[gh-dash](https://www.gh-dash.dev/)**, the GitHub CLI extension.
-5. **zsh as the login shell**, only if you answered yes to sudo: the system's own zsh,
+5. **[mise](https://mise.jdx.dev/)**, from its official installer into `~/.local/bin`,
+   then Node.js (LTS), Python, uv and pnpm from
+   [`home/dot_config/mise/config.toml`](home/dot_config/mise/config.toml). This works
+   without Homebrew or sudo. Existing versions are reused; a config change makes
+   chezmoi run `mise install` again without rewriting that config.
+6. **zsh as the login shell**, only if you answered yes to sudo: the system's own zsh,
    `/bin/zsh` on macOS (already the default there) or `/usr/bin/zsh` on Linux, set
    with `chsh` (sudo asks for your password). If that isn't possible, setup carries on.
 
@@ -46,13 +51,14 @@ because Homebrew can't be installed there, still gets them. chezmoi tries a fail
 script again on the next `chezmoi apply` or `chezmoi update`, and `install.sh` runs
 chezmoi with `--keep-going`, so one failed script doesn't stop the others.
 
-Once Homebrew is installed, `install.sh` runs `chezmoi init` and `chezmoi apply` once
-more, so that chezmoi's own config picks up `delta` and `nvim`, and the zsh and git
-configs pick up Homebrew. Finally it lists anything left to do by hand, such as asking
-an administrator (IT) to install zsh and make it your login shell, and it ends with an
-error if a step failed. Re-running it is safe, and extra arguments are passed to
-`chezmoi init`. To change an answer later, edit it under `[data]` in
-`~/.config/chezmoi/chezmoi.toml`.
+After the setup scripts, `install.sh` runs `chezmoi init` and `chezmoi apply` once
+more, so that chezmoi's own config picks up `delta` and `nvim`, the zsh and git
+configs pick up Homebrew, and mise's tab completion is generated. This second pass
+also runs without Homebrew, so mise's completion still arrives. Finally it lists
+anything left to do by hand, such as asking an administrator (IT) to install zsh
+and make it your login shell, and it ends with an error if a step failed. Re-running
+it is safe, and extra arguments are passed to `chezmoi init`. To change an answer
+later, edit it under `[data]` in `~/.config/chezmoi/chezmoi.toml`.
 
 ### On a machine that already has dotfiles
 
@@ -76,9 +82,9 @@ one-command install above; it reuses the downloaded repository and your answers.
 - Open a new terminal.
 - Start Neovim (`nvim`): the first time, LazyVim installs its plugins, which takes a
   minute and needs internet access. Then `:LazyHealth` and `:checkhealth mason`
-  report anything still missing. Node isn't installed or put on PATH, so LazyVim
-  extras whose language servers are npm packages (such as `lang.json` or
-  `lang.typescript`) can't install until it is.
+  report anything still missing. mise puts Node and its bundled npm on PATH, so
+  LazyVim extras whose language servers are npm packages (such as `lang.json` or
+  `lang.typescript`) can now be installed. No additional extras are enabled here.
 - Run `gh auth login` before using `gh dash`; installing it needed no login.
 - Ghostty bundles JetBrains Mono and the Nerd Font symbols. Over SSH, LazyVim, lazygit,
   eza and gh-dash icons need a Nerd Font (v3 or newer) in the connecting terminal.
@@ -96,14 +102,33 @@ wherever supported, using its standard paths.
 chezmoi update
 ```
 
-This pulls the repository and applies it. When the Brewfile changes, the scripts also
-install the new packages. If chezmoi warns that the config file template has changed,
-run `chezmoi init` to regenerate this machine's config; it only asks questions it
-hasn't asked before.
+This pulls the repository and applies it. When the Brewfile or mise config changes,
+the scripts also install the new packages or runtimes. If chezmoi warns that the
+config file template has changed, run `chezmoi init` to regenerate this machine's
+config; it only asks questions it hasn't asked before.
 
-To update everything at once, run `update`, an alias in `.zshrc`. It runs
-`brew update` and `brew upgrade`, `chezmoi upgrade` and `chezmoi update`, then upgrades
-gh's extensions. Neovim's plugins are updated inside Neovim, when you choose, with
+To update everything at once, run `update`, an alias in `.zshrc`:
+
+```sh
+brew update && brew upgrade && chezmoi upgrade && mise self-update --yes && chezmoi update && mise upgrade && gh extension upgrade --all
+```
+
+`mise self-update` comes before `chezmoi update`, so the same run regenerates mise's
+tab completion with the updated program. `mise upgrade` upgrades the configured
+tools and automatically prunes replaced versions after its grace period. The `&&`
+between commands stops the update at the first failure.
+
+Run `doctor` to check all three managers:
+
+```sh
+brew doctor; chezmoi doctor; mise doctor
+```
+
+The semicolons let every check run: Homebrew reports even warnings with an error
+exit status, which would stop a chain joined with `&&`. Both aliases are defined
+only when their required commands are installed.
+
+Neovim's plugins are updated inside Neovim, when you choose, with
 `:Lazy update`; LazyVim's statusline shows how many updates are available, and each
 machine keeps its own record of plugin versions in `~/.config/nvim/lazy-lock.json`.
 Mason's tools (language servers and formatters) are updated there too: open `:Mason`
@@ -124,6 +149,27 @@ to your GitHub username.
 - `.chezmoiversion` sets the oldest chezmoi that can read the source state.
 - `~/.config/gh/config.yml` is a symlink to `.config.yml` in `home/dot_config/gh/`,
   because gh rewrites it. Its changes appear in this repository as ordinary git changes.
+
+### Language runtimes
+
+chezmoi manages files and setup scripts, Homebrew installs shell tools and apps,
+and mise manages language runtimes and their package managers. Node, Python, uv
+and pnpm are kept out of the Brewfile so each has one owner.
+
+The global fallback versions in `~/.config/mise/config.toml` are Node `lts` (npm
+comes with Node), and Python, uv and pnpm `latest`. mise reads a project's `.nvmrc`
+or `.node-version` to choose Node there. uv owns `.python-version` and manages each
+project's Python; mise supplies the global Python fallback.
+
+Permanent global changes go in
+[`home/dot_config/mise/config.toml`](home/dot_config/mise/config.toml), then are
+applied with chezmoi. `mise use -g` changes only this machine's copy, which chezmoi
+would overwrite on the next apply. Project-specific mise configs stay with their
+projects.
+
+zsh login shells load mise's shims in `.zprofile`; interactive shells load full
+activation in `.zshrc` to switch versions when you change folders. mise's settings,
+data, state and cache use the XDG folders; `mise doctor` shows their paths.
 
 ### Shell and workflow tools
 
@@ -245,8 +291,6 @@ and integration with installed plugins still need checking on a configured machi
 
 These dotfiles don't set up the following yet:
 
-- Language runtimes: Node.js with pnpm, and Python with uv, most likely installed and
-  managed with [mise](https://mise.jdx.dev/).
 - Docker, which `lazydocker` and `act` need.
 
 ## License

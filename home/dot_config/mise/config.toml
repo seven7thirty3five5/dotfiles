@@ -1,0 +1,18 @@
+# Global fallback versions: projects can choose their own versions instead.
+# Node's LTS (long-term support) release is the stable default; npm comes with it.
+# The other tools use their newest stable release when first installed or upgraded.
+[tools]
+node = "lts"
+python = "latest"
+uv = "latest"
+pnpm = "latest"
+
+# Read Node versions from a project's .nvmrc or .node-version file.
+# Leave .python-version to uv, which manages Python inside each project;
+# mise's Python above is the fallback for commands outside those projects.
+[settings]
+idiomatic_version_file_enable_tools = ["node"]
+
+# `mise use -g` edits only this machine's copy of this file.
+# For permanent changes, edit home/dot_config/mise/config.toml in the dotfiles
+# repository, then apply it with chezmoi so the change reaches every machine.

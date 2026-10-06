@@ -1,7 +1,7 @@
 {{- /*
   .zprofile: zsh runs this in login shells: on macOS every new terminal tab or
   window, on Linux mainly SSH logins. It's a template: the macOS part is only
-  written on macOS; on Linux the file only says where Homebrew is set up instead.
+  written on macOS; mise's shims are set up on both macOS and Linux.
 */ -}}
 
 {{ if eq .chezmoi.os "darwin" -}}
@@ -27,4 +27,10 @@ eval "$({{ joinPath $brewPrefix "bin" "brew" | shellQuote }} shellenv zsh)"
 [[ -f "$ZDOTDIR/.zshenv" ]] && source "$ZDOTDIR/.zshenv"
 {{ else -}}
 # Linux initializes Homebrew in interactive .zshrc instead.
-{{ end -}}
+{{ end }}
+
+# Put mise's shims on PATH in login shells, including ones that aren't interactive.
+# Shims are small launchers that choose the right runtime version for the current
+# folder. `mise activate zsh --shims` prints the setup commands; eval runs them.
+# The command check skips this until mise is installed in ~/.local/bin.
+(( $+commands[mise] )) && eval "$(mise activate zsh --shims)"

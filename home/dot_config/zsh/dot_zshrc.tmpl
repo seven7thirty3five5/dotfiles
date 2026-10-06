@@ -134,14 +134,26 @@ fi
 #   brew update, brew upgrade    Homebrew's package list, then every outdated package
 #                                (apps that update themselves, like Ghostty, are left alone)
 #   chezmoi upgrade              chezmoi itself, which install.sh put in ~/.local/bin
+#   mise self-update --yes       mise itself; --yes skips its confirmation question
+#                                before chezmoi regenerates mise's tab completion
 #   chezmoi update               pull the dotfiles repository and apply it, which also
-#                                installs packages newly added to the Brewfile
+#                                installs new Brewfile packages and mise tools
+#   mise upgrade                 upgrade the runtimes and package managers; mise
+#                                automatically prunes replaced versions later
 #   gh extension upgrade --all   gh's extensions, such as gh-dash
 # Neovim's plugins are updated inside Neovim, when you choose: run :Lazy update
 # (LazyVim's statusline shows how many updates are available). Mason's tools
 # (language servers and formatters) too: open :Mason and press U.
-if (( $+commands[brew] && $+commands[chezmoi] && $+commands[gh] )); then
-  alias update='brew update && brew upgrade && chezmoi upgrade && chezmoi update && gh extension upgrade --all'
+if (( $+commands[brew] && $+commands[chezmoi] && $+commands[mise] && $+commands[gh] )); then
+  alias update='brew update && brew upgrade && chezmoi upgrade && mise self-update --yes && chezmoi update && mise upgrade && gh extension upgrade --all'
+fi
+
+# Check the three managers. Semicolons run every doctor even if an earlier one
+# fails: `brew doctor` reports warnings with an error exit status, which would
+# stop a chain joined with &&. The command check only defines this alias when
+# all three managers are installed.
+if (( $+commands[brew] && $+commands[chezmoi] && $+commands[mise] )); then
+  alias doctor='brew doctor; chezmoi doctor; mise doctor'
 fi
 
 if (( $+commands[fd] )); then
@@ -394,6 +406,9 @@ ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#7f849c'
 #   zoxide    --cmd cd makes cd smarter: cd with part of a folder's name jumps to
 #             the matching folder you use most.
 #   starship  draws the prompt.
+#   mise      selects the runtimes for this folder, and updates them when you cd.
+#             `activate zsh` prints its shell setup commands; eval runs them.
+(( $+commands[mise] )) && eval "$(mise activate zsh)"
 (( $+commands[atuin] )) && eval "$(atuin init zsh --disable-up-arrow --disable-ai)"
 (( $+commands[zoxide] )) && eval "$(zoxide init zsh --cmd cd)"
 (( $+commands[starship] )) && eval "$(starship init zsh)"

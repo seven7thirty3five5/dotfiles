@@ -1,0 +1,43 @@
+#!/bin/sh
+#
+# Install mise in ~/.local/bin, then the language tools in its global config.
+# This uses neither Homebrew nor sudo, so runtimes also work on a machine where
+# Homebrew cannot be installed.
+#
+# chezmoi runs this after writing the dotfiles ("after_", number 50), and again
+# whenever its rendered text changes ("run_onchange_"). The config's fingerprint
+# below makes a config edit change this script too. A failed run is retried on
+# the next apply.
+# mise config: {{ include "dot_config/mise/config.toml" | sha256sum }}
+
+# Stop at the first command that fails (-e), and treat an unset variable as an
+# error instead of quietly using an empty value (-u).
+set -eu
+
+# install.sh runs under sh, which doesn't read our zsh environment files.
+# Give mise the same XDG folders here; in particular, its macOS cache would
+# otherwise go in ~/Library/Caches. Keep any XDG paths this machine already set.
+export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+export XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+
+# -x: the file is executable. Reuse mise here instead of installing another copy
+# or updating it on every apply; the update alias handles mise's own updates.
+if [ ! -x "$HOME/.local/bin/mise" ]; then
+  # Save the official installer in a variable first, so a failed download stops
+  # this script instead of running an empty installer and reporting success.
+  mise_installer=$(curl -fsSL https://mise.run)
+
+  # MISE_INSTALL_PATH chooses the one permanent binary. MISE_INSTALL_HELP=0
+  # hides the activation instructions because our zsh files already handle it.
+  # sh -c runs the downloaded installer as a shell script.
+  MISE_INSTALL_PATH="$HOME/.local/bin/mise" MISE_INSTALL_HELP=0 sh -c "$mise_installer"
+fi
+
+# Run from home so a project's config cannot change which tools get installed.
+# MISE_YES=1 answers mise's confirmation questions. `install` installs missing
+# global tools without rewriting the config, unlike `mise use -g`; already
+# installed versions are kept, so running this again makes no changes.
+cd "$HOME"
+MISE_YES=1 "$HOME/.local/bin/mise" install
