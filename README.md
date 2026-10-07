@@ -34,8 +34,8 @@ runs the scripts in [`home/.chezmoiscripts`](home/.chezmoiscripts) in this order
      is no longer than the default ([support tiers](https://docs.brew.sh/Support-Tiers)).
      A C compiler, `file`, `git` and `unzip` must then come from your administrator.
 3. **The [Brewfile](home/dot_config/homebrew/Brewfile.tmpl)**, with `brew bundle --no-upgrade`.
-   Mole, GNU tar and the Ghostty cask are macOS-only; the Brewfile is a template that
-   leaves them out on Linux. The cask adopts an existing Ghostty app.
+   Mole, GNU tar, Ghostty and CodexBar are macOS-only; the Brewfile is a template
+   that leaves them out on Linux. The casks adopt existing apps.
 4. **[gh-dash](https://www.gh-dash.dev/)**, the GitHub CLI extension.
 5. **[mise](https://mise.jdx.dev/)**, from its official installer into `~/.local/bin`,
    then Node.js (LTS), Python, uv and pnpm from

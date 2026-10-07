@@ -4,7 +4,7 @@
   ~/.config/homebrew/Brewfile. Here that only keeps the macOS-only packages at
   the end on a Mac: chezmoi calls macOS "darwin", and eq means "equals". The
   dashes next to the braces remove the line breaks around the template code.
-  The install script in .chezmoiscripts (20-install-packages) fills it in the
+  The install script in .chezmoiscripts (30-install-packages) fills it in the
   same way and passes the result to brew bundle.
 */ -}}
 
@@ -72,4 +72,7 @@ brew "mole"                     # mo: cleans caches and leftovers to free space 
 # Terminal (macOS). Ghostty bundles JetBrains Mono and the Nerd Font symbols. brew bundle
 # installs casks with --adopt, so an existing /Applications/Ghostty.app is taken over.
 cask "ghostty"
+
+# AI tool usage (macOS). CodexBar shows usage and limits in the menu bar.
+cask "codexbar"
 {{- end }}
