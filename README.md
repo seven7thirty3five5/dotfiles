@@ -35,8 +35,9 @@ runs the scripts in [`home/.chezmoiscripts`](home/.chezmoiscripts) in this order
      A C compiler, `file`, `git` and `unzip` must then come from your administrator.
 3. **The [Brewfile](home/dot_config/homebrew/Brewfile.tmpl)**, with `brew bundle --no-upgrade`.
    Mole, GNU tar, Ghostty and CodexBar are macOS-only; the Brewfile is a template
-   that leaves them out on Linux. jq is installed only on Linux; macOS uses its
-   built-in copy. The casks adopt existing apps.
+   that leaves them out on Linux. jq comes from Homebrew on both systems, like
+   git, so both use Homebrew's current release rather than an OS-provided version.
+   The casks adopt existing apps.
 4. **[gh-dash](https://www.gh-dash.dev/)**, the GitHub CLI extension.
 5. **[mise](https://mise.jdx.dev/)**, from its official installer into `~/.local/bin`,
    then Node.js (LTS), Python, uv and pnpm from
