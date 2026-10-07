@@ -1,9 +1,9 @@
 {{- /*
   The Brewfile is a template: chezmoi fills in the parts between double braces
   for each machine (this note is one, and is left out) and writes the result to
-  ~/.config/homebrew/Brewfile. Here that only keeps the macOS-only packages at
-  the end on a Mac: chezmoi calls macOS "darwin", and eq means "equals". The
-  dashes next to the braces remove the line breaks around the template code.
+  ~/.config/homebrew/Brewfile. It keeps Linux-only packages on Linux and
+  macOS-only packages on a Mac: chezmoi calls macOS "darwin", and eq means
+  "equals". The dashes remove line breaks around the template code.
   The install script in .chezmoiscripts (30-install-packages) fills it in the
   same way and passes the result to brew bundle.
 */ -}}
@@ -60,6 +60,11 @@ brew "hyperfine"                # times commands precisely (benchmarks)
 brew "lazydocker"               # a terminal interface for Docker (lzd)
 brew "superfile"                # a file manager in the terminal (spf, or ff)
 brew "yq"                       # reads and edits YAML, JSON and other data files
+{{- if eq .chezmoi.os "linux" }}
+
+# JSON queries (Linux). macOS uses its built-in jq instead.
+brew "jq"                       # selects, transforms and formats JSON data
+{{- end }}
 {{- if eq .chezmoi.os "darwin" }}
 
 # Mason needs GNU tar; Linux supplies it through the system package manager.
