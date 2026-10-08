@@ -38,24 +38,8 @@ if (( $+commands[nvim] )); then
   alias vim="nvim"  # Open Neovim when invoking vim.
 fi
 
-# Open superfile and change to its last directory on exit.
+# Open superfile, the terminal file manager.
 (( $+commands[spf] )) && alias ff="spf"
-
-# spf (and ff): superfile, then cd to the folder you were in when you quit it (superfile docs,
-# "cd on quit"; needs cd_on_quit = true). spf pl --lastdir-file prints where superfile writes
-# that folder: the XDG state dir here, not the ~/Library path in the docs' macOS snippet.
-# `command spf` runs the spf program itself, not this function; source runs the cd
-# command that superfile wrote to that file.
-if (( $+commands[spf] )); then
-  spf() {
-    local lastdir_file="$(command spf pl --lastdir-file)"
-    command spf "$@"
-    if [[ -f $lastdir_file ]]; then
-      source "$lastdir_file"
-      rm -f -- "$lastdir_file"
-    fi
-  }
-fi
 
 # eza listings; plain ls keeps its usual flags (ls -ltr etc.). Folders first, icons, and
 # a git status column in long views, as Oh My Zsh's eza plugin options do.
@@ -185,22 +169,6 @@ fi
 if (( $+commands[yq] )); then
   alias y2j='yq -o=json'              # Read YAML and emit JSON.
   alias j2y='yq -p=json -o=yaml -P'   # Read JSON and emit formatted YAML.
-fi
-
-# rge PATTERN [PATH...]: select a content match, preview it, and open its line in Neovim.
-# Adapted from github.com/junegunn/fzf/blob/master/ADVANCED.md (ripgrep integration).
-# Colon-separated results assume filenames do not contain colons.
-# rg prints file:line:text for each match. fzf lists them, keeping rg's colors
-# (--ansi); searches only the text, from the third :-separated field on; quits when
-# there are no matches (--exit-0); previews the file with bat, highlighting the
-# line; and on Enter turns into nvim, opened at that line.
-if (( $+commands[rg] && $+commands[fzf] && $+commands[bat] && $+commands[nvim] )); then
-  rge() {
-    rg --line-number --no-heading --color=always -- "$@" |
-      fzf --ansi --delimiter ':' --nth '3..' --exit-0 \
-        --preview 'bat --color=always --highlight-line {2} -- {1}' \
-        --bind 'enter:become(nvim +{2} -- {1})'
-  }
 fi
 
 # Command history, kept in ~/.local/state/zsh/history: up to 10,000 commands in
