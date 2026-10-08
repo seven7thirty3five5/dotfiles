@@ -1,5 +1,5 @@
 # ~/.config/lazygit/config.yml
-# lazygit's settings. lazygit (lg) is a terminal interface for git. Settings not
+# lazygit's settings. lazygit is a terminal interface for git. Settings not
 # listed here keep lazygit's defaults; `lazygit --config` prints all of them.
 
 # Homebrew manages upgrades; disable LazyGit's own update prompts.

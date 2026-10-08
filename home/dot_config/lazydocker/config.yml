@@ -1,4 +1,4 @@
-# lazydocker's settings. lazydocker (lzd) is a terminal interface for Docker. It
+# lazydocker's settings. lazydocker is a terminal interface for Docker. It
 # finds this file in $XDG_CONFIG_HOME/lazydocker, and ~/.zshenv sets
 # XDG_CONFIG_HOME to ~/.config.
 

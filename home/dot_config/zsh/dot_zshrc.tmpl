@@ -57,9 +57,6 @@ if (( $+commands[spf] )); then
   }
 fi
 
-# Open LazyGit's interactive Git interface (the alias suggested in its README).
-(( $+commands[lazygit] )) && alias lg='lazygit'
-
 # eza listings; plain ls keeps its usual flags (ls -ltr etc.). Folders first, icons, and
 # a git status column in long views, as Oh My Zsh's eza plugin options do.
 if (( $+commands[eza] )); then
@@ -76,41 +73,7 @@ if (( $+commands[eza] )); then
   alias lt="eza --tree --level=2 --group-directories-first --icons=auto"
 
   # Show repository status for listed directories, useful from ~/Projects.
-  alias lrepos='eza -l --git-repos --group-directories-first --icons=auto'
-fi
-
-# Core Git shortcuts and worktree aliases follow Oh My Zsh's git plugin.
-if (( $+commands[git] )); then
-  alias g='git'                       # Run Git.
-  alias ga='git add'                  # Stage the specified paths.
-  alias gaa='git add --all'           # Stage all changes, including additions and deletions.
-  alias gb='git branch'               # List branches, or manage them with additional arguments.
-  alias gc='git commit --verbose'     # Commit staged changes with their diff shown in the editor.
-  alias gca='git commit --verbose --all'  # Stage tracked-file changes and commit with a diff in the editor.
-  alias gco='git checkout'            # Check out a branch or restore specified paths.
-  alias gcb='git checkout -b'         # Create a branch and check it out.
-  alias gd='git diff'                 # Show unstaged changes relative to the index.
-  alias gds='git diff --staged'       # Show staged changes for the next commit.
-  alias gl='git pull'                 # Fetch and integrate upstream changes using your rebase policy.
-  alias glog='git log --oneline --decorate --graph'        # Show a compact commit graph with branch and tag labels.
-  alias gloga='git log --oneline --decorate --graph --all'  # Show the compact graph across all branches and tags.
-  alias gp='git push'                 # Push commits to the configured remote.
-  alias gpf='git push --force-with-lease --force-if-includes'  # Push rewritten history with Git's lease and inclusion checks.
-  alias grb='git rebase'              # Replay commits onto another base.
-  alias grbi='git rebase --interactive'  # Interactively reorder, edit, or squash commits, including fixup commits.
-  alias gst='git status'              # Show working-tree and staging-area status.
-  alias gsta='git stash push'         # Temporarily save tracked-file changes in a stash.
-  alias gstp='git stash pop'          # Restore the latest stash and remove it after a successful application.
-  alias gsw='git switch'              # Switch to an existing branch.
-  alias gswc='git switch --create'    # Create a branch and switch to it.
-  alias gwta='git worktree add'       # Create another checkout; pass -b NAME to create its branch.
-  alias gwtls='git worktree list'     # List worktree directories and their checked-out branches.
-  alias gfixup='git commit --fixup'   # Commit staged corrections for a specified commit; autosquash folds them in later.
-fi
-
-if (( $+commands[git] && $+commands[delta] )); then
-  # Show a side-by-side diff; append --staged to review staged changes.
-  alias gdiffsplit='git -c delta.side-by-side=true diff'
+  alias lr='eza -l --git-repos --group-directories-first --icons=auto'
 fi
 
 # help <command>: colorized --help output (bat README), e.g. help git commit.
@@ -121,12 +84,6 @@ if (( $+commands[bat] )); then
   alias bathelp='bat --plain --language=help'  # Highlight piped help text without headers or line numbers.
   alias bcat='bat --plain --paging=never'      # Print highlighted file contents without decorations or a pager.
   help() { "$@" --help 2>&1 | bat --plain --language=help; }
-fi
-
-# Inspect dotfile changes before applying them (chezmoi's daily workflow).
-if (( $+commands[chezmoi] )); then
-  alias czs='chezmoi status'  # Show which managed dotfiles differ from their desired state.
-  alias czd='chezmoi diff'    # Preview the changes chezmoi would apply to managed dotfiles.
 fi
 
 # Print a heading before each manager's output. `print -P` understands zsh's
@@ -461,10 +418,6 @@ ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#7f849c'
 (( $+commands[atuin] )) && eval "$(atuin init zsh --disable-up-arrow --disable-ai)"
 (( $+commands[zoxide] )) && eval "$(zoxide init zsh --cmd cd)"
 (( $+commands[starship] )) && eval "$(starship init zsh)"
-
-# Open LazyDocker's interactive Docker interface. Like lazygit, it reads its
-# settings from $XDG_CONFIG_HOME (~/.config/lazydocker/config.yml).
-(( $+commands[lazydocker] )) && alias lzd='lazydocker'
 
 # Machine-specific settings (not tracked by chezmoi), loaded last so they can
 # override the defaults above and use compdef; the plugins below must still follow.
