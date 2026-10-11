@@ -7,10 +7,39 @@
 // you want to keep into the dotfiles source too, or chezmoi will undo it.
 {
   // Catppuccin Mocha. chezmoi downloads the theme into themes/ via
-  // .chezmoiexternal.toml; Fresh finds it by the name inside that file.
-  "theme": "catppuccin-mocha",
+  // .chezmoiexternal.toml. Fresh's theme picker names it by its file name.
+  "theme": "catppuccin-mocha.json",
 
   // Homebrew upgrades Fresh, so skip its own daily update check (which also
   // sends anonymous usage data).
   "check_for_updates": false,
+
+  // The version of this file's layout. Fresh writes it itself; leave it as is.
+  "version": 2,
+
+  // Use VS Code's key bindings (Fresh's default on a Mac is its macOS map).
+  "active_keybinding_map": "vscode",
+
+  // Fresh's built-in plugins, and their settings.
+  "plugins": {
+    // The welcome screen, shown when Fresh starts without a file.
+    "welcome_screen": {
+      "enabled": true,
+      "settings": {
+        "showOnStartup": true,
+      },
+    },
+
+    // Vim-style editing, available but off until you turn it on in Fresh
+    // (autoStart false). Arrow keys still move the cursor, and * / # search
+    // for the word under the cursor.
+    "vi_mode": {
+      "enabled": true,
+      "settings": {
+        "autoStart": false,
+        "arrowKeys": true,
+        "searchWordUnderCursor": true,
+      },
+    },
+  },
 }
