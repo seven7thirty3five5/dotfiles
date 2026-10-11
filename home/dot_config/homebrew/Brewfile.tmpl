@@ -62,6 +62,13 @@ brew "jq"                       # selects, transforms and formats JSON data
 brew "lazydocker"               # a terminal interface for Docker
 brew "yazi"                     # a file manager in the terminal (yazi, or ff)
 brew "yq"                       # reads and edits YAML, JSON and other data files
+
+# Yazi optional dependencies. jq, fd, ripgrep, fzf and zoxide are listed above.
+brew "ffmpeg"                   # video thumbnails
+brew "sevenzip"                 # archive previews and extraction
+brew "poppler"                  # PDF previews
+brew "resvg"                    # SVG previews
+brew "imagemagick"              # font and image previews
 {{- if eq .chezmoi.os "darwin" }}
 
 # Mole is macOS-only.
