@@ -36,7 +36,7 @@ runs the scripts in [`home/.chezmoiscripts`](home/.chezmoiscripts) in this order
 3. **The [Brewfile](home/dot_config/homebrew/Brewfile.tmpl)**, with `brew bundle --no-upgrade`.
    Mole and the app casks are macOS-only; the Brewfile is a template
    that leaves them out on Linux. The apps are Ghostty, CodexBar, Docker Desktop,
-   Zed, Stats, Rectangle, BetterDisplay and Logi Options+.
+   Stats, Rectangle, BetterDisplay and Logi Options+.
    jq comes from Homebrew on both systems, like git, so both use Homebrew's
    current release rather than an OS-provided version. See below for adopting
    existing macOS apps.
