@@ -34,8 +34,8 @@ eval "$({{ joinPath $brewPrefix "bin" "brew" | shellQuote }} shellenv zsh)"
 
 # Default aliases and functions, only for programs that are installed.
 
-# Open Fresh, the terminal text editor.
-(( $+commands[fresh] )) && alias ww="fresh"
+# Open Micro, the default terminal text editor.
+(( $+commands[micro] )) && alias ww="micro"
 
 # Open yazi, the terminal file manager.
 (( $+commands[yazi] )) && alias ff="yazi"
@@ -343,9 +343,9 @@ fi
   --preview 'bat -n --color=always {}'
   --bind 'ctrl-/:change-preview-window(down|hidden|)'"
 
-# Ctrl-O opens selected files in Fresh, then returns to fzf.
-if (( $+commands[fzf] && $+commands[fresh] )); then
-  export FZF_CTRL_T_OPTS="$FZF_CTRL_T_OPTS --bind 'ctrl-o:execute(fresh -- {+})'"
+# Ctrl-O opens selected files in Micro, then returns to fzf.
+if (( $+commands[fzf] && $+commands[micro] )); then
+  export FZF_CTRL_T_OPTS="$FZF_CTRL_T_OPTS --bind 'ctrl-o:execute(micro -- {+})'"
 fi
 
 # Alt-C shows the directory tree (also from fzf's README).

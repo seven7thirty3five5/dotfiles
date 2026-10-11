@@ -69,3 +69,9 @@
     type = "file"
     url = "https://raw.githubusercontent.com/sinelaw/fresh-plugins/main/themes/catppuccin/mocha.json"
     refreshPeriod = "168h"
+
+# Micro's theme. settings.json selects it with colorscheme = "catppuccin-mocha".
+[".config/micro/colorschemes/catppuccin-mocha.micro"]
+    type = "file"
+    url = "https://raw.githubusercontent.com/catppuccin/micro/main/themes/catppuccin-mocha.micro"
+    refreshPeriod = "168h"

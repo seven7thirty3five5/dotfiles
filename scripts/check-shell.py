@@ -61,14 +61,17 @@ STARTUP_FILES = [Path(".zshenv")] + [
 #                                     data, state and cache files) are set.
 #   $path[1] == ~/.local/bin          Your own programs in ~/.local/bin come first
 #                                     on PATH, before Homebrew's.
-#   EDITOR and VISUAL == vi           fresh isn't available in this test, so the
-#                                     fallback editor, vi, was chosen.
+#   EDITOR and VISUAL match expected  micro is preferred when Homebrew exposes
+#                                     both editors, otherwise vi is the fallback.
 #   DOTFILES_TEST_BREW_LOADED         The pretend Homebrew sets this to 1 when it is
 #     == DOTFILES_EXPECT_BREW         loaded. It must be loaded in exactly the
 #                                     shells where it should be (see main()).
+#   micro and fresh match Homebrew   Both editor stand-ins are found only after
+#                                     Homebrew initializes its PATH.
 #   optional tools are not found      Proves the test isn't using programs that
 #                                     happen to be installed on this computer.
 #   compdef exists (interactive)      zsh's tab completion system was set up.
+#   ww opens micro (interactive)      The editor alias follows the new default.
 #
 # Finally it prints "dotfiles-shell-ok". That must be the only output: anything
 # else the startup files print would be a bug (see run() below).
@@ -83,13 +86,19 @@ fail() { print -ru2 -- "$1"; exit 1; }
 [[ "$XDG_STATE_HOME" == "$HOME/.local/state" ]] || fail 'Unexpected state directory'
 [[ "$XDG_CACHE_HOME" == "$HOME/.cache" ]] || fail 'Unexpected cache directory'
 [[ "$path[1]" == "$HOME/.local/bin" ]] || fail '~/.local/bin lost PATH priority'
-[[ "$EDITOR" == vi && "$VISUAL" == vi ]] || fail 'Missing editor fallback'
+[[ "$EDITOR" == "$DOTFILES_EXPECT_EDITOR" && "$VISUAL" == "$EDITOR" ]] || fail 'Unexpected editor selection'
 [[ ${DOTFILES_TEST_BREW_LOADED:-0} == "$DOTFILES_EXPECT_BREW" ]] || fail 'Homebrew initialized in the wrong shell mode'
-for tool in fresh yazi eza fzf atuin zoxide starship lazydocker; do
+for editor in micro fresh; do
+  (( $+commands[$editor] == DOTFILES_EXPECT_BREW )) || fail "Editor unexpectedly available or missing: $editor"
+done
+for tool in yazi eza fzf atuin zoxide starship lazydocker; do
   (( ! $+commands[$tool] )) || fail "Optional tool unexpectedly available: $tool"
 done
 if [[ -o interactive ]]; then
   (( $+functions[compdef] )) || fail 'Interactive completion was not initialized'
+  if [[ "$EDITOR" == micro ]]; then
+    [[ ${aliases[ww]:-} == micro ]] || fail 'ww does not open Micro'
+  fi
 fi
 print -r -- dotfiles-shell-ok
 """
@@ -208,7 +217,7 @@ def main():
     # When zsh sets up tab completion, its compinit, compdump and compaudit
     # functions run these four programs. Later, zsh runs with a PATH that
     # contains only these four (see shell_bin), so that optional tools such as
-    # fresh or fzf are never found by accident.
+    # micro, fresh or fzf are never found by accident.
     utilities = ("mkdir", "mv", "sed", "grep")
 
     # Find chezmoi, zsh and the four utilities; stop if one is missing.
@@ -317,6 +326,13 @@ def main():
         )
         brew.chmod(0o755)  # make it runnable, like a real program
 
+        # Both editors are installed in the pretend Homebrew. They must never
+        # be launched during startup; only their presence on PATH matters.
+        for name in ("micro", "fresh"):
+            editor = prefix / "bin" / name
+            editor.write_text("#!/bin/sh\nexit 1\n")
+            editor.chmod(0o755)
+
         for with_brew in (False, True):
             scenario = "with Homebrew" if with_brew else "without Homebrew"
 
@@ -355,6 +371,7 @@ def main():
                         login if sys.platform == "darwin" else interactive
                     )
                     env["DOTFILES_EXPECT_BREW"] = str(int(expected_brew))
+                    env["DOTFILES_EXPECT_EDITOR"] = "micro" if expected_brew else "vi"
 
                     # Start zsh: -d skips the system-wide startup files in /etc
                     # (all but zshenv, which zsh always reads), so only this

@@ -84,8 +84,10 @@ one-command install above; it reuses the downloaded repository and your answers.
 ### After setup
 
 - Open a new terminal.
-- Fresh (`fresh`, or `ww`) is the editor, and `$EDITOR` for programs such as git.
-  It needs no plugins; its Catppuccin Mocha theme is downloaded with the other themes.
+- Micro (`micro`, or `ww`) is the default editor, and `$EDITOR` and `$VISUAL` for
+  programs such as git. Its [official Catppuccin Mocha theme](https://github.com/catppuccin/micro)
+  is downloaded with the other themes; `~/.config/micro/settings.json` selects it
+  and enables truecolor. Fresh is also installed and available with `fresh`.
 - Run `gh auth login` before using `gh dash`; installing it needed no login.
 - Ghostty bundles JetBrains Mono and the Nerd Font symbols. Over SSH, yazi, lazygit,
   eza and gh-dash icons need a Nerd Font (v3 or newer) in the connecting terminal.
@@ -307,12 +309,12 @@ python3 scripts/check-shell.py
 
 `check-shell.py` renders the shell files and checks Zsh syntax, then tests login and
 non-login startup in interactive and noninteractive modes. It verifies quiet
-SSH-style startup, completion initialization, the editor fallback, PATH priority,
-and the macOS `.zprofile` / Linux `.zshrc` split for Homebrew initialization.
+SSH-style startup, completion initialization, Micro selection and the vi fallback,
+PATH priority, and the macOS `.zprofile` / Linux `.zshrc` split for Homebrew initialization.
 
-Checks use temporary homes and a temporary source copy with a Homebrew stand-in;
-optional shell tools are absent. System-wide profiles are skipped to focus the
-checks on this repository. Standard Zsh functions are copied into private
+Checks use temporary homes and a temporary source copy with Homebrew and editor
+stand-ins; other optional shell tools are absent. System-wide profiles are skipped
+to focus the checks on this repository. Standard Zsh functions are copied into private
 temporary directories so shared runner permissions do not trigger completion
 security prompts. They do not apply dotfiles, install packages,
 download external themes, or use your local shell overrides. Application behavior

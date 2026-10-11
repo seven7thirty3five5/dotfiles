@@ -47,12 +47,12 @@ export _ZO_DATA_DIR="$XDG_DATA_HOME/zoxide"
 export PAGER="less"
 export LESS="-R"
 
-# The editor that programs open for you, such as git for commit messages: fresh
-# when it's installed, otherwise vi. $+commands[fresh] is 1 if fresh is on PATH,
+# The editor that programs open for you, such as git for commit messages: micro
+# when it's installed, otherwise vi. $+commands[micro] is 1 if micro is on PATH,
 # and `A && B || C` runs B when A succeeds, otherwise C. Some programs read
-# EDITOR and others VISUAL, so both are set. (`fresh FILE` waits until you
+# EDITOR and others VISUAL, so both are set. (`micro FILE` waits until you
 # close it, which is what git needs.)
-(( $+commands[fresh] )) && export EDITOR="fresh" || export EDITOR="vi"
+(( $+commands[micro] )) && export EDITOR="micro" || export EDITOR="vi"
 export VISUAL="$EDITOR"
 
 # Catppuccin Mocha for fzf (from catppuccin/fzf). fzf adds FZF_DEFAULT_OPTS to

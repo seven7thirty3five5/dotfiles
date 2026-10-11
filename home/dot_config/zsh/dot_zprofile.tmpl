@@ -23,7 +23,7 @@ eval "$({{ joinPath $brewPrefix "bin" "brew" | shellQuote }} shellenv zsh)"
 
 # Refresh the shared environment and editor selection after Homebrew setup.
 # (Running .zshenv again puts ~/.local/bin back in front of Homebrew, and
-# chooses fresh as the editor now that Homebrew's programs can be found.)
+# chooses micro as the editor now that Homebrew's programs can be found.)
 [[ -f "$ZDOTDIR/.zshenv" ]] && source "$ZDOTDIR/.zshenv"
 {{ else -}}
 # Linux initializes Homebrew in interactive .zshrc instead.
