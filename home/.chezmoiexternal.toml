@@ -48,3 +48,16 @@
     type = "file"
     url = "https://raw.githubusercontent.com/catppuccin/delta/main/catppuccin.gitconfig"
     refreshPeriod = "168h"
+
+# yazi's theme, in the folder layout yazi expects for a flavor. theme.toml
+# selects it with dark = "catppuccin-mocha". flavor.toml holds yazi's colors
+# and tmtheme.xml colors the code shown in file previews.
+[".config/yazi/flavors/catppuccin-mocha.yazi/flavor.toml"]
+    type = "file"
+    url = "https://raw.githubusercontent.com/yazi-rs/flavors/main/catppuccin-mocha.yazi/flavor.toml"
+    refreshPeriod = "168h"
+
+[".config/yazi/flavors/catppuccin-mocha.yazi/tmtheme.xml"]
+    type = "file"
+    url = "https://raw.githubusercontent.com/yazi-rs/flavors/main/catppuccin-mocha.yazi/tmtheme.xml"
+    refreshPeriod = "168h"

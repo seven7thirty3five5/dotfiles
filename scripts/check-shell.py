@@ -85,7 +85,7 @@ fail() { print -ru2 -- "$1"; exit 1; }
 [[ "$path[1]" == "$HOME/.local/bin" ]] || fail '~/.local/bin lost PATH priority'
 [[ "$EDITOR" == vi && "$VISUAL" == vi ]] || fail 'Missing editor fallback'
 [[ ${DOTFILES_TEST_BREW_LOADED:-0} == "$DOTFILES_EXPECT_BREW" ]] || fail 'Homebrew initialized in the wrong shell mode'
-for tool in nvim spf eza fzf atuin zoxide starship lazydocker; do
+for tool in nvim yazi eza fzf atuin zoxide starship lazydocker; do
   (( ! $+commands[$tool] )) || fail "Optional tool unexpectedly available: $tool"
 done
 if [[ -o interactive ]]; then

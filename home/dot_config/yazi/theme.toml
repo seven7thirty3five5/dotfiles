@@ -1,0 +1,11 @@
+# yazi's colors. yazi (or the ff alias) is a file manager that runs in the
+# terminal. Its default keys already match the old superfile setup: y copies,
+# x cuts, p pastes, a creates, r renames, and z jumps with zoxide.
+
+# Catppuccin Mocha, a "flavor" (yazi's name for a theme package). chezmoi
+# downloads it into flavors/ via .chezmoiexternal.toml, instead of yazi's own
+# `ya pkg add`. yazi picks dark or light to match the terminal's background;
+# both use Mocha here so the colors match the other tools.
+[flavor]
+dark = "catppuccin-mocha"
+light = "catppuccin-mocha"
