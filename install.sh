@@ -138,7 +138,7 @@ if [ -n "$prefix" ]; then
 fi
 
 # Step 4 rendered the dotfiles before its scripts installed the tools, so
-# render them again. `chezmoi init` picks up delta and nvim in chezmoi's own
+# render them again. `chezmoi init` picks up delta in chezmoi's own
 # settings; `chezmoi apply` writes mise's completion and retries failed scripts.
 # Do this even without Homebrew: mise installs independently and its completion
 # would otherwise stay empty. This second round decides whether setup failed.
@@ -211,10 +211,9 @@ else
 fi
 
 # Programs that need sudo to install, so setup installs them only on Linux with
-# sudo: a C compiler (cc) builds Neovim's syntax highlighting, Homebrew needs
-# file and git, and Neovim's Mason uses unzip.
+# sudo: Homebrew needs a C compiler (cc), file and git.
 missing=
-for tool in cc file git unzip; do
+for tool in cc file git; do
   if ! command -v "$tool" >/dev/null 2>&1; then
     missing="$missing $tool"
   fi

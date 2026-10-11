@@ -149,9 +149,9 @@ jobs:
 
           if [ "${{ matrix.access }}" = no-sudo ]; then
             # Without sudo, the installer can't install system packages, so this
-            # pretends an administrator already provided what Homebrew, LazyVim and
+            # pretends an administrator already provided what Homebrew and
             # the dotfiles need, zsh included.
-            apt-get install --no-install-recommends --yes build-essential procps file unzip zsh
+            apt-get install --no-install-recommends --yes build-essential procps file zsh
           fi
 
           useradd --create-home --shell /bin/bash tester

@@ -43,8 +43,8 @@ brew "actionlint"               # checks GitHub Actions workflows, including the
 brew "shellcheck"               # finds bugs and portability issues in sh and bash scripts
 brew "shfmt"                    # formats sh and bash scripts consistently
 
-# Neovim and search. LazyVim installs its plugins the first time you start nvim.
-brew "neovim"                   # the editor (nvim) that LazyVim runs in
+# Editor and search. Fresh needs no plugins; its theme comes from .chezmoiexternal.toml.
+brew "fresh-editor"             # the editor (fresh, or ww), with familiar keys and a mouse
 brew "ast-grep"                 # searches and rewrites code by its structure
 brew "fd"                       # a simpler, faster find
 brew "ripgrep"                  # rg: fast search through file contents
@@ -62,10 +62,6 @@ brew "lazydocker"               # a terminal interface for Docker
 brew "yazi"                     # a file manager in the terminal (yazi, or ff)
 brew "yq"                       # reads and edits YAML, JSON and other data files
 {{- if eq .chezmoi.os "darwin" }}
-
-# Mason needs GNU tar; Linux supplies it through the system package manager.
-# (Mason is the tool LazyVim uses to install language servers and formatters.)
-brew "gnu-tar"
 
 # Mole is macOS-only.
 brew "mole"                     # mo: cleans caches and leftovers to free space on a Mac

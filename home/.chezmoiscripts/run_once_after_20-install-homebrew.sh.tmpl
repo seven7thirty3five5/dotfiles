@@ -101,7 +101,7 @@ fi
 # without questions (NONINTERACTIVE=1), in that folder (--path).
 # HOMEBREW_NO_SUDO=1 tells it never to use sudo. It needs curl and git, and
 # says so if they're missing; install.sh lists the programs that only an
-# administrator can install (a C compiler, file, git, unzip) at the end.
+# administrator can install (a C compiler, file, git) at the end.
 HOMEBREW_NO_SUDO=1 NONINTERACTIVE=1 /bin/bash -c "$installer" install.sh --path "$prefix"
 {{- end }}
 {{- end }}

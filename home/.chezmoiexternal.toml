@@ -61,3 +61,11 @@
     type = "file"
     url = "https://raw.githubusercontent.com/yazi-rs/flavors/main/catppuccin-mocha.yazi/tmtheme.xml"
     refreshPeriod = "168h"
+
+# Fresh's theme, from the Catppuccin package in Fresh's own theme collection
+# (Fresh's package manager would install the same file). config.json selects
+# it with theme = "catppuccin-mocha".
+[".config/fresh/themes/catppuccin-mocha.json"]
+    type = "file"
+    url = "https://raw.githubusercontent.com/sinelaw/fresh-plugins/main/themes/catppuccin/mocha.json"
+    refreshPeriod = "168h"

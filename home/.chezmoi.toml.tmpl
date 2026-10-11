@@ -59,15 +59,6 @@
     pager = "delta"
 {{- end }}
 
-{{- if lookPath "nvim" }}
-
-# `chezmoi merge` opens Neovim's side-by-side diff mode (nvim -d), if Neovim was
-# installed when this file was generated.
-[merge]
-    command = "nvim"
-    args = ["-d"]
-{{- end }}
-
 # Your answers to the setup questions, for the templates to use.
 [data]
     gitName = {{ $gitName | quote }}

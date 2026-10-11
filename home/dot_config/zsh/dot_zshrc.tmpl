@@ -33,10 +33,9 @@ eval "$({{ joinPath $brewPrefix "bin" "brew" | shellQuote }} shellenv zsh)"
 {{ end -}}
 
 # Default aliases and functions, only for programs that are installed.
-if (( $+commands[nvim] )); then
-  alias vi="nvim"   # Open Neovim when invoking vi.
-  alias vim="nvim"  # Open Neovim when invoking vim.
-fi
+
+# Open Fresh, the terminal text editor.
+(( $+commands[fresh] )) && alias ww="fresh"
 
 # Open yazi, the terminal file manager.
 (( $+commands[yazi] )) && alias ff="yazi"
@@ -87,9 +86,6 @@ _dotfiles_section() {
 # managers. A function lets each step have its own line; `|| return` stops at the
 # first failure, just as the old alias's && chain did. `function update` also
 # works if you reload this file while the old update alias still exists.
-# Neovim's plugins are updated inside Neovim, when you choose: run :Lazy update
-# (LazyVim's statusline shows how many updates are available). Mason's tools
-# (language servers and formatters) too: open :Mason and press U.
 if (( $+commands[brew] && $+commands[chezmoi] && $+commands[mise] && $+commands[gh] )); then
   # Remove the former alias on reload so typing update reaches this function.
   # Ignore the message (2>/dev/null) when there is no old alias to remove.
@@ -278,8 +274,8 @@ zstyle ':completion:*' cache-path "$XDG_CACHE_HOME/zsh/zcompcache"
 zstyle ':completion:*' list-colors ''
 zstyle ':completion:*' special-dirs true   # also complete . and .. (cd ..<Tab> -> ../)
 
-# Use Emacs editing even when EDITOR or VISUAL is nvim/vim.
-# (zsh would pick Vim-style editing by itself, because EDITOR contains "vi". Emacs
+# Use Emacs editing even when EDITOR or VISUAL is vi.
+# (zsh would pick Vim-style editing by itself if EDITOR contains "vi". Emacs
 # style means keys such as Ctrl-A for start of line, Ctrl-E for end, Ctrl-W to
 # delete a word.)
 bindkey -e
@@ -347,9 +343,9 @@ fi
   --preview 'bat -n --color=always {}'
   --bind 'ctrl-/:change-preview-window(down|hidden|)'"
 
-# Ctrl-O opens selected files in Neovim, then returns to fzf.
-if (( $+commands[fzf] && $+commands[nvim] )); then
-  export FZF_CTRL_T_OPTS="$FZF_CTRL_T_OPTS --bind 'ctrl-o:execute(nvim -- {+})'"
+# Ctrl-O opens selected files in Fresh, then returns to fzf.
+if (( $+commands[fzf] && $+commands[fresh] )); then
+  export FZF_CTRL_T_OPTS="$FZF_CTRL_T_OPTS --bind 'ctrl-o:execute(fresh -- {+})'"
 fi
 
 # Alt-C shows the directory tree (also from fzf's README).

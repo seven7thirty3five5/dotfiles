@@ -1,0 +1,16 @@
+// Fresh's settings. Fresh (fresh, or the ww alias) is the terminal text editor,
+// with familiar keys (Ctrl-S saves, Ctrl-Q quits) and mouse support. Anything
+// not listed here keeps Fresh's default.
+//
+// This file is JSONC: JSON that may also hold // comments and trailing commas.
+// Fresh's Settings screen saves changes back into this file, so copy a change
+// you want to keep into the dotfiles source too, or chezmoi will undo it.
+{
+  // Catppuccin Mocha. chezmoi downloads the theme into themes/ via
+  // .chezmoiexternal.toml; Fresh finds it by the name inside that file.
+  "theme": "catppuccin-mocha",
+
+  // Homebrew upgrades Fresh, so skip its own daily update check (which also
+  // sends anonymous usage data).
+  "check_for_updates": false,
+}

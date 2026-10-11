@@ -22,7 +22,7 @@ with `chezmoi upgrade`), and runs `chezmoi init --apply`. That writes the dotfil
 runs the scripts in [`home/.chezmoiscripts`](home/.chezmoiscripts) in this order:
 
 1. **System packages**, on Linux with sudo only: what Homebrew needs (build tools,
-   `curl`, `file`, `git`), plus `unzip` and zsh, with `apt-get`, `dnf` or `pacman`.
+   `curl`, `file`, `git`), plus zsh, with `apt-get`, `dnf` or `pacman`.
 2. **Homebrew**, if it is missing (an existing installation is reused without sudo):
    - macOS (Apple silicon): `/opt/homebrew` is the only supported prefix, and
      installing it needs sudo. If you answered no, this step fails and the list at
@@ -32,9 +32,9 @@ runs the scripts in [`home/.chezmoiscripts`](home/.chezmoiscripts) in this order
    - Linux, without sudo: `~/.linuxbrew`, or `~/.brew` when that path would be longer
      than the default. Homebrew uses its prebuilt bottles in a custom prefix only if it
      is no longer than the default ([support tiers](https://docs.brew.sh/Support-Tiers)).
-     A C compiler, `file`, `git` and `unzip` must then come from your administrator.
+     A C compiler, `file` and `git` must then come from your administrator.
 3. **The [Brewfile](home/dot_config/homebrew/Brewfile.tmpl)**, with `brew bundle --no-upgrade`.
-   Mole, GNU tar and the app casks are macOS-only; the Brewfile is a template
+   Mole and the app casks are macOS-only; the Brewfile is a template
    that leaves them out on Linux. The apps are Ghostty, CodexBar, Docker Desktop,
    Zed, Stats, Rectangle, BetterDisplay and Logi Options+.
    jq comes from Homebrew on both systems, like git, so both use Homebrew's
@@ -56,7 +56,7 @@ script again on the next `chezmoi apply` or `chezmoi update`, and `install.sh` r
 chezmoi with `--keep-going`, so one failed script doesn't stop the others.
 
 After the setup scripts, `install.sh` runs `chezmoi init` and `chezmoi apply` once
-more, so that chezmoi's own config picks up `delta` and `nvim`, the zsh and git
+more, so that chezmoi's own config picks up `delta`, the zsh and git
 configs pick up Homebrew, and mise's tab completion is generated. This second pass
 also runs without Homebrew, so mise's completion still arrives. Finally it lists
 anything left to do by hand, such as asking an administrator (IT) to install zsh
@@ -67,7 +67,7 @@ later, edit it under `[data]` in `~/.config/chezmoi/chezmoi.toml`.
 ### On a machine that already has dotfiles
 
 The install replaces every existing file that these dotfiles manage, such as
-`~/.config/git/config` or `~/.config/nvim/init.lua`, and leaves other files alone.
+`~/.config/git/config` or `~/.config/fresh/config.json`, and leaves other files alone.
 zsh stops reading the startup files in your home folder, such as `~/.zshrc`, because
 these dotfiles move them to `~/.config/zsh`. To see what would change first, download
 chezmoi and the repository without applying anything, then compare:
@@ -84,13 +84,10 @@ one-command install above; it reuses the downloaded repository and your answers.
 ### After setup
 
 - Open a new terminal.
-- Start Neovim (`nvim`): the first time, LazyVim installs its plugins, which takes a
-  minute and needs internet access. Then `:LazyHealth` and `:checkhealth mason`
-  report anything still missing. mise puts Node and its bundled npm on PATH, so
-  LazyVim extras whose language servers are npm packages (such as `lang.json` or
-  `lang.typescript`) can now be installed. No additional extras are enabled here.
+- Fresh (`fresh`, or `ww`) is the editor, and `$EDITOR` for programs such as git.
+  It needs no plugins; its Catppuccin Mocha theme is downloaded with the other themes.
 - Run `gh auth login` before using `gh dash`; installing it needed no login.
-- Ghostty bundles JetBrains Mono and the Nerd Font symbols. Over SSH, LazyVim, lazygit,
+- Ghostty bundles JetBrains Mono and the Nerd Font symbols. Over SSH, yazi, lazygit,
   eza and gh-dash icons need a Nerd Font (v3 or newer) in the connecting terminal.
 - On macOS, open Docker Desktop once and finish its setup before using `lazydocker`
   or `act`. On Linux, set up Docker separately.
@@ -168,12 +165,6 @@ mise doctor
 The commands run separately, as with semicolons, so every check runs: Homebrew
 reports even warnings with an error exit status, which would stop a chain joined
 with `&&`. Both functions are defined only when their required commands exist.
-
-Neovim's plugins are updated inside Neovim, when you choose, with
-`:Lazy update`; LazyVim's statusline shows how many updates are available, and each
-machine keeps its own record of plugin versions in `~/.config/nvim/lazy-lock.json`.
-Mason's tools (language servers and formatters) are updated there too: open `:Mason`
-and press `U`.
 
 ## Use these dotfiles yourself
 
@@ -273,7 +264,7 @@ The names starting with `.chezmoi` control chezmoi itself:
 - `.chezmoi.toml.tmpl` asks the setup questions and writes each machine's chezmoi
   settings.
 - `.chezmoiignore` lists files chezmoi leaves alone: some only on some machines, and
-  some, such as Neovim's `lazy-lock.json`, everywhere.
+  some, such as `~/.config/zsh/.zshrc.local`, everywhere.
 - `.chezmoiexternal.toml` lists files that chezmoi downloads instead of keeping them
   here: the Catppuccin themes.
 - `.chezmoitemplates/` holds template pieces that several files share, such as how
@@ -286,8 +277,7 @@ The names starting with `.chezmoi` control chezmoi itself:
 
 Most files explain themselves in comments. A few can't hold any: `.chezmoiroot` (just
 the folder name, `home`), `.chezmoiversion` (just a version number), `LICENSE` (the
-standard MIT license text), `empty_dot_hushlogin`, and `lazyvim.json`, the LazyVim
-extras turned on with `:LazyExtras`, which LazyVim writes itself.
+standard MIT license text) and `empty_dot_hushlogin`.
 
 ## Validate
 
@@ -336,7 +326,5 @@ These dotfiles don't set up the following yet:
 
 ## License
 
-[MIT](LICENSE). The Neovim config in `home/dot_config/nvim` started from
-[LazyVim's starter](https://github.com/LazyVim/starter) (Apache-2.0), and the atuin,
-btop and gh-dash configs start from the default settings those tools generate; those
+[MIT](LICENSE). The atuin, btop and gh-dash configs start from the default settings those tools generate; those
 parts remain under their projects' licenses.

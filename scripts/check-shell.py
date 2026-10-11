@@ -61,7 +61,7 @@ STARTUP_FILES = [Path(".zshenv")] + [
 #                                     data, state and cache files) are set.
 #   $path[1] == ~/.local/bin          Your own programs in ~/.local/bin come first
 #                                     on PATH, before Homebrew's.
-#   EDITOR and VISUAL == vi           nvim isn't available in this test, so the
+#   EDITOR and VISUAL == vi           fresh isn't available in this test, so the
 #                                     fallback editor, vi, was chosen.
 #   DOTFILES_TEST_BREW_LOADED         The pretend Homebrew sets this to 1 when it is
 #     == DOTFILES_EXPECT_BREW         loaded. It must be loaded in exactly the
@@ -85,7 +85,7 @@ fail() { print -ru2 -- "$1"; exit 1; }
 [[ "$path[1]" == "$HOME/.local/bin" ]] || fail '~/.local/bin lost PATH priority'
 [[ "$EDITOR" == vi && "$VISUAL" == vi ]] || fail 'Missing editor fallback'
 [[ ${DOTFILES_TEST_BREW_LOADED:-0} == "$DOTFILES_EXPECT_BREW" ]] || fail 'Homebrew initialized in the wrong shell mode'
-for tool in nvim yazi eza fzf atuin zoxide starship lazydocker; do
+for tool in fresh yazi eza fzf atuin zoxide starship lazydocker; do
   (( ! $+commands[$tool] )) || fail "Optional tool unexpectedly available: $tool"
 done
 if [[ -o interactive ]]; then
@@ -208,7 +208,7 @@ def main():
     # When zsh sets up tab completion, its compinit, compdump and compaudit
     # functions run these four programs. Later, zsh runs with a PATH that
     # contains only these four (see shell_bin), so that optional tools such as
-    # nvim or fzf are never found by accident.
+    # fresh or fzf are never found by accident.
     utilities = ("mkdir", "mv", "sed", "grep")
 
     # Find chezmoi, zsh and the four utilities; stop if one is missing.
