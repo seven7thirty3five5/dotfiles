@@ -34,10 +34,12 @@ runs the scripts in [`home/.chezmoiscripts`](home/.chezmoiscripts) in this order
      is no longer than the default ([support tiers](https://docs.brew.sh/Support-Tiers)).
      A C compiler, `file`, `git` and `unzip` must then come from your administrator.
 3. **The [Brewfile](home/dot_config/homebrew/Brewfile.tmpl)**, with `brew bundle --no-upgrade`.
-   Mole, GNU tar, Ghostty and CodexBar are macOS-only; the Brewfile is a template
-   that leaves them out on Linux. jq comes from Homebrew on both systems, like
-   git, so both use Homebrew's current release rather than an OS-provided version.
-   The casks adopt existing apps.
+   Mole, GNU tar and the app casks are macOS-only; the Brewfile is a template
+   that leaves them out on Linux. The apps are Ghostty, CodexBar, Docker Desktop,
+   Zed, Stats, Rectangle, BetterDisplay and Logi Options+.
+   jq comes from Homebrew on both systems, like git, so both use Homebrew's
+   current release rather than an OS-provided version. See below for adopting
+   existing macOS apps.
 4. **[gh-dash](https://www.gh-dash.dev/)**, the GitHub CLI extension.
 5. **[mise](https://mise.jdx.dev/)**, from its official installer into `~/.local/bin`,
    then Node.js (LTS), Python, uv and pnpm from
@@ -90,13 +92,34 @@ one-command install above; it reuses the downloaded repository and your answers.
 - Run `gh auth login` before using `gh dash`; installing it needed no login.
 - Ghostty bundles JetBrains Mono and the Nerd Font symbols. Over SSH, LazyVim, lazygit,
   eza and gh-dash icons need a Nerd Font (v3 or newer) in the connecting terminal.
-- `lazydocker` and `act` need a working Docker installation, which you set up separately.
+- On macOS, open Docker Desktop once and finish its setup before using `lazydocker`
+  or `act`. On Linux, set up Docker separately.
 - `~/.config/zsh/.zshrc.local` (optional) holds per-machine zsh settings such as
   aliases and functions. It is not tracked by chezmoi. Lines that installers (Docker
   Desktop, conda, nvm and so on) offer to add to `~/.zshrc` belong there too.
 
 **Rule:** Follow the [XDG Base Directory Specification](https://specifications.freedesktop.org/basedir/latest/)
 wherever supported, using its standard paths.
+
+### Existing macOS apps
+
+You do not need to uninstall these apps before adding them to the Brewfile.
+`brew bundle` automatically uses Homebrew's [app adoption](https://docs.brew.sh/Tips-and-Tricks#adopt-a-manually-installed-app-as-a-cask),
+so existing app bundles stay in place and their settings remain intact. The setup
+also uses `--no-upgrade`, leaving apps that Homebrew already manages as they are.
+
+Logi Options+ is an exception to app adoption: its [cask](https://formulae.brew.sh/cask/logi-options%2B)
+runs Logitech's installer with administrator access and requires a reboot.
+An existing installation does not need to be removed first, but the vendor
+installer will run the first time Homebrew registers this cask.
+
+Docker Desktop also installs CLI symlinks. Homebrew may report a conflict if
+existing links point somewhere other than `/Applications/Docker.app`, such as
+macOS's temporary `AppTranslocation` location. Before the first apply, make sure
+those links point into `/Applications/Docker.app/Contents/Resources`, rather than
+uninstalling Docker. Docker's [Advanced settings](https://docs.docker.com/desktop/settings-and-maintenance/settings/#advanced-mac-only)
+let you reconfigure CLI installation paths. This only concerns the CLI links;
+leave Docker's settings, images and containers in place.
 
 ## Sync dotfiles
 
@@ -309,7 +332,7 @@ and integration with installed plugins still need checking on a configured machi
 
 These dotfiles don't set up the following yet:
 
-- Docker, which `lazydocker` and `act` need.
+- Docker on Linux, which `lazydocker` and `act` need. macOS installs Docker Desktop.
 
 ## License
 

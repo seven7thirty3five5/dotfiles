@@ -70,10 +70,23 @@ brew "gnu-tar"
 # Mole is macOS-only.
 brew "mole"                     # mo: cleans caches and leftovers to free space on a Mac
 
-# Terminal (macOS). Ghostty bundles JetBrains Mono and the Nerd Font symbols. brew bundle
-# installs casks with --adopt, so an existing /Applications/Ghostty.app is taken over.
+# Terminal (macOS). Ghostty bundles JetBrains Mono and the Nerd Font symbols.
+# brew bundle adopts existing app bundles, keeping their settings.
 cask "ghostty"
 
 # AI tool usage (macOS). CodexBar shows usage and limits in the menu bar.
 cask "codexbar"
+
+# Development apps (macOS). Docker Desktop supplies Docker for act and lazydocker.
+cask "docker-desktop"           # Docker engine and desktop app
+cask "zed"                      # editor and the zed command
+
+# System, window and display utilities (macOS).
+cask "stats"                    # system statistics in the menu bar
+cask "rectangle"                # window positioning and sizing shortcuts
+cask "betterdisplay"            # display resolution, scaling and brightness controls
+
+# Logitech devices (macOS). This cask runs the vendor installer with sudo;
+# it does not adopt the existing app bundle. No pre-uninstall is needed.
+cask "logi-options+"
 {{- end }}
