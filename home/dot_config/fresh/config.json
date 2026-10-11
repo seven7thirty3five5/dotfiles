@@ -20,6 +20,22 @@
   // Use VS Code's key bindings (Fresh's default on a Mac is its macOS map).
   "active_keybinding_map": "vscode",
 
+  // How the editor looks and behaves.
+  "editor": {
+    // Nerd Font icons in the file explorer and menus. Ghostty bundles the
+    // symbols; another terminal (such as over SSH) needs a Nerd Font, or the
+    // icons show as boxes.
+    "nerd_font_icons": true,
+
+    // Hide the File/Edit/View menu bar for one more line of text. The command
+    // palette still reaches every command.
+    "show_menu_bar": false,
+
+    // Show code completions while typing, as VS Code does, instead of only on
+    // Ctrl-Space. It needs a language server for the file's language.
+    "completion_popup_auto_show": true,
+  },
+
   // Fresh's built-in plugins, and their settings.
   "plugins": {
     // The welcome screen, shown when Fresh starts without a file.
