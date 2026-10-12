@@ -14,7 +14,7 @@
 # error instead of quietly using an empty value (-u).
 set -eu
 
-# install.sh runs under sh, which doesn't read our zsh environment files.
+# install.sh runs under sh, which doesn't read fish's environment file.
 # Give mise the same XDG folders here; in particular, its macOS cache would
 # otherwise go in ~/Library/Caches. Keep any XDG paths this machine already set.
 export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
@@ -30,7 +30,7 @@ if [ ! -x "$HOME/.local/bin/mise" ]; then
   mise_installer=$(curl -fsSL https://mise.run)
 
   # MISE_INSTALL_PATH chooses the one permanent binary. MISE_INSTALL_HELP=0
-  # hides the activation instructions because our zsh files already handle it.
+  # hides the activation instructions because fish's config already handles it.
   # sh -c runs the downloaded installer as a shell script.
   MISE_INSTALL_PATH="$HOME/.local/bin/mise" MISE_INSTALL_HELP=0 sh -c "$mise_installer"
 fi

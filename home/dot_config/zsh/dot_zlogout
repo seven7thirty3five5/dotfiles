@@ -1,2 +1,0 @@
-# .zlogout is not used.
-# (zsh would run it when a login shell exits. Nothing needs to happen then.)

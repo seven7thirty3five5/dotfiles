@@ -35,13 +35,6 @@
     url = "https://raw.githubusercontent.com/catppuccin/glamour/main/themes/catppuccin-mocha.json"
     refreshPeriod = "168h"
 
-# The colors for zsh-syntax-highlighting. .zshrc loads this file just before
-# the plugin itself.
-[".config/zsh/themes/catppuccin_mocha-zsh-syntax-highlighting.zsh"]
-    type = "file"
-    url = "https://raw.githubusercontent.com/catppuccin/zsh-syntax-highlighting/main/themes/catppuccin_mocha-zsh-syntax-highlighting.zsh"
-    refreshPeriod = "168h"
-
 # delta's theme. The git config includes this file and turns the theme on with
 # features = catppuccin-mocha.
 [".config/delta/themes/catppuccin.gitconfig"]

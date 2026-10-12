@@ -237,6 +237,17 @@ if [ -n "$missing" ]; then
   fi
 fi
 
+# Earlier versions of these dotfiles configured zsh. chezmoi removes the files
+# they wrote (see home/.chezmoiremove), but not your own machine-specific zsh
+# settings. (-f: the file exists.)
+zsh_local=${XDG_CONFIG_HOME:-$HOME/.config}/zsh/.zshrc.local
+if [ -f "$zsh_local" ]; then
+  todo="$todo
+  - Move the settings you still want from $zsh_local
+    into ~/.config/fish/config-local.fish (in fish's syntax), then delete
+    the old file."
+fi
+
 # -n: the text isn't empty, so there is something left to do.
 if [ -n "$todo" ]; then
   echo "Still to do:$todo"
