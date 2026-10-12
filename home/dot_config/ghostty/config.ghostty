@@ -12,7 +12,10 @@ macos-option-as-alt = left
 # When you ssh to another computer, copy Ghostty's terminal description there if
 # it's missing (ssh-terminfo), and otherwise fall back to a common terminal type
 # that computer knows (ssh-env), so programs there draw the screen correctly.
-# Other shell integration features keep their defaults.
+# This only applies to the zsh that Ghostty opens, where you start herdr. In
+# herdr's panes, ssh already sends herdr's own terminal type (xterm-256color),
+# which every computer knows. Other shell integration features keep their
+# defaults.
 shell-integration-features = ssh-env,ssh-terminfo
 
 # Quake-style drop-down terminal from any app (the example in Ghostty's toggle_quick_terminal
