@@ -1,4 +1,6 @@
-# Show hidden files, including dotfiles, by default.
+[preview]
+wrap = "yes"
+
 [mgr]
 show_hidden = true
 ratio = [0, 1, 3]
