@@ -1,0 +1,26 @@
+{{- /*
+  ~/.zprofile, for macOS only (.chezmoiignore leaves it out on Linux). It's a
+  template so that chezmoi can write in the full path to brew, which the
+  brew-prefix template finds. Until Homebrew is installed, only the comments
+  are written; install.sh applies the dotfiles again after installing it.
+*/ -}}
+
+{{- $brewPrefix := includeTemplate "brew-prefix" . | trim -}}
+
+# ~/.zprofile: zsh reads this in login shells: on this Mac, every new Ghostty
+# window or tab. Its only job is to put Homebrew on PATH, so that you can type
+# `herdr` there. herdr's panes run fish, and your environment lives in fish's
+# config (~/.config/fish). Everything else this zsh does is macOS's default:
+# /etc/zprofile runs path_helper before this file, and /etc/zshrc keeps zsh's
+# history in ~/.zsh_history. Commands run with `zsh -c` don't read this file.
+#
+# This is Homebrew's documented setup line for zsh on macOS, after path_helper
+# so that Homebrew's programs come before the system's older versions (such as
+# Apple's git). [[ -x FILE ]] checks that brew exists and can run, and && runs
+# the rest only if it does, so a Mac without Homebrew gets nothing here.
+# `brew shellenv zsh` prints the commands that add Homebrew to PATH, and eval
+# runs them.
+{{- if $brewPrefix }}
+{{- $brew := joinPath $brewPrefix "bin" "brew" | shellQuote }}
+[[ -x {{ $brew }} ]] && eval "$({{ $brew }} shellenv zsh)"
+{{- end }}
