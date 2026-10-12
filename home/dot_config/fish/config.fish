@@ -123,8 +123,8 @@ if status is-interactive
         end
 
         # Atuin owns Ctrl-R: an empty FZF_CTRL_R_COMMAND tells fzf not to bind
-        # it. Then load fzf's key bindings, plus its completion on Shift-Tab
-        # (fzf's version of zsh's **<Tab>).
+        # it. Then load fzf's key bindings, plus its completion on Shift-Tab,
+        # which picks from Tab's completions (or a pattern's matches) in fzf.
         set -g FZF_CTRL_R_COMMAND ''
         fzf --fish | source
     end
