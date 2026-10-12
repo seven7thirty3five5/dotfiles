@@ -1,9 +1,12 @@
 # Shell checks: lint the scripts and workflows, then test macOS and Linux startup.
 #
 #   scripts/check-lint.py       runs ShellCheck and shfmt on shell scripts and
-#                               rendered templates, plus actionlint on workflows
-#   scripts/check-shell.py      renders the zsh startup files and starts zsh in
-#                               every mode to check the environment they set up
+#                               rendered templates, fish's syntax check and
+#                               fish_indent on fish files, and actionlint on
+#                               workflows
+#   scripts/check-shell.py      renders the fish config and the login shell's
+#                               startup file, and starts fish and the login
+#                               shell in every mode to check what they set up
 #
 # Both scripts work in temporary folders, so they are quick (under a minute) and
 # also safe to run on your own computer. The slower, real installation is tested
@@ -41,6 +44,7 @@ jobs:
 
       # GitHub's Ubuntu runner already has Homebrew in its standard Linux prefix.
       # Use the same packages locally and in CI; no dotfiles are applied here.
+      # fish brings fish_indent with it.
       - name: Install lint tools and chezmoi
         env:
           HOMEBREW_NO_AUTO_UPDATE: 1
@@ -48,15 +52,15 @@ jobs:
         run: |
           brew_env=$(/home/linuxbrew/.linuxbrew/bin/brew shellenv bash)
           eval "$brew_env"
-          brew install shellcheck shfmt actionlint chezmoi
+          brew install shellcheck shfmt actionlint chezmoi fish
           echo "$HOMEBREW_PREFIX/bin" >> "$GITHUB_PATH"
 
       - name: Lint shell scripts and workflows
         run: python3 scripts/check-lint.py
 
   shell:
-    # The job's name in the Actions tab, e.g. "Zsh (macos-latest)".
-    name: Zsh (${{ matrix.os }})
+    # The job's name in the Actions tab, e.g. "Shell startup (macos-latest)".
+    name: Shell startup (${{ matrix.os }})
 
     # Run on a fresh virtual machine of each operating system in the matrix below.
     runs-on: ${{ matrix.os }}
@@ -87,13 +91,30 @@ jobs:
           # where later steps could read it; nothing here needs to push.
           persist-credentials: false
 
-      # GitHub's Ubuntu machines don't come with zsh (macOS has it built in).
-      # --no-install-recommends skips optional extra packages to keep it quick.
-      - name: Install Zsh on Linux
+      # fish 4, from fish's own releases: Ubuntu's package is still fish 3.
+      # The release is a single program; run under the name fish_indent, it
+      # formats instead (that's how fish installs it too). uname -m prints
+      # x86_64 or aarch64, as in the release's file names. FISH_VERSION is the
+      # release to test with; raise it when fish releases a new version.
+      - name: Install fish on Linux
         if: runner.os == 'Linux'
+        env:
+          FISH_VERSION: 4.9.3
         run: |
-          sudo apt-get update
-          sudo apt-get install --no-install-recommends --yes zsh
+          mkdir -p "$RUNNER_TEMP/fish-bin"
+          curl -fsSL "https://github.com/fish-shell/fish-shell/releases/download/$FISH_VERSION/fish-$FISH_VERSION-linux-$(uname -m).tar.xz" \
+            | tar -xJ -C "$RUNNER_TEMP/fish-bin"
+          ln -s fish "$RUNNER_TEMP/fish-bin/fish_indent"
+          echo "$RUNNER_TEMP/fish-bin" >> "$GITHUB_PATH"
+
+      # GitHub's macOS machines have Homebrew; its fish is the one these
+      # dotfiles install there. (zsh, the login shell, is built into macOS.)
+      - name: Install fish on macOS
+        if: runner.os == 'macOS'
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+          HOMEBREW_NO_INSTALL_CLEANUP: 1
+        run: brew install fish
 
       # Get the newest chezmoi with its official installer, into a temporary folder
       # GitHub provides ($RUNNER_TEMP), instead of using Homebrew, which is much
