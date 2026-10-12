@@ -1,8 +1,9 @@
 {{- /*
-  Install the programs that Homebrew and these dotfiles need from Linux's own
-  package manager: a C compiler and the other build tools, procps, curl, file
-  and git (Homebrew's requirements, from docs.brew.sh/Homebrew-on-Linux), plus
-  zsh, the shell these dotfiles configure.
+  Install the programs that Homebrew needs from Linux's own package manager: a
+  C compiler and the other build tools, procps, curl, file and git (Homebrew's
+  requirements, from docs.brew.sh/Homebrew-on-Linux). The shell these dotfiles
+  configure, fish, comes from Homebrew like the other tools; bash, the login
+  shell, is already part of every Linux system.
 
   This file is a template that chezmoi only fills in on Linux where you
   answered yes to "Use sudo on this machine" (.useSudo). Everywhere else it
@@ -32,7 +33,7 @@ set -eu
 # sudo asks for your password if it doesn't remember it yet.
 if command -v apt-get >/dev/null 2>&1; then
   sudo apt-get update
-  sudo apt-get install -y build-essential procps curl file git ca-certificates zsh
+  sudo apt-get install -y build-essential procps curl file git ca-certificates
 elif command -v dnf >/dev/null 2>&1; then
   # The build tools group is "development-tools" on newer Fedora and
   # "Development Tools" on older Fedora and RHEL; || tries the second name if
@@ -45,11 +46,11 @@ elif command -v dnf >/dev/null 2>&1; then
   # that Homebrew's documentation lists. --allowerasing lets dnf swap the two,
   # as dnf's own error message suggests. util-linux-user provides chsh, which
   # the login shell script uses; Fedora and RHEL don't install it by default.
-  sudo dnf install -y --allowerasing procps-ng curl file git zsh util-linux-user
+  sudo dnf install -y --allowerasing procps-ng curl file git util-linux-user
 elif command -v pacman >/dev/null 2>&1; then
-  sudo pacman -S --needed --noconfirm base-devel procps-ng curl file git zsh
+  sudo pacman -S --needed --noconfirm base-devel procps-ng curl file git
 else
   echo "warning: unknown package manager;" \
-    "install a C compiler, curl, file, git and zsh yourself." >&2
+    "install a C compiler, curl, file and git yourself." >&2
 fi
 {{ end -}}

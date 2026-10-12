@@ -14,13 +14,14 @@
 #      x86_64 or ARM64) and that chezmoi's folder holds no other dotfiles.
 #   4. Runs `chezmoi init --apply`. That downloads this repository, asks the
 #      setup questions and writes the dotfiles. Then it runs the scripts in
-#      home/.chezmoiscripts, which install Homebrew, the Brewfile's packages,
-#      gh-dash and mise's runtimes, and make zsh your login shell. If one of
+#      home/.chezmoiscripts, which install Homebrew, the Brewfile's packages
+#      (fish and herdr among them), gh-dash and mise's runtimes. If one of
 #      them fails, for example because Homebrew can't be installed, the
 #      dotfiles are still in place.
 #   5. Runs `chezmoi init` and `chezmoi apply` once more: the dotfiles and
-#      chezmoi's own settings pick up newly installed tools. This also writes
-#      mise's completion on machines where Homebrew cannot be installed.
+#      chezmoi's own settings pick up newly installed tools (herdr's config
+#      finds fish, for example). This also writes mise's completion on
+#      machines where Homebrew cannot be installed.
 #   6. Lists what you still have to do by hand, such as asking an administrator
 #      to change your login shell. Where you answer no to "Use sudo on this
 #      machine", setup never runs sudo, so it never asks for a sudo password.
@@ -172,42 +173,49 @@ if [ -z "$prefix" ]; then
   fi
 fi
 
-# Is zsh your login shell yet? dscl (macOS) or getent (Linux) looks it up, as
-# in the login shell script. Where setup may use sudo, it switches to the
-# system's zsh: /bin/zsh on macOS, /usr/bin/zsh on Linux.
+# Is your login shell the system's own? Only its startup file puts Homebrew,
+# and so herdr, on PATH: ~/.zprofile for zsh on macOS, ~/.bashrc for bash on
+# Linux. herdr's panes then run fish. dscl (macOS) or getent (Linux) looks the
+# login shell up. (*/bash matches any path that ends in /bash.)
 user=$(id -un)
 if [ "$os" = darwin ]; then
   login_shell=$(dscl . -read "/Users/$user" UserShell | awk '{print $2}')
-  zsh=/bin/zsh
-else
-  login_shell=$(getent passwd "$user" | cut -d: -f7)
-  zsh=/usr/bin/zsh
-fi
-
-if [ "$use_sudo" = true ]; then
-  if [ "$login_shell" != "$zsh" ]; then
-    # Setup tried with sudo but couldn't, for example because sudo's password
-    # prompt timed out.
+  if [ "$login_shell" != /bin/zsh ]; then
+    # Changing your own login shell on macOS only asks for your password.
     todo="$todo
-  - Make $zsh your login shell: run  sudo chsh -s $zsh $user
-    (if IT manages your account, ask them to change it instead)."
+  - Make /bin/zsh, macOS's default, your login shell again: run
+    chsh -s /bin/zsh"
   fi
 else
-  # Without sudo, any zsh that an administrator sets up will do. (*/zsh
-  # matches any path that ends in /zsh.) If zsh is installed already, name it.
+  login_shell=$(getent passwd "$user" | cut -d: -f7)
   case $login_shell in
-    */zsh) ;;
+    */bash) ;;
     *)
-      if installed_zsh=$(command -v zsh); then
+      if [ "$use_sudo" = true ]; then
+        # Setup tried with sudo but couldn't, for example because sudo's
+        # password prompt timed out.
         todo="$todo
-  - Ask IT (an administrator) to make $installed_zsh your login shell.
-    Until then, start zsh by typing zsh"
+  - Make /bin/bash your login shell: run  sudo chsh -s /bin/bash $user
+    (if IT manages your account, ask them to change it instead)."
       else
         todo="$todo
-  - Ask IT (an administrator) to install zsh and make it your login shell."
+  - Ask IT (an administrator) to make /bin/bash your login shell. Until
+    then, type  exec bash -l  before starting herdr."
       fi
       ;;
   esac
+
+  # An SSH login reaches ~/.bashrc only through a login file such as
+  # ~/.profile or ~/.bash_profile, which normally reads it. Check that an
+  # interactive login bash (-l -i) really finds herdr; its startup messages
+  # are thrown away, and </dev/null keeps it from waiting for input.
+  if [ -n "$prefix" ] && [ "${login_shell##*/}" = bash ] \
+    && ! bash -l -i -c 'command -v herdr' </dev/null >/dev/null 2>&1; then
+    todo="$todo
+  - Make SSH logins read ~/.bashrc: add this line to ~/.bash_profile
+    (or to ~/.profile if you have no ~/.bash_profile):
+    [ -f ~/.bashrc ] && . ~/.bashrc"
+  fi
 fi
 
 # Programs that need sudo to install, so setup installs them only on Linux with

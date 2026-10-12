@@ -1,63 +1,57 @@
+{{- /*
+  Switch your login shell back to bash, on Linux, if an earlier version of
+  these dotfiles changed it to zsh. These dotfiles now keep the system's own
+  login shells: bash on Linux and zsh on macOS (/bin/zsh, its default since
+  macOS 10.15), each with only Homebrew's setup line, which you need to start
+  herdr. herdr's panes run fish.
+
+  This file is a template that chezmoi only fills in on Linux where you
+  answered yes to "Use sudo on this machine" (.useSudo), because changing the
+  login shell needs sudo there. Everywhere else it comes out empty, and chezmoi
+  skips a script with nothing in it. Without sudo, the login shell stays as it
+  is, and install.sh lists what to ask an administrator at the end.
+
+  How chezmoi runs this file:
+    - "run_once_": once per machine, and again if this file's text changes
+      (which is how machines that ran the earlier version run this one).
+    - "after_": after chezmoi has written the dotfiles.
+*/ -}}
+
+{{ if and (eq .chezmoi.os "linux") .useSudo -}}
 #!/bin/sh
-#
-# Make zsh your login shell: the shell a new terminal or SSH session starts.
-#
-# These dotfiles only configure zsh, and they use the system's own zsh: on
-# macOS /bin/zsh, which has been the default login shell since macOS 10.15, and
-# on Linux /usr/bin/zsh, which the install-system-packages script installs.
-# Installing zsh also lists it in /etc/shells, the list of shells chsh accepts.
-# chezmoi runs this once per machine ("run_once_"), after writing the dotfiles
-# ("after_").
-#
-# Changing the login shell needs sudo, so this only does something where you
-# answered yes to the setup question "Use sudo on this machine" (.useSudo).
-# When the shell can't be changed (without sudo, or for an account that only an
-# administrator can change, such as one from a company directory), the setup
-# carries on, and install.sh lists that step at the end.
 
 # Stop at the first command that fails (-e), and treat an unset variable as an
 # error instead of quietly using an empty value (-u).
 set -eu
 
-{{ if not .useSudo -}}
-# You answered no to "Use sudo on this machine": leave the login shell as it is.
-exit 0
-{{- else -}}
-# The system's zsh; chezmoi keeps only this OS's line.
-{{ if eq .chezmoi.os "darwin" -}}
-zsh=/bin/zsh
-{{- else -}}
-zsh=/usr/bin/zsh
-{{- end }}
+# The system's bash. Every Linux system has it at /bin/bash, and lists it in
+# /etc/shells, the list of shells chsh accepts.
+bash=/bin/bash
 
-# A login shell that can't start would lock you out of new terminals and SSH
-# logins, so first check that this zsh starts: -f skips its startup files, and
-# -c true runs a command that does nothing. (! -x: not a program we can run.)
-if [ ! -x "$zsh" ] || ! "$zsh" -f -c true; then
-  echo "error: $zsh is missing or doesn't start." >&2
-  exit 1
-fi
-
-# Look up your current login shell; chezmoi keeps only this OS's line.
-#   macOS: dscl reads the UserShell setting from the user directory.
-#   Linux: getent prints your line from the user database; its 7th
-#          colon-separated field (cut -d: -f7) is the login shell.
+# Look up your current login shell: getent prints your line from the user
+# database, and its 7th colon-separated field (cut -d: -f7) is the login shell.
 user=$(id -un)
-{{ if eq .chezmoi.os "darwin" -}}
-current=$(dscl . -read "/Users/$user" UserShell | awk '{print $2}')
-{{- else -}}
 current=$(getent passwd "$user" | cut -d: -f7)
-{{- end }}
 
-# Already the system's zsh? Then there's nothing to do.
-if [ "$current" = "$zsh" ]; then
-  exit 0
+# Only undo the earlier change to zsh (*/zsh matches any path that ends in
+# /zsh); leave any other login shell, including bash, alone.
+case $current in
+  */zsh) ;;
+  *) exit 0 ;;
+esac
+
+# A login shell that can't start would lock you out of SSH logins, so first
+# check that this bash starts: --norc and --noprofile skip its startup files,
+# and -c true runs a command that does nothing. (! -x: not a program we can run.)
+if [ ! -x "$bash" ] || ! "$bash" --norc --noprofile -c true; then
+  echo "error: $bash is missing or doesn't start." >&2
+  exit 1
 fi
 
 # Change the login shell. sudo asks for your password if it doesn't remember
 # it. On an account that only an administrator can change (one from a company
 # directory, for example) chsh fails; `|| true` then carries on without an
 # error, and install.sh lists the step at the end.
-echo "Changing your login shell from $current to $zsh."
-sudo chsh -s "$zsh" "$user" || true
-{{- end }}
+echo "Changing your login shell from $current back to $bash."
+sudo chsh -s "$bash" "$user" || true
+{{ end -}}
