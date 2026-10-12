@@ -88,6 +88,7 @@ one-command install above; it reuses the downloaded repository and your answers.
   programs such as git. Its [official Catppuccin Mocha theme](https://github.com/catppuccin/micro)
   is downloaded with the other themes; `~/.config/micro/settings.json` selects it
   and enables truecolor. Fresh is also installed and available with `fresh`.
+- `ff` opens Yazi and changes the shell to the directory selected when you exit.
 - Run `gh auth login` before using `gh dash`; installing it needed no login.
 - Ghostty bundles JetBrains Mono and the Nerd Font symbols. Over SSH, yazi, lazygit,
   eza and gh-dash icons need a Nerd Font (v3 or newer) in the connecting terminal.

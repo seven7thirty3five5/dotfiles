@@ -37,8 +37,20 @@ eval "$({{ joinPath $brewPrefix "bin" "brew" | shellQuote }} shellenv zsh)"
 # Open Micro, the default terminal text editor.
 (( $+commands[micro] )) && alias ww="micro"
 
-# Open yazi, the terminal file manager.
-(( $+commands[yazi] )) && alias ff="yazi"
+# Open Yazi and leave the shell in the directory selected on exit.
+if (( $+commands[yazi] )); then
+  # Remove the former alias when reloading this file.
+  unalias ff 2>/dev/null
+
+  function ff() {
+    local tmp cwd
+    tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
+    command yazi "$@" --cwd-file="$tmp"
+    IFS= read -r -d '' cwd < "$tmp"
+    [ "$cwd" != "$PWD" ] && [ -d "$cwd" ] && builtin cd -- "$cwd" || builtin true
+    command rm -f -- "$tmp"
+  }
+fi
 
 # eza listings; plain ls keeps its usual flags (ls -ltr etc.). Folders first, icons, and
 # a git status column in long views, as Oh My Zsh's eza plugin options do.
