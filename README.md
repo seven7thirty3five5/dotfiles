@@ -22,7 +22,7 @@ with `chezmoi upgrade`), and runs `chezmoi init --apply`. That writes the dotfil
 runs the scripts in [`home/.chezmoiscripts`](home/.chezmoiscripts) in this order:
 
 1. **System packages**, on Linux with sudo only: what Homebrew needs (build tools,
-   `curl`, `file`, `git`), plus zsh, with `apt-get`, `dnf` or `pacman`.
+   `curl`, `file`, `git`), with `apt-get`, `dnf` or `pacman`.
 2. **Homebrew**, if it is missing (an existing installation is reused without sudo):
    - macOS (Apple silicon): `/opt/homebrew` is the only supported prefix, and
      installing it needs sudo. If you answered no, this step fails and the list at
@@ -33,7 +33,8 @@ runs the scripts in [`home/.chezmoiscripts`](home/.chezmoiscripts) in this order
      than the default. Homebrew uses its prebuilt bottles in a custom prefix only if it
      is no longer than the default ([support tiers](https://docs.brew.sh/Support-Tiers)).
      A C compiler, `file` and `git` must then come from your administrator.
-3. **The [Brewfile](home/dot_config/homebrew/Brewfile.tmpl)**, with `brew bundle --no-upgrade`.
+3. **The [Brewfile](home/dot_config/homebrew/Brewfile.tmpl)**, with `brew bundle --no-upgrade`,
+   including fish and herdr.
    Mole and the app casks are macOS-only; the Brewfile is a template
    that leaves them out on Linux. The apps are Ghostty, CodexBar, Docker Desktop,
    Stats, Rectangle, BetterDisplay and Logi Options+.
@@ -46,9 +47,11 @@ runs the scripts in [`home/.chezmoiscripts`](home/.chezmoiscripts) in this order
    [`home/dot_config/mise/config.toml`](home/dot_config/mise/config.toml). This works
    without Homebrew or sudo. Existing versions are reused; a config change makes
    chezmoi run `mise install` again without rewriting that config.
-6. **zsh as the login shell**, only if you answered yes to sudo: the system's own zsh,
-   `/bin/zsh` on macOS (already the default there) or `/usr/bin/zsh` on Linux, set
-   with `chsh` (sudo asks for your password). If that isn't possible, setup carries on.
+6. **The login shell**, on Linux with sudo only: if an earlier version of these
+   dotfiles made zsh your login shell, it switches back to the system's bash with
+   `chsh` (sudo asks for your password). Otherwise the login shell is left alone:
+   `/bin/zsh` on macOS and bash on Linux, the systems' defaults (see
+   [The shell](#the-shell-fish-inside-herdr)). If that isn't possible, setup carries on.
 
 Because the dotfiles are written first, a machine where a script fails, for example
 because Homebrew can't be installed there, still gets them. chezmoi tries a failed
@@ -56,11 +59,11 @@ script again on the next `chezmoi apply` or `chezmoi update`, and `install.sh` r
 chezmoi with `--keep-going`, so one failed script doesn't stop the others.
 
 After the setup scripts, `install.sh` runs `chezmoi init` and `chezmoi apply` once
-more, so that chezmoi's own config picks up `delta`, the zsh and git
-configs pick up Homebrew, and mise's tab completion is generated. This second pass
-also runs without Homebrew, so mise's completion still arrives. Finally it lists
-anything left to do by hand, such as asking an administrator (IT) to install zsh
-and make it your login shell, and it ends with an error if a step failed. Re-running
+more, so that chezmoi's own config picks up `delta` and fish, the shell, git and
+herdr configs pick up Homebrew and fish, and mise's tab completion is generated.
+This second pass also runs without Homebrew, so mise's completion still arrives.
+Finally it lists anything left to do by hand, such as asking an administrator (IT)
+to make bash your login shell, and it ends with an error if a step failed. Re-running
 it is safe, and extra arguments are passed to `chezmoi init`. To change an answer
 later, edit it under `[data]` in `~/.config/chezmoi/chezmoi.toml`.
 
@@ -68,9 +71,9 @@ later, edit it under `[data]` in `~/.config/chezmoi/chezmoi.toml`.
 
 The install replaces every existing file that these dotfiles manage, such as
 `~/.config/git/config` or `~/.config/fresh/config.json`, and leaves other files alone.
-zsh stops reading the startup files in your home folder, such as `~/.zshrc`, because
-these dotfiles move them to `~/.config/zsh`. To see what would change first, download
-chezmoi and the repository without applying anything, then compare:
+That includes the login shell's startup file: `~/.zprofile` on macOS and `~/.bashrc`
+on Linux, which afterwards only put Homebrew on PATH. To see what would change first,
+download chezmoi and the repository without applying anything, then compare:
 
 ```sh
 sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin" init --use-builtin-git=true seven7thirty3five5
@@ -78,12 +81,13 @@ sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin" init --use
 ```
 
 The first command also asks the setup questions. Copy anything you want to keep, such
-as machine-specific aliases, into `~/.config/zsh/.zshrc.local`, then run the
-one-command install above; it reuses the downloaded repository and your answers.
+as machine-specific aliases, into `~/.config/fish/config-local.fish` (in fish's
+syntax), then run the one-command install above; it reuses the downloaded repository
+and your answers.
 
 ### After setup
 
-- Open a new terminal.
+- Open a new terminal and start `herdr`; its panes run fish.
 - Micro (`micro`, or `ww`) is the default editor, and `$EDITOR` and `$VISUAL` for
   programs such as git. Its [official Catppuccin Mocha theme](https://github.com/catppuccin/micro)
   is downloaded with the other themes; `~/.config/micro/settings.json` selects it
@@ -94,9 +98,10 @@ one-command install above; it reuses the downloaded repository and your answers.
   eza and gh-dash icons need a Nerd Font (v3 or newer) in the connecting terminal.
 - On macOS, open Docker Desktop once and finish its setup before using `lazydocker`
   or `act`. On Linux, set up Docker separately.
-- `~/.config/zsh/.zshrc.local` (optional) holds per-machine zsh settings such as
-  aliases and functions. It is not tracked by chezmoi. Lines that installers (Docker
-  Desktop, conda, nvm and so on) offer to add to `~/.zshrc` belong there too.
+- `~/.config/fish/config-local.fish` (optional) holds per-machine fish settings such
+  as abbreviations and functions. It is not tracked by chezmoi. Lines that installers
+  (Docker Desktop, conda, nvm and so on) offer to add to fish's `config.fish` belong
+  there too.
 
 **Rule:** Follow the [XDG Base Directory Specification](https://specifications.freedesktop.org/basedir/latest/)
 wherever supported, using its standard paths.
@@ -121,6 +126,112 @@ uninstalling Docker. Docker's [Advanced settings](https://docs.docker.com/deskto
 let you reconfigure CLI installation paths. This only concerns the CLI links;
 leave Docker's settings, images and containers in place.
 
+## The shell: fish inside herdr
+
+You work inside [herdr](https://herdr.dev), and every herdr pane runs
+[fish](https://fishshell.com). The login shells stay the systems' own and only start
+herdr.
+
+### How it starts
+
+- **macOS**: Ghostty opens a login `/bin/zsh`, macOS's default. zsh reads
+  [`~/.zprofile`](home/dot_zprofile.tmpl), which holds only Homebrew's documented
+  setup line, so `herdr` is on PATH. Type `herdr`. (`zsh -c` doesn't read that file.)
+- **Linux**: an SSH login starts bash. The system's own login file (`~/.profile` on
+  Debian and Ubuntu, `~/.bash_profile` on Fedora, RHEL and Arch, `/etc/profile` on
+  openSUSE) reads [`~/.bashrc`](home/dot_bashrc.tmpl), which only adds Homebrew,
+  and only in interactive shells: `scp`, `rsync`, `ssh host command` and herdr's own
+  SSH connection get nothing. An account with none of those login files gets a
+  `~/.bash_profile` that reads `~/.bashrc`. Type `herdr`.
+- **herdr** ([`config.toml`](home/dot_config/herdr/config.toml.tmpl)) starts new panes
+  with `[terminal] default_shell`, set to Homebrew's fish by its full path, because
+  herdr can be started over SSH (`herdr --remote`, saved machines) with a minimal
+  PATH. On macOS the panes are login shells (herdr's default `shell_mode`). Without
+  fish (no Homebrew yet), the setting is left out and herdr falls back to `$SHELL`.
+- **herdr's popups** (lazygit on prefix, Alt+G and gh dash on prefix, Alt+H) run as
+  `fish -c COMMAND`. herdr starts commands with its own environment, which only
+  has what the login shell added: Homebrew. Through fish they get what a pane has:
+  `$EDITOR` (so lazygit opens Micro, not vi), the XDG folders, `~/.local/bin`, and
+  mise's runtimes (which git hooks that need Node rely on).
+
+### Why the login shells stay zsh and bash
+
+- Nothing has to run `chsh` to fish or add fish to `/etc/shells`, which needs an
+  administrator on a managed account, and a broken fish config can't lock you out
+  of SSH.
+- Everything outside herdr keeps a fast POSIX shell: the shell you type `herdr`
+  into, plain `ssh host` sessions, and programs that run `$SHELL -c` (fzf previews,
+  coding agents). fish never sets `$SHELL`.
+- A few programs open an interactive `$SHELL` and so get the bare login shell:
+  `chezmoi cd` is set to open fish instead; in Micro, type `term fish`; for
+  `mise en`, add `-s fish`.
+- Ghostty's `ssh-env` and `ssh-terminfo` only affect the zsh Ghostty opens. In
+  herdr's panes, ssh sends herdr's terminal type (`xterm-256color`), which every
+  computer knows.
+
+### Layout and startup order
+
+Every fish, even one that only runs a command, reads the same files in this order:
+
+1. fish's own setup. In a login shell on macOS this includes its copy of
+   `path_helper`, which puts the system's folders at the front of PATH.
+2. Every file in [`~/.config/fish/conf.d`](home/dot_config/fish/conf.d), in name
+   order. These set the environment, for every fish:
+
+   | File                     | What it does                                                        |
+   | ------------------------ | ------------------------------------------------------------------- |
+   | `00-environment.fish`    | XDG folders first, then tool config paths, `PAGER`, `LESS`, fzf colors |
+   | `10-homebrew.fish`       | Homebrew's `brew shellenv fish`, written in when chezmoi applies    |
+   | `20-path.fish`           | `~/.local/bin` and mise's shims in front of Homebrew; picks `$EDITOR` |
+
+3. [`config.fish`](home/dot_config/fish/config.fish). Inside
+   `if status is-interactive`, so only for shells you type into: the Catppuccin Mocha
+   theme built into fish, abbreviations, fzf's settings, and the mise, fzf, atuin,
+   zoxide and starship hooks. Popups and scripts skip all of it.
+4. `~/.config/fish/config-local.fish`, if it exists (untracked, see below).
+
+Functions in [`functions/`](home/dot_config/fish/functions) (`update`, `doctor`,
+`help`, `ff`, and key bindings in `fish_user_key_bindings`) and completions in
+[`completions/`](home/dot_config/fish/completions) load the first time they're used.
+Homebrew's tools bring their own completions, which fish finds by itself; chezmoi
+writes chezmoi's and mise's here because both live in `~/.local/bin`.
+
+Nothing prints while fish starts, which matters for SSH. Starting fish to run a
+command (`fish -c true`, as each popup does) takes about 7 ms on an Apple silicon
+Mac, and an interactive one about 40 ms.
+
+### Where to add things
+
+| To add                       | Put it in                                                            |
+| ---------------------------- | -------------------------------------------------------------------- |
+| An environment variable      | `conf.d/00-environment.fish`: `set -gx NAME value`                   |
+| An abbreviation              | `config.fish`, inside `if status is-interactive`, after `command -q TOOL` |
+| A function                   | A new `functions/NAME.fish` holding one `function NAME --description '...'` |
+| A completion                 | `completions/COMMAND.fish`                                           |
+| Something for one machine    | `~/.config/fish/config-local.fish` (untracked; loads last, in every fish) |
+
+Keep settings global (`set -g`, `set -gx`). Universal variables (`set -U`) live in
+`~/.config/fish/fish_variables`, which belongs to each machine and is never tracked.
+
+### Keys and habits
+
+fish's defaults already include autosuggestions (Right or Ctrl-F accepts), syntax
+highlighting, tab completion with a menu, typing a folder's path to `cd` into it, and
+Emacs-style editing. On top of those:
+
+- Up/Down (and Ctrl-P/Ctrl-N) find earlier commands that start with what you typed.
+- Ctrl-R opens atuin's history search. Ctrl-T picks files and Alt-C changes folder
+  with fzf, with previews; in Ctrl-T, Ctrl-O opens the selection in Micro. Shift-Tab
+  picks from Tab's completions in fzf.
+- Alt-E opens the command line in your editor.
+- Typing `..`, `...`, `....` expands to `cd ../`, `cd ../../` and so on.
+- fish keeps a history of the folders you visit: Alt-Left/Alt-Right on an empty
+  line move back and forward, `cdh` picks one, `dirh` lists them, and `cd -` goes
+  back. `cd` with part of a folder's name jumps there (zoxide).
+- Abbreviations (`l`, `ll`, `la`, `lt`, `lr`, `ww`, `fdall`, `rgall`, `dfh`, `du2`,
+  `bench`, `y2j`, `j2y`, `bathelp`, `bcat`) expand when you press Space or Enter, so
+  history keeps the full command. `abbr` lists them.
+
 ## Sync dotfiles
 
 ```sh
@@ -132,7 +243,26 @@ the scripts also install the new packages or runtimes. If chezmoi warns that the
 config file template has changed, run `chezmoi init` to regenerate this machine's
 config; it only asks questions it hasn't asked before.
 
-To update everything at once, run `update`, a function in `.zshrc`. It prints
+A machine still on the earlier zsh setup moves to fish like this, from a shell
+outside herdr (a new Ghostty window, or a plain SSH login):
+
+```sh
+chezmoi update     # installs fish; on Linux with sudo, switches zsh back to bash
+chezmoi init       # picks up fish for `chezmoi cd`
+chezmoi apply      # second pass: herdr's config now finds fish
+herdr server stop  # the running server keeps its old environment
+herdr
+```
+
+The first apply removes the zsh files the dotfiles wrote (`~/.zshenv`,
+`~/.config/zsh`'s startup files) and, on a Mac, writes `~/.zprofile` at the same
+time, so `herdr` stays on PATH. Your own `~/.config/zsh/.zshrc.local` and zsh's
+history stay; `install.sh` reminds you to move the settings to fish. On a Linux
+account without sudo whose login shell is zsh, ask IT to make it bash, and until then
+type `exec bash -l` before `herdr`.
+
+To update everything at once, run `update`, a fish function
+([`functions/update.fish`](home/dot_config/fish/functions/update.fish)). It prints
 separate Homebrew, chezmoi and mise headings, with distinct colors in a terminal
 and plain text when redirected (or when `NO_COLOR` is set). It runs these steps
 in order and stops at the first failure:
@@ -167,7 +297,8 @@ mise doctor
 
 The commands run separately, as with semicolons, so every check runs: Homebrew
 reports even warnings with an error exit status, which would stop a chain joined
-with `&&`. Both functions are defined only when their required commands exist.
+with `&&`. Both functions check for their programs first and stop with a message
+naming any that are missing; `update --help` and `doctor --help` describe them.
 
 ## Use these dotfiles yourself
 
@@ -202,9 +333,10 @@ applied with chezmoi. `mise use -g` changes only this machine's copy, which chez
 would overwrite on the next apply. Project-specific mise configs stay with their
 projects.
 
-zsh login shells load mise's shims in `.zprofile`; interactive shells load full
-activation in `.zshrc` to switch versions when you change folders. mise's settings,
-data, state and cache use the XDG folders; `mise doctor` shows their paths.
+Every fish puts mise's shims on PATH (`conf.d/20-path.fish`), so scripts and herdr's
+popups find the runtimes; interactive shells load full activation in `config.fish` to
+switch versions when you change folders. mise's settings, data, state and cache use
+the XDG folders; `mise doctor` shows their paths.
 
 ### Shell and workflow tools
 
@@ -223,7 +355,7 @@ The Brewfile installs [ShellCheck](https://github.com/koalaman/shellcheck),
 - act reads `$XDG_CONFIG_HOME/act/actrc`. It uses the upstream Medium Ubuntu images
   and, on Apple silicon, amd64 containers. Its caches follow `$XDG_CACHE_HOME`.
   Project `.actrc` files and CLI arguments can override these defaults. Homebrew
-  installs its Zsh completion, which the existing `fpath` and `compinit` setup load.
+  installs its fish completion, which fish loads by itself.
 - actionlint checks every workflow when run from a repository. It automatically
   uses ShellCheck for shell steps. Its optional config belongs to the project at
   `.github/actionlint.yaml`; the standard defaults fit this repo, so there is no
@@ -252,9 +384,10 @@ Each file in `home/` becomes a file in your home folder, and its name says how:
 
 | Name in `home/`                | What chezmoi does                                                   |
 | ------------------------------ | ------------------------------------------------------------------- |
-| `dot_zshenv`                   | Writes `~/.zshenv`: `dot_` stands for the leading dot.              |
+| `dot_editorconfig`             | Writes `~/.editorconfig`: `dot_` stands for the leading dot.        |
 | `dot_config/git/config.tmpl`   | Writes `~/.config/git/config`, filled in as a template (`.tmpl`).   |
 | `empty_dot_hushlogin`          | Writes `~/.hushlogin`, keeping it although it's empty (`empty_`).   |
+| `create_dot_bash_profile`      | Writes `~/.bash_profile` only if it doesn't exist yet (`create_`).  |
 | `symlink_config.yml.tmpl`      | Makes `config.yml` a symlink; the file holds the path it points to. |
 | `.config.yml`, or any name starting with a dot | Nothing: chezmoi skips it.                          |
 
@@ -267,7 +400,9 @@ The names starting with `.chezmoi` control chezmoi itself:
 - `.chezmoi.toml.tmpl` asks the setup questions and writes each machine's chezmoi
   settings.
 - `.chezmoiignore` lists files chezmoi leaves alone: some only on some machines, and
-  some, such as `~/.config/zsh/.zshrc.local`, everywhere.
+  some, such as `~/.config/fish/config-local.fish`, everywhere.
+- `.chezmoiremove` lists files chezmoi deletes: the zsh setup that earlier versions
+  of these dotfiles wrote.
 - `.chezmoiexternal.toml` lists files that chezmoi downloads instead of keeping them
   here: the Catppuccin themes.
 - `.chezmoitemplates/` holds template pieces that several files share, such as how
@@ -288,38 +423,41 @@ GitHub Actions runs three workflows on pushes and pull requests:
 
 - **Shell checks** run ShellCheck and shfmt on plain shell scripts and on chezmoi
   templates rendered for macOS and Linux (x86_64 and ARM64) with both answers to the
-  sudo question, and actionlint on all workflows, then run `scripts/check-shell.py`
-  on macOS and Linux.
+  sudo question, fish's syntax check and `fish_indent` on fish files, and actionlint
+  on all workflows, then run `scripts/check-shell.py` on macOS and Linux.
 - **Bootstrap** runs `install.sh` against the pushed commit on GitHub's macOS runner
   and its x86_64 and ARM64 Ubuntu runners, and in fresh Ubuntu containers on both
   architectures, as a user with sudo and as one without, who answers no to the sudo
   question (Homebrew then goes into the home folder). `scripts/check-install.sh` then
-  checks the result: the tools on PATH, `chezmoi verify`, that setup left the
-  repository unchanged, the Homebrew prefix, the gh config symlink, gh-dash and,
-  where setup may use sudo, the login shell.
+  checks the result: the tools on fish's PATH, `chezmoi verify`, that setup left the
+  repository unchanged, the Homebrew prefix, the gh config symlink, gh-dash, the login
+  shell and that it finds `herdr`, and that herdr's panes and popups use fish.
 - **Secret scan** runs gitleaks over the whole history, which also covers edits made
   without `chezmoi add` and its secret check.
 
-You can also run the checks locally with Python 3.8+, `chezmoi`, `zsh`, `shellcheck`,
-`shfmt` and `actionlint` available:
+You can also run the checks locally with Python 3.8+, `chezmoi`, `fish` (which brings
+`fish_indent`), `shellcheck`, `shfmt` and `actionlint` available, plus `zsh` on macOS
+or `bash` on Linux:
 
 ```sh
 python3 scripts/check-lint.py
 python3 scripts/check-shell.py
 ```
 
-`check-shell.py` renders the shell files and checks Zsh syntax, then tests login and
-non-login startup in interactive and noninteractive modes. It verifies quiet
-SSH-style startup, completion initialization, Micro selection and the vi fallback,
-PATH priority, and the macOS `.zprofile` / Linux `.zshrc` split for Homebrew initialization.
+`check-shell.py` renders the fish config and the login shell's startup file, checks
+their syntax and fish's formatting, then starts fish as a login and non-login shell
+in interactive and noninteractive modes. It verifies quiet SSH-style startup, PATH
+priority (including after macOS's path_helper in login shells), Micro selection and
+the vi fallback, that interactive settings stay out of scripts and popups, and that
+the macOS `zsh -l` (`~/.zprofile`) or Linux interactive `bash` (`~/.bashrc`) gets
+Homebrew while `zsh -c` and `bash -c` stay untouched.
 
 Checks use temporary homes and a temporary source copy with Homebrew and editor
-stand-ins; other optional shell tools are absent. System-wide profiles are skipped
-to focus the checks on this repository. Standard Zsh functions are copied into private
-temporary directories so shared runner permissions do not trigger completion
-security prompts. They do not apply dotfiles, install packages,
-download external themes, or use your local shell overrides. Application behavior
-and integration with installed plugins still need checking on a configured machine.
+stand-ins; other optional shell tools are absent. zsh's system-wide files are
+skipped to focus the checks on this repository; bash can't skip its own, so those
+run too. The checks do not apply dotfiles, install packages, download external
+themes, or use your local shell overrides. Application behavior and integration with
+installed tools still need checking on a configured machine.
 
 ## To do
 
