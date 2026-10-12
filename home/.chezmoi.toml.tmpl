@@ -25,7 +25,8 @@
   ~/.config/chezmoi/chezmoi.toml.
 
   lookPath "delta" checks whether the delta program is on PATH right now, so
-  the [diff] and [merge] sections are only written if those programs exist.
+  the [diff] section is only written if delta exists; lookPath "fish" does the
+  same for the [cd] section.
 
   After this file changes, chezmoi warns that the config file template has
   changed until you run `chezmoi init` on that machine.
@@ -57,6 +58,16 @@
 # `chezmoi init` once more at the end, after Homebrew has installed delta.
 [diff]
     pager = "delta"
+{{- end }}
+
+{{- with lookPath "fish" }}
+
+# `chezmoi cd` opens a shell in the dotfiles repository. It would start $SHELL,
+# the login shell (zsh on macOS, bash on Linux), which has none of your shell
+# setup; start fish instead. `with` writes this section only if fish was on
+# PATH when this file was generated, and . is the full path lookPath found.
+[cd]
+    command = {{ . | quote }}
 {{- end }}
 
 # Your answers to the setup questions, for the templates to use.
