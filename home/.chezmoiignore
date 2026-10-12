@@ -2,15 +2,38 @@
 # Each line is a path in your home folder, written without the ~/.
 #
 # This file is a template. The lines between `if` and `end` below are only
-# ignored when the condition is true: here, when this machine isn't a Mac
+# ignored when the condition is true: for example when this machine isn't a Mac
 # (chezmoi calls macOS "darwin", and ne means "not equal").
 
-# macOS-only: Ghostty's config, and .hushlogin, which hides the "Last login" banner
-# login(1) prints in every Ghostty tab (Linux keeps its SSH login message).
+# macOS-only: Ghostty's config; .hushlogin, which hides the "Last login" banner
+# login(1) prints in every Ghostty tab (Linux keeps its SSH login message); and
+# ~/.zprofile, which puts Homebrew on PATH in macOS's login shell, zsh.
 {{ if ne .chezmoi.os "darwin" }}
 .config/ghostty
 .hushlogin
+.zprofile
 {{ end }}
+
+# Linux-only: ~/.bashrc, which puts Homebrew on PATH in Linux's login shell,
+# bash, and ~/.bash_profile, which makes SSH logins read ~/.bashrc. Write
+# ~/.bash_profile only on an account with none of bash's three login files:
+# where one exists, it's the system's own and already reads ~/.bashrc. stat
+# looks a file up, and `or` is true when any of its checks is.
+{{ if ne .chezmoi.os "linux" }}
+.bashrc
+.bash_profile
+{{ else if or (stat (joinPath .chezmoi.homeDir ".bash_profile")) (stat (joinPath .chezmoi.homeDir ".bash_login")) (stat (joinPath .chezmoi.homeDir ".profile")) }}
+.bash_profile
+{{ end }}
+
+# NEVER track machine-specific fish settings. config.fish loads this file, if
+# it exists, for settings that only make sense on one machine.
+.config/fish/config-local.fish
+
+# fish's own saved state, which belongs to each machine: universal variables
+# (set -U), and the files fish writes once when it upgrades an old setup.
+.config/fish/fish_variables
+.config/fish/conf.d/fish_frozen_*.fish
 
 # NEVER track machine-specific zsh settings. .zshrc loads this file, if it
 # exists, for settings that only make sense on one machine.

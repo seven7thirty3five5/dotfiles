@@ -1,0 +1,40 @@
+{{- /*
+  ~/.bashrc, for Linux only (.chezmoiignore leaves it out on macOS). It's a
+  template so that chezmoi can write in the full path to brew, which the
+  brew-prefix template finds in one of the folders Homebrew can live in on
+  Linux. Until Homebrew is installed, only the comments and the guard are
+  written; install.sh applies the dotfiles again after installing it.
+*/ -}}
+
+{{- $brewPrefix := includeTemplate "brew-prefix" . | trim -}}
+
+# shellcheck shell=bash
+#
+# ~/.bashrc: bash reads this in interactive shells, the ones you type into. On
+# Linux, bash is your login shell, and an SSH login reaches this file through
+# your system's own login file (~/.profile on Debian and Ubuntu, ~/.bash_profile
+# on Fedora, RHEL and Arch, /etc/profile on openSUSE). Its only job is to put
+# Homebrew on PATH, so that you can type `herdr` there. herdr's panes run fish,
+# and your environment lives in fish's config (~/.config/fish).
+
+# Stop here unless this shell is interactive. Commands sent over SSH (scp,
+# rsync, `ssh host command`, herdr's own connection) may also read this file,
+# and must get nothing from it. $- lists the shell's options; i means
+# interactive. `case` compares it with each pattern in turn, and ;; ends the
+# commands for a pattern.
+case $- in
+  *i*) ;;
+  *) return ;;
+esac
+{{- if $brewPrefix }}
+{{- $brew := joinPath $brewPrefix "bin" "brew" | shellQuote }}
+
+# Homebrew's documented setup line for bash on Linux. -x checks that brew
+# exists and can run, so an account without Homebrew gets nothing here.
+# `brew shellenv bash` prints the commands that add Homebrew to PATH, and eval
+# runs them; it prints nothing if Homebrew is already first on PATH, so reading
+# this file twice is harmless.
+if [ -x {{ $brew }} ]; then
+  eval "$({{ $brew }} shellenv bash)"
+fi
+{{- end }}
