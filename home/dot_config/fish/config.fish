@@ -26,65 +26,66 @@ if status is-interactive
     fish_config theme choose catppuccin-mocha --color-theme=dark
     set -g fish_color_autosuggestion 7f849c
 
-    # Abbreviations, only for programs that are installed. --description is
-    # what Tab's list of completions shows next to the name.
+    # Abbreviations, only for programs that are installed. --description=TEXT
+    # is what Tab's list of completions shows next to the name. (It needs the
+    # =; with a space instead, the text would become part of the expansion.)
 
     # Open Micro, the default terminal text editor.
     if command -q micro
-        abbr --add ww --description 'Open Micro' micro
+        abbr --add ww --description='Open Micro' micro
     end
 
     # eza listings; plain ls keeps its usual flags (ls -ltr etc.). Folders
     # first, icons, and a Git status column in the long views.
     if command -q eza
-        abbr --add l --description 'List all files in detail' \
+        abbr --add l --description='List all files in detail' \
             eza -lah --group-directories-first --icons=auto --git
-        abbr --add ll --description 'List visible files in detail' \
+        abbr --add ll --description='List visible files in detail' \
             eza -l --group-directories-first --icons=auto --git
-        abbr --add la --description 'List files in detail, hidden ones too' \
+        abbr --add la --description='List files in detail, hidden ones too' \
             eza -la --group-directories-first --icons=auto --git
-        abbr --add lt --description 'Show a folder tree two levels deep' \
+        abbr --add lt --description='Show a folder tree two levels deep' \
             eza --tree --level=2 --group-directories-first --icons=auto
-        abbr --add lr --description 'Show the Git status of each repository' \
+        abbr --add lr --description='Show the Git status of each repository' \
             eza -l --git-repos --group-directories-first --icons=auto
     end
 
     if command -q bat
-        abbr --add bathelp --description 'Highlight piped help text' \
+        abbr --add bathelp --description='Highlight piped help text' \
             bat --plain --language=help
-        abbr --add bcat --description 'Print a highlighted file, no pager' \
+        abbr --add bcat --description='Print a highlighted file, no pager' \
             bat --plain --paging=never
     end
 
     if command -q fd
-        abbr --add fdall --description 'Find hidden and ignored files too' \
+        abbr --add fdall --description='Find hidden and ignored files too' \
             fd --hidden --no-ignore --exclude .git
     end
 
     if command -q rg
-        abbr --add rgall --description 'Search ignored files too' \
+        abbr --add rgall --description='Search ignored files too' \
             rg --no-ignore
     end
 
     if command -q duf
-        abbr --add dfh --description 'Show usage of local disks' \
+        abbr --add dfh --description='Show usage of local disks' \
             duf --only local
     end
 
     if command -q dust
-        abbr --add du2 --description 'Show folder sizes two levels deep' \
+        abbr --add du2 --description='Show folder sizes two levels deep' \
             dust --depth 2
     end
 
     if command -q hyperfine
-        abbr --add bench --description 'Benchmark after three warm-up runs' \
+        abbr --add bench --description='Benchmark after three warm-up runs' \
             hyperfine --warmup 3
     end
 
     if command -q yq
-        abbr --add y2j --description 'Convert YAML to JSON' \
+        abbr --add y2j --description='Convert YAML to JSON' \
             yq -o=json
-        abbr --add j2y --description 'Convert JSON to YAML' \
+        abbr --add j2y --description='Convert JSON to YAML' \
             yq -p=json -o=yaml -P
     end
 

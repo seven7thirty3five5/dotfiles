@@ -132,7 +132,7 @@ if status is-interactive
     test "$fish_color_autosuggestion" = 7f849c; or fail 'The color theme was not applied'
     abbr -q dotdot; or fail 'Abbreviations were not set up'
     if test "$EDITOR" = micro
-        abbr -q ww; or fail 'ww does not open Micro'
+        abbr --show | string match -q -- '* -- ww micro'; or fail 'ww does not expand to micro'
     end
     for name in update doctor help ff
         functions -q $name; or fail "Function missing: $name"
