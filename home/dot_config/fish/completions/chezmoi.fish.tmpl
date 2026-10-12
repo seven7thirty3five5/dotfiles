@@ -1,0 +1,10 @@
+{{- /*
+  fish's tab completion for chezmoi: what Tab offers after you type `chezmoi `.
+  Homebrew's packages bring their completions with them (fish finds those by
+  itself), but install.sh puts chezmoi in ~/.local/bin instead, so chezmoi
+  writes its own here with its `completion` template function. fish loads
+  ~/.config/fish/completions/chezmoi.fish the first time you complete chezmoi.
+  chezmoi rewrites this file on `chezmoi apply` when a newer chezmoi's
+  completion differs, so it always matches the installed one.
+*/ -}}
+{{- completion "fish" -}}
