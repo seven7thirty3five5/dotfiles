@@ -16,21 +16,32 @@ fail() {
   exit 1
 }
 
-# Find zsh, the shell these dotfiles configure: the system's own, which the
-# setup installs on Linux with sudo (an administrator installs it elsewhere).
-# `command -v zsh` prints where it is, or fails if it isn't installed.
-if ! zsh=$(command -v zsh); then
-  fail "zsh is not installed"
+# chezmoi lives in ~/.local/bin, which isn't on this script's PATH yet.
+chezmoi=$HOME/.local/bin/chezmoi
+if [ ! -x "$chezmoi" ]; then
+  fail "chezmoi is not installed in ~/.local/bin"
 fi
 
-# Use the same PATH a new terminal gets. We start zsh as an interactive login
-# shell (-l -i), the way a terminal does, and have it print its PATH. This
-# matters on Linux, where Homebrew is only added to PATH in .zshrc, a file
-# other shells never read. zsh's startup warnings are thrown away (2>/dev/null)
-# and only the last line of output, the PATH itself, is kept (tail -n 1).
-# Expand PATH in the child zsh after it has read its startup files.
+# Ask chezmoi where Homebrew is: the brew-prefix template prints its folder, or
+# nothing if Homebrew isn't installed. fish, the shell in herdr's panes, comes
+# from there. (-n: the text isn't empty; -x: a program we can run.)
+brew_prefix=$("$chezmoi" execute-template '{{ includeTemplate "brew-prefix" . }}')
+if [ -z "$brew_prefix" ]; then
+  fail "Homebrew is not installed"
+fi
+
+fish=$brew_prefix/bin/fish
+if [ ! -x "$fish" ]; then
+  fail "fish is not installed in $brew_prefix/bin"
+fi
+
+# Use the same PATH a herdr pane gets. We start fish as an interactive login
+# shell (-l -i), the way herdr does on macOS, and have it print its PATH with
+# colons between the folders (string join). Its startup messages, if any, are
+# thrown away (2>/dev/null) and only the last line, the PATH itself, is kept
+# (tail -n 1). The single quotes keep this shell from expanding $PATH itself.
 # shellcheck disable=SC2016
-PATH=$("$zsh" -l -i -c 'echo "$PATH"' 2>/dev/null | tail -n 1)
+PATH=$("$fish" -l -i -c 'string join : -- $PATH' 2>/dev/null </dev/null | tail -n 1)
 export PATH
 
 # Where the dotfiles keep config and data files. ${NAME:-default} means "the
@@ -42,9 +53,9 @@ data_dir=${XDG_DATA_HOME:-$HOME/.local/share}
 
 # The loop goes through the list one word at a time. chezmoi and mise come
 # from ~/.local/bin; mise provides node (with npm), pnpm, python and uv.
-# All of them must resolve from the new zsh's PATH, just as in a terminal.
+# All of them must resolve from fish's PATH, just as in a herdr pane.
 tools="brew chezmoi mise node pnpm python uv git delta difft fresh micro fzf fd rg bat eza
-       atuin zoxide starship lazygit gh shellcheck shfmt act actionlint"
+       atuin zoxide starship lazygit gh herdr shellcheck shfmt act actionlint"
 for tool in $tools; do
   if ! command -v "$tool" >/dev/null; then
     fail "$tool is not on PATH"
@@ -76,11 +87,9 @@ fi
 # --- 4. The templates found Homebrew where it was installed -----------------
 
 # The brew-prefix template is how the dotfiles find Homebrew; compare its answer
-# with Homebrew's own.
-template_prefix=$(chezmoi execute-template '{{ includeTemplate "brew-prefix" . }}')
-brew_prefix=$(brew --prefix)
-if [ "$template_prefix" != "$brew_prefix" ]; then
-  fail "brew-prefix found $template_prefix, but Homebrew is in $brew_prefix"
+# (from the start of this script) with Homebrew's own.
+if [ "$(brew --prefix)" != "$brew_prefix" ]; then
+  fail "brew-prefix found $brew_prefix, but Homebrew is in $(brew --prefix)"
 fi
 
 # --- 5. The git config was applied ------------------------------------------
@@ -114,25 +123,50 @@ if [ ! -d "$data_dir/gh/extensions/gh-dash" ]; then
   fail "gh-dash is not installed"
 fi
 
-# --- 9. The system's zsh is the login shell, where setup may use sudo -------
+# --- 9. The login shell is the system's own, and it finds herdr ------------
 
-# Setup only changes the login shell where you answered yes to "Use sudo on
-# this machine"; elsewhere install.sh lists it as a step for an administrator.
-# As in check 4, chezmoi fills in a template: .useSudo is that answer (true or
-# false), and .chezmoi.os is darwin on macOS. (dscl and getent look up the
-# login shell, as in the setup script.)
-if [ "$(chezmoi execute-template '{{ .useSudo }}')" = true ]; then
-  if [ "$(chezmoi execute-template '{{ .chezmoi.os }}')" = darwin ]; then
-    login_shell=$(dscl . -read "/Users/$(id -un)" UserShell | awk '{print $2}')
-    expected=/bin/zsh
-  else
-    login_shell=$(getent passwd "$(id -un)" | cut -d: -f7)
-    expected=/usr/bin/zsh
+# The login shells stay the system's: /bin/zsh on macOS and bash on Linux. Their
+# one startup file puts Homebrew, and so herdr, on PATH: ~/.zprofile for a zsh
+# login shell, ~/.bashrc for an interactive bash, which an SSH login reaches
+# through the system's login file. dscl and getent look up the login shell, as
+# in install.sh. (*/bash matches any path ending in /bash; </dev/null keeps the
+# shells from waiting for input, and 2>/dev/null drops bash's warnings about
+# having no terminal.)
+if [ "$(chezmoi execute-template '{{ .chezmoi.os }}')" = darwin ]; then
+  login_shell=$(dscl . -read "/Users/$(id -un)" UserShell | awk '{print $2}')
+  if [ "$login_shell" != /bin/zsh ]; then
+    fail "the login shell is $login_shell, not macOS's /bin/zsh"
   fi
 
-  if [ "$login_shell" != "$expected" ]; then
-    fail "the login shell is $login_shell, not the system's zsh ($expected)"
-  fi
+  login_herdr=$(/bin/zsh -l -c 'command -v herdr' </dev/null)
+else
+  login_shell=$(getent passwd "$(id -un)" | cut -d: -f7)
+  case $login_shell in
+    */bash) ;;
+    *) fail "the login shell is $login_shell, not the system's bash" ;;
+  esac
+
+  login_herdr=$(bash -l -i -c 'command -v herdr' </dev/null 2>/dev/null | tail -n 1)
+fi
+
+if [ "$login_herdr" != "$brew_prefix/bin/herdr" ]; then
+  fail "the login shell finds herdr at '$login_herdr', not $brew_prefix/bin/herdr"
+fi
+
+# --- 10. herdr starts fish --------------------------------------------------
+
+# herdr's config names fish's full path as the shell for new panes
+# (default_shell), and runs both popups through it (command = "exec FISH -c
+# ..."). sed -n prints only what its pattern captures; grep -c counts the
+# matching lines.
+herdr_config=$config_dir/herdr/config.toml
+default_shell=$(sed -n 's/^default_shell = "\(.*\)"$/\1/p' "$herdr_config")
+if [ "$default_shell" != "$fish" ] || [ ! -x "$default_shell" ]; then
+  fail "herdr's default_shell is '$default_shell', not $fish"
+fi
+
+if [ "$(grep -c "^command = \"exec $fish -c " "$herdr_config")" -ne 2 ]; then
+  fail "herdr's popup commands don't run through $fish"
 fi
 
 echo "Install checks passed (Homebrew in $brew_prefix)."

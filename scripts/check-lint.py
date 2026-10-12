@@ -1,19 +1,29 @@
 #!/usr/bin/env python3
-"""Lint shell scripts and GitHub workflows without running the setup scripts.
+"""Lint shell scripts, fish files and GitHub workflows without running anything.
 
-Run with Python 3.8+, chezmoi, shellcheck, shfmt and actionlint on PATH.
-Chezmoi templates are rendered for macOS (Apple silicon, and Intel, which the
-scripts refuse) and Linux (x86_64 and ARM64), with both answers to the
-"Use sudo on this machine" setup question, into temporary files before
-ShellCheck reads them. shfmt checks their rendered formatting using the original
-relative filenames in a temporary home with home/dot_editorconfig installed.
-Zsh startup files are checked separately by check-shell.py; ShellCheck does not
-support Zsh.
+Run with Python 3.8+, chezmoi, shellcheck, shfmt, fish, fish_indent and
+actionlint on PATH. Chezmoi templates are rendered for macOS (Apple silicon,
+and Intel, which the scripts refuse) and Linux (x86_64 and ARM64), with both
+answers to the "Use sudo on this machine" setup question, into temporary files
+before the checks read them:
+
+  - sh and bash files (by extension, shebang, or a `# shellcheck shell=` line,
+    as in bash's startup files): ShellCheck, then shfmt, which checks their
+    rendered formatting using the original relative filenames in a temporary
+    home with home/dot_editorconfig installed;
+  - fish files: `fish --no-execute` for syntax and `fish_indent --check` for
+    formatting. Templates whose text comes from a program (Homebrew's or mise's
+    setup, completions) only get the syntax check: that output isn't ours to
+    format.
+
+The macOS ~/.zprofile is zsh, which ShellCheck does not support;
+check-shell.py checks it with `zsh -n` on macOS.
 """
 
 import json
 import os
 from pathlib import Path
+import re
 import shlex
 import shutil
 import subprocess
@@ -24,6 +34,12 @@ import tempfile
 SOURCE = Path(__file__).resolve().parents[1]
 STATE = SOURCE / (SOURCE / ".chezmoiroot").read_text().strip()
 SHELL_SUFFIXES = (".sh", ".bash", ".bats", ".dash", ".ksh")
+
+# A ShellCheck directive naming the shell, for files with no extension or shebang.
+SHELL_DIRECTIVE = re.compile(r"^# shellcheck shell=(sh|bash)$", re.MULTILINE)
+
+# Text in a template that means a program wrote (part of) the result.
+GENERATED = ("output ", 'completion "fish"')
 
 
 def run(command, env, input=None):
@@ -39,32 +55,48 @@ def run(command, env, input=None):
     return result.stdout
 
 
-def shell_files():
-    """Include tracked and new scripts, including shell template fragments."""
+def repository_files():
+    """Tracked and new files, one Path each, in a stable order."""
     paths = subprocess.check_output(
         ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
         cwd=SOURCE,
     ).decode().split("\0")
     for relative in sorted(set(paths) - {""}):
         path = SOURCE / relative
-        if not path.is_file():
-            continue
+        if path.is_file():
+            yield path
+
+
+def shell_files():
+    """Include tracked and new scripts, including shell template fragments."""
+    for path in repository_files():
         name = path.name[:-5] if path.name.endswith(".tmpl") else path.name
         if name.endswith(SHELL_SUFFIXES):
             yield path
         elif "." not in name:
-            # Extensionless scripts are identified by their shell shebang.
-            first = path.read_bytes().split(b"\n", 1)[0].decode(errors="replace")
-            if first.startswith("#!") and first.split()[-1].split("/")[-1] in (
+            # Extensionless scripts are identified by their shell shebang, or
+            # by a ShellCheck directive (bash's startup files have neither an
+            # extension nor a shebang).
+            text = path.read_text(errors="replace")
+            first = text.split("\n", 1)[0]
+            if (first.startswith("#!") and first.split()[-1].split("/")[-1] in (
                 "sh", "bash", "dash", "ksh", "mksh",
-            ):
+            )) or SHELL_DIRECTIVE.search(text):
                 yield path
+
+
+def fish_files():
+    """fish files and templates that render into fish files."""
+    for path in repository_files():
+        name = path.name[:-5] if path.name.endswith(".tmpl") else path.name
+        if name.endswith(".fish"):
+            yield path
 
 
 def main():
     binaries = {
         name: shutil.which(name)
-        for name in ("chezmoi", "shellcheck", "shfmt", "actionlint")
+        for name in ("chezmoi", "shellcheck", "shfmt", "fish", "fish_indent", "actionlint")
     }
     for name, binary in binaries.items():
         if not binary:
@@ -100,29 +132,26 @@ def main():
             "--refresh-externals=never", "--no-tty", "--no-pager",
             "execute-template",
         ]
-        checks = 0
-        failures = []
-        for path in shell_files():
+
+        def rendered_variants(path):
+            """Yield (label, content, rendered path) for each way path renders.
+
+            A template keeps different parts on each kind of machine and for
+            each answer to the setup question "Use sudo on this machine"
+            (useSudo), so check every combination. Plain files are checked once,
+            in place, so relative source statements resolve correctly.
+            """
+            label = str(path.relative_to(SOURCE))
             template = path.suffix == ".tmpl" or ".chezmoitemplates" in path.parts
-            # A template keeps different parts on each kind of machine and for
-            # each answer to the setup question "Use sudo on this machine"
-            # (useSudo), so check every combination. Plain scripts are checked once.
-            variants = (
-                [
-                    (system, arch, use_sudo)
-                    for system, arch in (
-                        ("darwin", "arm64"), ("darwin", "amd64"),
-                        ("linux", "amd64"), ("linux", "arm64"),
-                    )
-                    for use_sudo in (True, False)
-                ]
-                if template else [(None, None, None)]
-            )
-            for system, arch, use_sudo in variants:
-                label = str(path.relative_to(SOURCE))
-                content = path.read_text()
-                if template:
-                    label += f" ({system}/{arch}, useSudo={json.dumps(use_sudo)})"
+            if not template:
+                yield label, path.read_text(), path
+                return
+
+            for system, arch in (
+                ("darwin", "arm64"), ("darwin", "amd64"),
+                ("linux", "amd64"), ("linux", "arm64"),
+            ):
+                for use_sudo in (True, False):
                     context = {
                         "os": system, "arch": arch,
                         "homeDir": str(home), "sourceDir": str(STATE),
@@ -138,22 +167,36 @@ def main():
                         chezmoi, env,
                         '{{ with dict "chezmoi" (dict ' + fields + ') "useSudo" '
                         + json.dumps(use_sudo) + ' }}'
-                        + content + '{{ end }}',
+                        + path.read_text() + '{{ end }}',
                     )
 
-                    # A script that comes out empty on this kind of machine (for
-                    # example a Linux-only one on macOS) is one chezmoi skips, so
-                    # there is nothing to check.
+                    # A file that comes out empty on this kind of machine (for
+                    # example a Linux-only script on macOS) is one chezmoi skips,
+                    # so there is nothing to check.
                     if not content.strip():
                         continue
 
-                # Keep ordinary scripts in place so relative source statements
-                # resolve correctly. Templates need a temporary rendered copy.
-                rendered = path
-                if template:
                     name = path.name[:-5] if path.suffix == ".tmpl" else path.name
                     rendered = temporary / name
                     rendered.write_text(content)
+                    yield (f"{label} ({system}/{arch}, useSudo={json.dumps(use_sudo)})",
+                           content, rendered)
+
+        checks = 0
+        failures = []
+
+        def check(label, commands):
+            nonlocal checks
+            for command, input in commands:
+                try:
+                    run(command, env, input)
+                except RuntimeError as error:
+                    failures.append(f"{label}: {error}")
+            checks += 1
+
+        for path in shell_files():
+            template = path.suffix == ".tmpl" or ".chezmoitemplates" in path.parts
+            for label, content, rendered in rendered_variants(path):
                 shellcheck = [
                     binaries["shellcheck"], "--rcfile",
                     str(STATE / "dot_config/shellcheckrc"),
@@ -164,16 +207,19 @@ def main():
                     shellcheck += ["--shell=sh"]
                 format_path = home / path.relative_to(SOURCE)
                 format_path.parent.mkdir(parents=True, exist_ok=True)
-                commands = [
+                check(label, [
                     (shellcheck + [str(rendered)], None),
                     ([binaries["shfmt"], "--diff", "--filename", str(format_path)], content),
-                ]
-                for command, input in commands:
-                    try:
-                        run(command, env, input)
-                    except RuntimeError as error:
-                        failures.append(f"{label}: {error}")
-                checks += 1
+                ])
+        shell_checks = checks
+
+        for path in fish_files():
+            generated = any(marker in path.read_text() for marker in GENERATED)
+            for label, content, rendered in rendered_variants(path):
+                commands = [([binaries["fish"], "--no-execute", str(rendered)], None)]
+                if not generated:
+                    commands.append(([binaries["fish_indent"], "--check", str(rendered)], None))
+                check(label, commands)
 
         try:
             run([binaries["actionlint"], "-shellcheck", binaries["shellcheck"]], env)
@@ -181,7 +227,9 @@ def main():
             failures.append(str(error))
         if failures:
             raise RuntimeError("\n\n".join(failures))
-        print(f"PASS: ShellCheck and shfmt ({checks} script variants), all workflows")
+        print(f"PASS: ShellCheck and shfmt ({shell_checks} script variants), "
+              f"fish syntax and formatting ({checks - shell_checks} file variants), "
+              "all workflows")
 
 
 if __name__ == "__main__":
