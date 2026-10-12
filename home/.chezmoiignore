@@ -34,7 +34,3 @@
 # (set -U), and the files fish writes once when it upgrades an old setup.
 .config/fish/fish_variables
 .config/fish/conf.d/fish_frozen_*.fish
-
-# NEVER track machine-specific zsh settings. .zshrc loads this file, if it
-# exists, for settings that only make sense on one machine.
-.config/zsh/.zshrc.local

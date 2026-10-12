@@ -1,5 +1,5 @@
 # bat's settings. bat is cat with syntax highlighting; it reads this file from
-# ~/.config/bat (BAT_CONFIG_DIR in ~/.config/zsh/.zshenv points there).
+# ~/.config/bat (BAT_CONFIG_DIR in ~/.config/fish/conf.d/00-environment.fish points there).
 # One bat command-line option per line; defaults are unchanged.
 
 # Catppuccin Mocha is one of bat's built-in themes (bat --list-themes lists them).

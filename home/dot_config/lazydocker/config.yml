@@ -1,6 +1,6 @@
 # lazydocker's settings. lazydocker is a terminal interface for Docker. It
-# finds this file in $XDG_CONFIG_HOME/lazydocker, and ~/.zshenv sets
-# XDG_CONFIG_HOME to ~/.config.
+# finds this file in $XDG_CONFIG_HOME/lazydocker, and fish's environment file
+# (~/.config/fish/conf.d/00-environment.fish) sets XDG_CONFIG_HOME to ~/.config.
 
 # Catppuccin Mocha (blue accent), reusing lazygit's official Catppuccin colors:
 # there is no lazydocker port, but lazydocker takes the same theme keys and hex values.

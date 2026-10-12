@@ -1,6 +1,6 @@
 # Starship's settings. Starship draws the prompt, the line before your cursor
-# with the folder, git branch and so on. STARSHIP_CONFIG in ~/.config/zsh/.zshenv
-# points it to this file. Settings not listed here keep Starship's defaults
+# with the folder, git branch and so on. STARSHIP_CONFIG in fish's environment
+# file (~/.config/fish/conf.d/00-environment.fish) points it to this file. Settings not listed here keep Starship's defaults
 # (https://starship.rs/config/).
 
 # Built-in Starship prompt, recolored with the Catppuccin Mocha palette.

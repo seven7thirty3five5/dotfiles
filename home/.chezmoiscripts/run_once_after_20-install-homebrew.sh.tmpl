@@ -7,9 +7,9 @@
 #     this file changes). If it fails, chezmoi tries it again on the next
 #     `chezmoi apply` or `chezmoi update`.
 #   - "after_": it runs after chezmoi has written the dotfiles, so a machine
-#     where Homebrew can't be installed still gets them. (The zsh and git
-#     configs only set up Homebrew once it's installed, which is why install.sh
-#     applies the dotfiles once more at the end.)
+#     where Homebrew can't be installed still gets them. (The shell, git and
+#     herdr configs only set up Homebrew once it's installed, which is why
+#     install.sh applies the dotfiles once more at the end.)
 #   - ".tmpl": chezmoi first fills in the template parts (written between double
 #     braces). For example, it keeps only the part for your answer to the setup
 #     question "Use sudo on this machine" (.useSudo).
