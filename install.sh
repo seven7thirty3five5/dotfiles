@@ -192,8 +192,7 @@ else
     */bash) ;;
     *)
       if [ "$use_sudo" = true ]; then
-        # Setup tried with sudo but couldn't, for example because sudo's
-        # password prompt timed out.
+        # Setup never changes the login shell, but with sudo you can.
         todo="$todo
   - Make /bin/bash your login shell: run  sudo chsh -s /bin/bash $user
     (if IT manages your account, ask them to change it instead)."
@@ -235,17 +234,6 @@ if [ -n "$missing" ]; then
     todo="$todo
   - Ask IT (an administrator) to install:$missing"
   fi
-fi
-
-# Earlier versions of these dotfiles configured zsh. chezmoi removes the files
-# they wrote (see home/.chezmoiremove), but not your own machine-specific zsh
-# settings. (-f: the file exists.)
-zsh_local=${XDG_CONFIG_HOME:-$HOME/.config}/zsh/.zshrc.local
-if [ -f "$zsh_local" ]; then
-  todo="$todo
-  - Move the settings you still want from $zsh_local
-    into ~/.config/fish/config-local.fish (in fish's syntax), then delete
-    the old file."
 fi
 
 # -n: the text isn't empty, so there is something left to do.

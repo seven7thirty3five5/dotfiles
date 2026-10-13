@@ -47,11 +47,8 @@ runs the scripts in [`home/.chezmoiscripts`](home/.chezmoiscripts) in this order
    [`home/dot_config/mise/config.toml`](home/dot_config/mise/config.toml). This works
    without Homebrew or sudo. Existing versions are reused; a config change makes
    chezmoi run `mise install` again without rewriting that config.
-6. **The login shell**, on Linux with sudo only: if an earlier version of these
-   dotfiles made zsh your login shell, it switches back to the system's bash with
-   `chsh` (sudo asks for your password). Otherwise the login shell is left alone:
-   `/bin/zsh` on macOS and bash on Linux, the systems' defaults (see
-   [The shell](#the-shell-fish-inside-herdr)). If that isn't possible, setup carries on.
+Setup never changes your login shell: macOS keeps `/bin/zsh` and Linux keeps bash,
+the systems' defaults (see [The shell](#the-shell-fish-inside-herdr)).
 
 Because the dotfiles are written first, a machine where a script fails, for example
 because Homebrew can't be installed there, still gets them. chezmoi tries a failed
@@ -246,24 +243,6 @@ the scripts also install the new packages or runtimes. If chezmoi warns that the
 config file template has changed, run `chezmoi init` to regenerate this machine's
 config; it only asks questions it hasn't asked before.
 
-A machine still on the earlier zsh setup moves to fish like this, from a shell
-outside herdr (a new Ghostty window, or a plain SSH login):
-
-```sh
-chezmoi update     # installs fish; on Linux with sudo, switches zsh back to bash
-chezmoi init       # picks up fish for `chezmoi cd`
-chezmoi apply      # second pass: herdr's config now finds fish
-herdr server stop  # the running server keeps its old environment
-herdr
-```
-
-The first apply removes the zsh files the dotfiles wrote (`~/.zshenv`,
-`~/.config/zsh`'s startup files) and, on a Mac, writes `~/.zprofile` at the same
-time, so `herdr` stays on PATH. Your own `~/.config/zsh/.zshrc.local` and zsh's
-history stay; `install.sh` reminds you to move the settings to fish. On a Linux
-account without sudo whose login shell is zsh, ask IT to make it bash, and until then
-type `exec bash -l` before `herdr`.
-
 To update everything at once, run `update`, a fish function
 ([`functions/update.fish`](home/dot_config/fish/functions/update.fish)). It prints
 separate Homebrew, chezmoi and mise headings, with distinct colors in a terminal
@@ -404,8 +383,8 @@ The names starting with `.chezmoi` control chezmoi itself:
   settings.
 - `.chezmoiignore` lists files chezmoi leaves alone: some only on some machines, and
   some, such as `~/.config/fish/config-local.fish`, everywhere.
-- `.chezmoiremove` lists files chezmoi deletes: the zsh setup that earlier versions
-  of these dotfiles wrote, and fish files that the repository no longer ships.
+- `.chezmoiremove` lists files chezmoi deletes: fish files that the repository no
+  longer ships.
 - `.chezmoiexternal.toml` lists files that chezmoi downloads instead of keeping them
   here: the Catppuccin themes.
 - `.chezmoitemplates/` holds template pieces that several files share, such as how

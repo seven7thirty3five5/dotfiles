@@ -44,9 +44,8 @@ elif command -v dnf >/dev/null 2>&1; then
   # Workaround: RHEL 9 and its relatives (Rocky, Alma) ship the curl command
   # in a package called curl-minimal, which conflicts with the curl package
   # that Homebrew's documentation lists. --allowerasing lets dnf swap the two,
-  # as dnf's own error message suggests. util-linux-user provides chsh, which
-  # the login shell script uses; Fedora and RHEL don't install it by default.
-  sudo dnf install -y --allowerasing procps-ng curl file git util-linux-user
+  # as dnf's own error message suggests.
+  sudo dnf install -y --allowerasing procps-ng curl file git
 elif command -v pacman >/dev/null 2>&1; then
   sudo pacman -S --needed --noconfirm base-devel procps-ng curl file git
 else
