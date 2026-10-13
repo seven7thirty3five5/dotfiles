@@ -93,48 +93,17 @@ if status is-interactive
     # _multicd (in functions/) for the expansion. From fish's documentation.
     abbr --add dotdot --regex '^\.\.+$' --function _multicd
 
-    # fzf: Ctrl-T picks files and Alt-C changes to a folder, both listed by fd
-    # so that fzf respects .gitignore (fzf README, "Respecting .gitignore").
-    # Ctrl-T previews files with bat (Ctrl-/ moves or hides the preview), and
-    # Ctrl-O there opens the selected files in Micro. Alt-C previews folders
-    # as trees with eza. Inside double quotes, a backslash at the end of a line
-    # continues the text on the next line.
-    if command -q fzf
-        if command -q fd
-            set -gx FZF_DEFAULT_COMMAND 'fd --type f --strip-cwd-prefix --hidden --follow --exclude .git'
-            set -gx FZF_CTRL_T_COMMAND $FZF_DEFAULT_COMMAND
-            set -gx FZF_ALT_C_COMMAND 'fd --type d --strip-cwd-prefix --hidden --follow --exclude .git'
-        end
-
-        if command -q bat
-            set -gx FZF_CTRL_T_OPTS "--walker-skip .git,node_modules,target \
-                --preview 'bat -n --color=always {}' \
-                --bind 'ctrl-/:change-preview-window(down|hidden|)'"
-        end
-
-        if command -q micro
-            set -gx FZF_CTRL_T_OPTS "$FZF_CTRL_T_OPTS --bind 'ctrl-o:execute(micro -- {+})'"
-        end
-
-        if command -q eza
-            set -gx FZF_ALT_C_OPTS "--walker-skip .git,node_modules,target \
-                --preview 'eza --tree --level=2 --color=always {} | head -200'"
-        end
-
-        # Atuin owns Ctrl-R: an empty FZF_CTRL_R_COMMAND tells fzf not to bind
-        # it. Then load fzf's key bindings, plus its completion on Shift-Tab,
-        # which picks from Tab's completions (or a pattern's matches) in fzf.
-        set -g FZF_CTRL_R_COMMAND ''
-        fzf --fish | source
-    end
+    # fzf's key bindings are off: atuin covers Ctrl-R and yazi covers browsing.
+    # You may want fzf's file picker on Ctrl-T later. `fzf --fish | source` turns
+    # on Ctrl-T, Alt-C, Ctrl-R and Shift-Tab at once, and a custom
+    # FZF_CTRL_T_COMMAND must use $dir to search inside a typed path (fzf README).
 
     # Start the tools that hook into the shell:
     #   mise      selects the runtimes for this folder, and updates them when
     #             you cd.
-    #   atuin     searchable history on Ctrl-R, loaded after fzf so it wins
-    #             that key. --disable-up-arrow leaves Up to fish's history
-    #             search, and --disable-ai leaves ? alone instead of binding it
-    #             to Atuin AI.
+    #   atuin     searchable history on Ctrl-R. --disable-up-arrow leaves Up to
+    #             fish's history search, and --disable-ai leaves ? alone instead
+    #             of binding it to Atuin AI.
     #   zoxide    --cmd cd makes cd smarter: cd with part of a folder's name
     #             jumps to the matching folder you use most.
     #   starship  draws the prompt.
