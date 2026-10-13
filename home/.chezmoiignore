@@ -14,15 +14,13 @@
 .zprofile
 {{ end }}
 
-# Linux-only: ~/.bashrc, which puts Homebrew on PATH in Linux's login shell,
-# bash, and ~/.bash_profile, which makes SSH logins read ~/.bashrc. Write
-# ~/.bash_profile only on an account with none of bash's three login files:
-# where one exists, it's the system's own and already reads ~/.bashrc. stat
-# looks a file up, and `or` is true when any of its checks is.
+# Linux-only: bash startup files. create_dot_bash_profile preserves an existing
+# ~/.bash_profile; ignore it when ~/.bash_login or ~/.profile exists so a new
+# ~/.bash_profile doesn't take precedence over those login files.
 {{ if ne .chezmoi.os "linux" }}
 .bashrc
 .bash_profile
-{{ else if or (stat (joinPath .chezmoi.homeDir ".bash_profile")) (stat (joinPath .chezmoi.homeDir ".bash_login")) (stat (joinPath .chezmoi.homeDir ".profile")) }}
+{{ else if or (stat (joinPath .chezmoi.homeDir ".bash_login")) (stat (joinPath .chezmoi.homeDir ".profile")) }}
 .bash_profile
 {{ end }}
 
