@@ -31,12 +31,6 @@ set -q XDG_DATA_HOME; or set -gx XDG_DATA_HOME $HOME/.local/share
 set -q XDG_STATE_HOME; or set -gx XDG_STATE_HOME $HOME/.local/state
 set -q XDG_CACHE_HOME; or set -gx XDG_CACHE_HOME $HOME/.cache
 
-# Where XDG programs look for system-wide settings and data, unless already set.
-# fish treats variables whose names end in DIRS like PATH: a list it exports
-# joined with colons.
-set -q XDG_CONFIG_DIRS; or set -gx --path XDG_CONFIG_DIRS /etc/xdg
-set -q XDG_DATA_DIRS; or set -gx --path XDG_DATA_DIRS /usr/local/share /usr/share
-
 # XDG_RUNTIME_DIR belongs to the OS/session; do not invent a persistent path.
 
 # Tell some tools where their files are, because their defaults may bypass XDG
