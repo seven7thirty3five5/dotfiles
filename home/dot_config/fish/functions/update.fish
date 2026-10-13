@@ -33,12 +33,10 @@ function update --description 'Update Homebrew, chezmoi, mise and what they inst
     _dotfiles_section chezmoi yellow
     chezmoi upgrade; or return
 
-    # mise first, so chezmoi update regenerates mise's completion with it.
-    mise self-update --yes; or return
-
     # --force replaces locally changed files without asking; --no-tty never prompts.
     chezmoi update --force --no-tty; or return
 
     _dotfiles_section mise magenta
+    mise self-update --yes; or return
     mise upgrade --yes
 end
