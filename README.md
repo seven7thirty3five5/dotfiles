@@ -40,10 +40,9 @@ runtimes and shortcuts.
 
 | Command or shortcut | Purpose |
 | --- | --- |
-| `micro` or `ww` | Open the default editor. |
+| `micro` | Open the default editor. |
 | `ff` | Open Yazi, then change to its directory when you exit. |
 | Ctrl-R | Search shell history with atuin. |
-| `abbr` | List shell abbreviations. |
 | Ctrl-Space, then Alt-G | Open lazygit in a herdr popup. |
 | Ctrl-Space, then Alt-H | Open gh-dash in a herdr popup. |
 

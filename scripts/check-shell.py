@@ -10,8 +10,8 @@ first everything in ~/.config/fish/conf.d (in name order), then
   - every fish, even one that just runs a command (as herdr's popups do with
     `fish -c lazygit`), gets the environment: XDG folders, Homebrew, PATH with
     ~/.local/bin first, and the editor;
-  - an "interactive" fish (one you type into) also gets the colors,
-    abbreviations and key bindings;
+  - an "interactive" fish (one you type into) also gets the colors and shell
+    integrations;
   - a "login" fish (herdr's panes on macOS) first runs fish's copy of macOS's
     path_helper, which puts the system's folders at the front of PATH; the
     dotfiles must move ~/.local/bin and Homebrew back in front.
@@ -89,9 +89,8 @@ OPTIONAL_TOOLS = "yazi eza fzf atuin zoxide starship lazydocker mise bat fd"
 #                                     installer lists the real Homebrew. There, the
 #                                     three checks above can't hold; instead the
 #                                     pretend Homebrew must come before /usr/bin.
-#   interactive settings              The theme, abbreviations and key bindings
-#                                     exist in interactive shells, and the
-#                                     abbreviations don't in the others.
+#   interactive settings              The theme applies in interactive shells,
+#                                     and the helper functions can autoload.
 #
 # Finally it prints "dotfiles-shell-ok". That must be the only output: anything
 # else the startup files print would be a bug (see run() below).
@@ -130,15 +129,9 @@ else
 end
 if status is-interactive
     test "$fish_color_autosuggestion" = 7f849c; or fail 'The color theme was not applied'
-    abbr -q dotdot; or fail 'Abbreviations were not set up'
-    if test "$EDITOR" = micro
-        abbr --show | string match -q -- '* -- ww micro'; or fail 'ww does not expand to micro'
-    end
     for name in update doctor ff
         functions -q $name; or fail "Function missing: $name"
     end
-else
-    not abbr -q dotdot; or fail 'Abbreviations leaked into a non-interactive shell'
 end
 echo dotfiles-shell-ok
 """

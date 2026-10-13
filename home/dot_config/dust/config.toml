@@ -1,5 +1,4 @@
-# dust's settings. dust shows which folders use the most disk space (the du2
-# abbreviation in ~/.config/fish/config.fish runs it two levels deep).
+# dust's settings. dust shows which folders use the most disk space.
 
 # Print the size tree upside down, with the biggest entries highest.
 reverse = true
