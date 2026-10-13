@@ -36,3 +36,7 @@
 # Claude's synced skill bundles are generated; custom skills can be tracked.
 .claude/skills/synced
 .claude/skills/synced/**
+
+# Claude downloads plugin files and rebuilds installation metadata from settings.
+.claude/plugins
+.claude/plugins/**
