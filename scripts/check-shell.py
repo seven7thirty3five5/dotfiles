@@ -137,8 +137,6 @@ if status is-interactive
     for name in update doctor help ff
         functions -q $name; or fail "Function missing: $name"
     end
-    fish_user_key_bindings
-    bind up | string match -q '*history-prefix-search-backward*'; or fail 'Up is not a prefix search'
 else
     not abbr -q dotdot; or fail 'Abbreviations leaked into a non-interactive shell'
 end

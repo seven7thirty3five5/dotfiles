@@ -191,8 +191,8 @@ Every fish, even one that only runs a command, reads the same files in this orde
 4. `~/.config/fish/config-local.fish`, if it exists (untracked, see below).
 
 Functions in [`functions/`](home/dot_config/fish/functions) (`update`, `doctor`,
-`help`, `ff`, and key bindings in `fish_user_key_bindings`) and completions in
-[`completions/`](home/dot_config/fish/completions) load the first time they're used.
+`help`, `ff`) and completions in [`completions/`](home/dot_config/fish/completions)
+load the first time they're used.
 Homebrew's tools bring their own completions, which fish finds by itself; chezmoi
 writes chezmoi's and mise's here because both live in `~/.local/bin`.
 
@@ -219,7 +219,9 @@ fish's defaults already include autosuggestions (Right or Ctrl-F accepts), synta
 highlighting, tab completion with a menu, typing a folder's path to `cd` into it, and
 Emacs-style editing. On top of those:
 
-- Up/Down (and Ctrl-P/Ctrl-N) find earlier commands that start with what you typed.
+- Up/Down (and Ctrl-P/Ctrl-N) are fish's own: they search history for commands that
+  contain what you typed, move through the Tab menu, and move between the lines of
+  a multi-line command.
 - Ctrl-R opens atuin's history search. Ctrl-T picks files and Alt-C changes folder
   with fzf, with previews; in Ctrl-T, Ctrl-O opens the selection in Micro. Shift-Tab
   picks from Tab's completions in fzf.
@@ -402,7 +404,7 @@ The names starting with `.chezmoi` control chezmoi itself:
 - `.chezmoiignore` lists files chezmoi leaves alone: some only on some machines, and
   some, such as `~/.config/fish/config-local.fish`, everywhere.
 - `.chezmoiremove` lists files chezmoi deletes: the zsh setup that earlier versions
-  of these dotfiles wrote.
+  of these dotfiles wrote, and fish files that the repository no longer ships.
 - `.chezmoiexternal.toml` lists files that chezmoi downloads instead of keeping them
   here: the Catppuccin themes.
 - `.chezmoitemplates/` holds template pieces that several files share, such as how

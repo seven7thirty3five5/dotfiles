@@ -2,12 +2,15 @@
 # the dotfiles, if they exist. Each line is a path in your home folder, written
 # without the ~/. (This file is read as a template, like .chezmoiignore.)
 #
+# chezmoi stops managing a file that is deleted from this repository, but it
+# leaves the copy that is already in your home folder. Listing the file here
+# deletes that copy too, on every machine's next `chezmoi update`.
+
 # Earlier versions of these dotfiles configured zsh; the shell setup now lives
-# in fish (~/.config/fish). These are the files those versions wrote, so that
-# other machines drop them on their next `chezmoi update`. On a Mac, the same
-# apply writes the new ~/.zprofile, which isn't listed here. Your own files are
-# left alone: ~/.config/zsh/.zshrc.local (install.sh reminds you to move it to
-# fish) and zsh's history in ~/.local/state/zsh.
+# in fish (~/.config/fish). These are the files those versions wrote. On a Mac,
+# the same apply writes the new ~/.zprofile, which isn't listed here. Your own
+# files are left alone: ~/.config/zsh/.zshrc.local (install.sh reminds you to
+# move it to fish) and zsh's history in ~/.local/state/zsh.
 .zshenv
 .config/zsh/.zshenv
 .config/zsh/.zprofile
@@ -17,3 +20,9 @@
 .config/zsh/completions
 .config/zsh/themes
 .cache/zsh
+
+# fish files these dotfiles no longer ship, so that fish's own behaviour comes
+# back everywhere: fish_user_key_bindings.fish replaced what Up and Down do. To
+# put your own file at one of these paths later, delete its line here first, or
+# chezmoi deletes the file again on every apply.
+.config/fish/functions/fish_user_key_bindings.fish
