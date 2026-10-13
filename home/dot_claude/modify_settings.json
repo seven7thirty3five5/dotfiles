@@ -1,0 +1,3 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- $statusLine := dict "type" "command" "command" "\"$HOME/.claude/statusline.sh\"" -}}
+{{ .chezmoi.stdin | default "{}" | fromJson | setValueAtPath "statusLine" $statusLine | toPrettyJson | trim }}
