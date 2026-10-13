@@ -32,3 +32,7 @@
 # (set -U), and the files fish writes once when it upgrades an old setup.
 .config/fish/fish_variables
 .config/fish/conf.d/fish_frozen_*.fish
+
+# Claude's synced skill bundles are generated; custom skills can be tracked.
+.claude/skills/synced
+.claude/skills/synced/**

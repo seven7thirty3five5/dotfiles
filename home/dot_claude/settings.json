@@ -1,0 +1,21 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "command": "bash \"$HOME/.claude/hooks/herdr-agent-state.sh\" session",
+            "timeout": 10,
+            "type": "command"
+          }
+        ],
+        "matcher": "^(startup|resume|clear|compact|fork)$"
+      }
+    ]
+  },
+  "statusLine": {
+    "command": "jq -r '\n  def percentage:\n    if type == \"number\" then \"\\(floor)%\" else \"--\" end;\n  def capacity:\n    if . >= 1000000 then \"\\(. / 1000000)M\"\n    elif . >= 1000 then \"\\(. / 1000)k\"\n    else tostring end;\n\n  .context_window as $context |\n  \"Context \\($context.used_percentage | percentage)\" +\n  (if ($context.context_window_size | type) == \"number\"\n   then \" / \\($context.context_window_size | capacity)\"\n   else \"\" end) +\n  \" | 5h \\(.rate_limits.five_hour.used_percentage | percentage)\" +\n  \" | 7d \\(.rate_limits.seven_day.used_percentage | percentage)\"\n'",
+    "type": "command"
+  },
+  "theme": "dark"
+}
