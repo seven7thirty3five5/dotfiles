@@ -1,6 +1,4 @@
-# doctor: check all three managers, with the same headings as update. Every
-# check runs, even after one reports a problem: brew doctor reports even
-# warnings as a failure, which would otherwise skip the other two.
+# Every check runs even after one fails: brew doctor fails on mere warnings.
 function doctor --description 'Check Homebrew, chezmoi and mise for problems'
     argparse --name=doctor --max-args=0 h/help -- $argv
     or return

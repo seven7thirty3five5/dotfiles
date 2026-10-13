@@ -1,40 +1,20 @@
-# ~/.config/fish/config.fish: fish reads this after every file in conf.d. Those
-# set up the environment for every fish; this file sets up the shells you type
-# into: colors, abbreviations and the tools that hook into the prompt. Functions
-# such as update and doctor live in ~/.config/fish/functions, one per file, and
-# fish loads each one the first time you use it.
-#
-# How to read this file:
-#   if status is-interactive   true in a shell you type into. herdr's popups
-#                              and scripts skip this whole block, which keeps
-#                              them fast and silent.
-#   command -q mise            "is mise installed?" A tool's hook is skipped
-#                              when the tool is missing.
-#   abbr --add lt 'eza ...'    typing lt and then a space or Enter expands it to
-#                              the full command, which you see before it runs
-#                              and which history saves in full.
-#   tool init fish | source    runs the setup code a tool prints for fish.
+# Interactive setup; conf.d sets the environment for every fish, popups included.
 
 if status is-interactive
-    # No "Welcome to fish" greeting when a shell starts.
+    # No greeting, so startup prints nothing.
     set -g fish_greeting
 
-    # Colors: Catppuccin Mocha, one of the themes built into fish (see them
-    # with `fish_config theme show`). Its dark variant always, even if the
-    # terminal reports a light background. Suggestions then use Catppuccin's
-    # Overlay1 instead of the theme's dimmer Overlay0.
+    # Catppuccin Mocha, built into fish; always its dark variant.
     fish_config theme choose catppuccin-mocha --color-theme=dark
+
+    # Catppuccin's Overlay1: the theme's own suggestion color is too dim.
     set -g fish_color_autosuggestion 7f849c
 
-    # Abbreviations. --description=TEXT is what Tab's list of completions shows
-    # next to the name. (It needs the =; with a space instead, the text would
-    # become part of the expansion.)
-
-    # Open Micro, the default terminal text editor.
+    # Abbreviations. --description needs the =: with a space, fish 4.9.3 makes
+    # the text part of the expansion.
     abbr --add ww --description='Open Micro' micro
 
-    # eza views that fish has no equivalent for. For listings, fish's own ll
-    # (ls -lh) and la (ls -lAh) apply.
+    # eza views that fish has no equivalent for; ll and la are fish's own.
     abbr --add lt --description='Show a folder tree two levels deep' \
         eza --tree --level=2 --group-directories-first --icons=auto
     abbr --add lr --description='Show the Git status of each repository' \
@@ -57,10 +37,7 @@ if status is-interactive
     abbr --add j2y --description='Convert JSON to YAML' \
         yq -p=json -o=yaml -P
 
-    # .. goes up one folder, ... two, .... three, and so on: typing two or
-    # more dots expands to `cd ../`, `cd ../../` and so on. --regex matches the
-    # whole word against a pattern (two or more dots), and --function asks
-    # _multicd (in functions/) for the expansion. From fish's documentation.
+    # .., ..., .... expand to cd ../, cd ../../ and so on (fish's documentation).
     abbr --add dotdot --regex '^\.\.+$' --function _multicd
 
     # fzf's key bindings are off: atuin covers Ctrl-R and yazi covers browsing.
@@ -68,26 +45,19 @@ if status is-interactive
     # on Ctrl-T, Alt-C, Ctrl-R and Shift-Tab at once, and a custom
     # FZF_CTRL_T_COMMAND must use $dir to search inside a typed path (fzf README).
 
-    # Start the tools that hook into the shell:
-    #   mise      selects the runtimes for this folder, and updates them when
-    #             you cd.
-    #   atuin     searchable history on Ctrl-R. --disable-up-arrow leaves Up to
-    #             fish's history search, and --disable-ai leaves ? alone instead
-    #             of binding it to Atuin AI.
-    #   zoxide    --cmd cd makes cd smarter: cd with part of a folder's name
-    #             jumps to the matching folder you use most.
-    #   starship  draws the prompt.
+    # mise switches runtimes when you cd.
     command -q mise; and mise activate fish | source
+
+    # atuin on Ctrl-R; Up stays fish's own, and ? isn't bound to Atuin AI.
     command -q atuin; and atuin init fish --disable-up-arrow --disable-ai | source
+
+    # zoxide's cd also jumps to frequently used folders by part of their name.
     command -q zoxide; and zoxide init fish --cmd cd | source
+
+    # starship draws the prompt.
     command -q starship; and starship init fish | source
 end
 
-# Machine-specific settings, not tracked by chezmoi: put them in
-# ~/.config/fish/config-local.fish. Lines that installers (Docker Desktop,
-# conda, nvm and so on) offer to add to config.fish belong there too. It loads
-# last, in every fish, so it can override everything above; wrap settings that
-# only make sense when typing in `if status is-interactive ... end`. (status
-# dirname is the folder this file is in.)
+# Untracked per-machine settings, loaded last in every fish.
 set -l local_config (status dirname)/config-local.fish
 test -f $local_config; and source $local_config

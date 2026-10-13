@@ -1,29 +1,15 @@
 {{- /*
-  Homebrew's setup for fish, written in when chezmoi applies the dotfiles
-  instead of being worked out every time a fish starts. `brew shellenv fish`
-  prints the lines Homebrew documents for fish, and `output` runs it here and
-  writes what it prints into this file. Until Homebrew is installed, the
-  brew-prefix template finds nothing and only the comments below are written;
-  install.sh applies the dotfiles again after installing Homebrew.
-
-  Workaround: `brew shellenv` prints nothing at all when PATH already starts
-  with Homebrew's folders, which it does in the login shell you start herdr
-  from. Running it through /usr/bin/env with a plain PATH makes it always print
-  its full setup.
+  Workaround: `brew shellenv` prints nothing when PATH already starts with
+  Homebrew's folders, as it does in the login shell herdr starts from, so run it
+  with a plain PATH. Until Homebrew is installed only the comment below is
+  written; install.sh applies the dotfiles again afterwards.
 */ -}}
 
 {{- $brewPrefix := includeTemplate "brew-prefix" . | trim -}}
 
-# ~/.config/fish/conf.d/10-homebrew.fish: put Homebrew's programs on PATH and
-# set its variables, for every fish. chezmoi wrote the lines below by running
-# `brew shellenv fish` when it applied the dotfiles.
-#
-# fish_add_path --global --move --path FOLDERS puts the folders at the front of
-# PATH, moving them there if they're already listed further back. That matters
-# in herdr's panes on macOS: they are login shells, and fish's copy of macOS's
-# path_helper puts the system's folders first before this file runs.
-#
-# Do not edit the generated lines; rerun `chezmoi apply` to refresh them.
+# Homebrew, from `brew shellenv fish` when chezmoi applied (rerun `chezmoi apply`
+# to refresh). --move puts it back in front after the path_helper that macOS
+# login shells, such as herdr's panes, run before conf.d.
 {{- if $brewPrefix }}
 
 {{ output "/usr/bin/env" "PATH=/usr/bin:/bin" (joinPath $brewPrefix "bin" "brew") "shellenv" "fish" | trim }}

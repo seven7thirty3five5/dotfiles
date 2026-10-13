@@ -1,57 +1,25 @@
-# ~/.config/fish/conf.d/00-environment.fish: the environment every fish gets,
-# including the fish that herdr starts for its popups (`fish -c lazygit`) and
-# the ones that run scripts. This is the only place your environment is
-# defined; the login shells (~/.zprofile on macOS, ~/.bashrc on Linux) only add
-# Homebrew so that you can start herdr.
-#
-# fish runs every file in conf.d, in name order, before config.fish, and it does
-# that for every fish: interactive or not, login or not. The numbers at the
-# start of the names set the order: 00 (this file) sets the environment, 10 adds
-# Homebrew, and 20 puts your own programs first and picks the editor.
-#
-# This file must never print anything: what a shell prints while starting can
-# break programs that talk to it, such as scp, rsync or git over SSH.
-#
-# How to read fish:
-#   set -gx NAME VALUE  sets a variable. -g makes it global (the whole shell,
-#                       not just this file) and -x exports it to the programs
-#                       fish starts.
-#   set -q NAME         succeeds if NAME is set ("query").
-#   A; or B             runs B only if A failed (`A; and B`: only if it worked).
-#   $NAME               the variable's value. fish never splits a value on
-#                       spaces, so variables need no quotes around them.
+# The environment for every fish, popups and scripts included. Print nothing
+# here: startup output breaks scp, rsync and git over SSH.
 
-# The XDG base directories: the standard folders where programs keep their
-# settings (config), data, state (such as history and logs) and cache. Set them
-# first, because many tools fall back to ~/Library on macOS when they're
-# missing. Each line keeps a value this machine already set. (fish found its own
-# folders before reading this file; they are these same defaults.)
+# XDG base directories first: without them, many tools use ~/Library on macOS.
 set -q XDG_CONFIG_HOME; or set -gx XDG_CONFIG_HOME $HOME/.config
 set -q XDG_DATA_HOME; or set -gx XDG_DATA_HOME $HOME/.local/share
 set -q XDG_STATE_HOME; or set -gx XDG_STATE_HOME $HOME/.local/state
 set -q XDG_CACHE_HOME; or set -gx XDG_CACHE_HOME $HOME/.cache
 
-# XDG_RUNTIME_DIR belongs to the OS/session; do not invent a persistent path.
-
-# Tell some tools where their files are, because their defaults may bypass XDG
-# on macOS: bat's and eza's config folders (eza's holds its theme), ripgrep's
-# config file (rg reads none unless this is set), Starship's config file, and
-# the folder for zoxide's list of folders.
+# These tools bypass the XDG folders on macOS unless told; rg reads no config
+# file at all without RIPGREP_CONFIG_PATH.
 set -gx BAT_CONFIG_DIR $XDG_CONFIG_HOME/bat
 set -gx EZA_CONFIG_DIR $XDG_CONFIG_HOME/eza
 set -gx RIPGREP_CONFIG_PATH $XDG_CONFIG_HOME/ripgrep/config
 set -gx STARSHIP_CONFIG $XDG_CONFIG_HOME/starship/config.toml
 set -gx _ZO_DATA_DIR $XDG_DATA_HOME/zoxide
 
-# Programs that show long output one screen at a time use less. LESS stays
-# unset: git, gh and fish's history add their own less options (FRX, or
-# --quit-if-one-screen) only while it is, so short output doesn't open the pager.
+# less for programs that page. LESS stays unset: git, gh and fish's history add
+# their own less options (so short output doesn't page) only while it is.
 set -gx PAGER less
 
-# Catppuccin Mocha for fzf (from catppuccin/fzf). fzf adds FZF_DEFAULT_OPTS to
-# its options every time it runs. Each option is one item of a list; fish
-# exports a list like this joined with spaces. A backslash at the end of a line
-# continues the command on the next line.
+# Catppuccin Mocha for fzf (catppuccin/fzf), which yazi and zoxide's cdi run.
 set -gx FZF_DEFAULT_OPTS \
     --color=bg+:#313244,bg:#1E1E2E,spinner:#F5E0DC,hl:#F38BA8 \
     --color=fg:#CDD6F4,header:#F38BA8,info:#CBA6F7,pointer:#F5E0DC \
