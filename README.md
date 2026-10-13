@@ -205,7 +205,7 @@ Mac, and an interactive one about 40 ms.
 | To add                       | Put it in                                                            |
 | ---------------------------- | -------------------------------------------------------------------- |
 | An environment variable      | `conf.d/00-environment.fish`: `set -gx NAME value`                   |
-| An abbreviation              | `config.fish`, inside `if status is-interactive`, after `command -q TOOL` |
+| An abbreviation              | `config.fish`, inside `if status is-interactive`                      |
 | A function                   | A new `functions/NAME.fish` holding one `function NAME --description '...'` |
 | A completion                 | `completions/COMMAND.fish`                                           |
 | Something for one machine    | `~/.config/fish/config-local.fish` (untracked; loads last, in every fish) |

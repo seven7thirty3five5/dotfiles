@@ -8,8 +8,8 @@
 #   if status is-interactive   true in a shell you type into. herdr's popups
 #                              and scripts skip this whole block, which keeps
 #                              them fast and silent.
-#   command -q eza             "is eza installed?" Settings for optional tools
-#                              are skipped when the tool is missing.
+#   command -q mise            "is mise installed?" A tool's hook is skipped
+#                              when the tool is missing.
 #   abbr --add l 'eza ...'     typing l and then a space or Enter expands it to
 #                              the full command, which you see before it runs
 #                              and which history saves in full.
@@ -26,66 +26,42 @@ if status is-interactive
     fish_config theme choose catppuccin-mocha --color-theme=dark
     set -g fish_color_autosuggestion 7f849c
 
-    # Abbreviations, only for programs that are installed. --description=TEXT
-    # is what Tab's list of completions shows next to the name. (It needs the
-    # =; with a space instead, the text would become part of the expansion.)
+    # Abbreviations. --description=TEXT is what Tab's list of completions shows
+    # next to the name. (It needs the =; with a space instead, the text would
+    # become part of the expansion.)
 
     # Open Micro, the default terminal text editor.
-    if command -q micro
-        abbr --add ww --description='Open Micro' micro
-    end
+    abbr --add ww --description='Open Micro' micro
 
     # eza listings; plain ls keeps its usual flags (ls -ltr etc.). Folders
     # first, icons, and a Git status column in the long views.
-    if command -q eza
-        abbr --add l --description='List all files in detail' \
-            eza -lah --group-directories-first --icons=auto --git
-        abbr --add ll --description='List visible files in detail' \
-            eza -l --group-directories-first --icons=auto --git
-        abbr --add la --description='List files in detail, hidden ones too' \
-            eza -la --group-directories-first --icons=auto --git
-        abbr --add lt --description='Show a folder tree two levels deep' \
-            eza --tree --level=2 --group-directories-first --icons=auto
-        abbr --add lr --description='Show the Git status of each repository' \
-            eza -l --git-repos --group-directories-first --icons=auto
-    end
+    abbr --add l --description='List all files in detail' \
+        eza -lah --group-directories-first --icons=auto --git
+    abbr --add ll --description='List visible files in detail' \
+        eza -l --group-directories-first --icons=auto --git
+    abbr --add la --description='List files in detail, hidden ones too' \
+        eza -la --group-directories-first --icons=auto --git
+    abbr --add lt --description='Show a folder tree two levels deep' \
+        eza --tree --level=2 --group-directories-first --icons=auto
+    abbr --add lr --description='Show the Git status of each repository' \
+        eza -l --git-repos --group-directories-first --icons=auto
 
-    if command -q bat
-        abbr --add bcat --description='Print a highlighted file, no pager' \
-            bat --plain --paging=never
-    end
-
-    if command -q fd
-        abbr --add fdall --description='Find hidden and ignored files too' \
-            fd --hidden --no-ignore --exclude .git
-    end
-
-    if command -q rg
-        abbr --add rgall --description='Search ignored files too' \
-            rg --no-ignore
-    end
-
-    if command -q duf
-        abbr --add dfh --description='Show usage of local disks' \
-            duf --only local
-    end
-
-    if command -q dust
-        abbr --add du2 --description='Show folder sizes two levels deep' \
-            dust --depth 2
-    end
-
-    if command -q hyperfine
-        abbr --add bench --description='Benchmark after three warm-up runs' \
-            hyperfine --warmup 3
-    end
-
-    if command -q yq
-        abbr --add y2j --description='Convert YAML to JSON' \
-            yq -o=json
-        abbr --add j2y --description='Convert JSON to YAML' \
-            yq -p=json -o=yaml -P
-    end
+    abbr --add bcat --description='Print a highlighted file, no pager' \
+        bat --plain --paging=never
+    abbr --add fdall --description='Find hidden and ignored files too' \
+        fd --hidden --no-ignore --exclude .git
+    abbr --add rgall --description='Search ignored files too' \
+        rg --no-ignore
+    abbr --add dfh --description='Show usage of local disks' \
+        duf --only local
+    abbr --add du2 --description='Show folder sizes two levels deep' \
+        dust --depth 2
+    abbr --add bench --description='Benchmark after three warm-up runs' \
+        hyperfine --warmup 3
+    abbr --add y2j --description='Convert YAML to JSON' \
+        yq -o=json
+    abbr --add j2y --description='Convert JSON to YAML' \
+        yq -p=json -o=yaml -P
 
     # .. goes up one folder, ... two, .... three, and so on: typing two or
     # more dots expands to `cd ../`, `cd ../../` and so on. --regex matches the
