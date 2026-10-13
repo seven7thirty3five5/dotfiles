@@ -134,7 +134,7 @@ if status is-interactive
     if test "$EDITOR" = micro
         abbr --show | string match -q -- '* -- ww micro'; or fail 'ww does not expand to micro'
     end
-    for name in update doctor help ff
+    for name in update doctor ff
         functions -q $name; or fail "Function missing: $name"
     end
 else

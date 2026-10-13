@@ -191,8 +191,8 @@ Every fish, even one that only runs a command, reads the same files in this orde
 4. `~/.config/fish/config-local.fish`, if it exists (untracked, see below).
 
 Functions in [`functions/`](home/dot_config/fish/functions) (`update`, `doctor`,
-`help`, `ff`) and completions in [`completions/`](home/dot_config/fish/completions)
-load the first time they're used.
+`ff`) and completions in [`completions/`](home/dot_config/fish/completions) load the
+first time they're used.
 Homebrew's tools bring their own completions, which fish finds by itself; chezmoi
 writes chezmoi's and mise's here because both live in `~/.local/bin`.
 
@@ -226,12 +226,14 @@ Emacs-style editing. On top of those:
   with fzf, with previews; in Ctrl-T, Ctrl-O opens the selection in Micro. Shift-Tab
   picks from Tab's completions in fzf.
 - Alt-E opens the command line in your editor.
+- Alt-H (or F1) shows the manual page for the command you're typing, and `help`
+  opens fish's own documentation.
 - Typing `..`, `...`, `....` expands to `cd ../`, `cd ../../` and so on.
 - fish keeps a history of the folders you visit: Alt-Left/Alt-Right on an empty
   line move back and forward, `cdh` picks one, `dirh` lists them, and `cd -` goes
   back. `cd` with part of a folder's name jumps there (zoxide).
 - Abbreviations (`l`, `ll`, `la`, `lt`, `lr`, `ww`, `fdall`, `rgall`, `dfh`, `du2`,
-  `bench`, `y2j`, `j2y`, `bathelp`, `bcat`) expand when you press Space or Enter, so
+  `bench`, `y2j`, `j2y`, `bcat`) expand when you press Space or Enter, so
   history keeps the full command. `abbr` lists them.
 
 ## Sync dotfiles

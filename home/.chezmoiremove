@@ -22,7 +22,9 @@
 .cache/zsh
 
 # fish files these dotfiles no longer ship, so that fish's own behaviour comes
-# back everywhere: fish_user_key_bindings.fish replaced what Up and Down do. To
-# put your own file at one of these paths later, delete its line here first, or
-# chezmoi deletes the file again on every apply.
+# back everywhere: fish_user_key_bindings.fish replaced what Up and Down do, and
+# help.fish replaced fish's own help command. To put your own file at one of
+# these paths later, delete its line here first, or chezmoi deletes the file
+# again on every apply.
 .config/fish/functions/fish_user_key_bindings.fish
+.config/fish/functions/help.fish

@@ -51,8 +51,6 @@ if status is-interactive
     end
 
     if command -q bat
-        abbr --add bathelp --description='Highlight piped help text' \
-            bat --plain --language=help
         abbr --add bcat --description='Print a highlighted file, no pager' \
             bat --plain --paging=never
     end
