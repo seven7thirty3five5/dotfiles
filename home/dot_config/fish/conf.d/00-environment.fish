@@ -49,10 +49,10 @@ set -gx RIPGREP_CONFIG_PATH $XDG_CONFIG_HOME/ripgrep/config
 set -gx STARSHIP_CONFIG $XDG_CONFIG_HOME/starship/config.toml
 set -gx _ZO_DATA_DIR $XDG_DATA_HOME/zoxide
 
-# Programs that show long output one screen at a time use less; -R lets less
-# show colors instead of raw color codes.
+# Programs that show long output one screen at a time use less. LESS stays
+# unset: git, gh and fish's history add their own less options (FRX, or
+# --quit-if-one-screen) only while it is, so short output doesn't open the pager.
 set -gx PAGER less
-set -gx LESS -R
 
 # Catppuccin Mocha for fzf (from catppuccin/fzf). fzf adds FZF_DEFAULT_OPTS to
 # its options every time it runs. Each option is one item of a list; fish

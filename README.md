@@ -180,7 +180,7 @@ Every fish, even one that only runs a command, reads the same files in this orde
 
    | File                     | What it does                                                        |
    | ------------------------ | ------------------------------------------------------------------- |
-   | `00-environment.fish`    | XDG folders first, then tool config paths, `PAGER`, `LESS`, fzf colors |
+   | `00-environment.fish`    | XDG folders first, then tool config paths, `PAGER`, fzf colors       |
    | `10-homebrew.fish`       | Homebrew's `brew shellenv fish`, written in when chezmoi applies    |
    | `20-path.fish`           | `~/.local/bin` and mise's shims in front of Homebrew; picks `$EDITOR` |
 
