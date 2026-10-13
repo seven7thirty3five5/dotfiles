@@ -10,8 +10,10 @@ style: {{ joinPath .chezmoi.homeDir ".config/glow/catppuccin-mocha.json" | quote
 # mouse support (TUI-mode only)
 mouse: false
 
-# use pager to display markdown
-pager: true
+# use pager to display markdown. Off, as glow ships it: glow runs $PAGER (less)
+# without -R, and with LESS unset that shows raw color codes instead of colors.
+# `glow -t` opens glow's own scrolling view instead.
+pager: false
 
 # word-wrap at width
 width: 80
