@@ -1,16 +1,10 @@
-{{- /*
-  Workaround: `brew shellenv` prints nothing when PATH already starts with
-  Homebrew's folders, as it does in the login shell herdr starts from, so run it
-  with a plain PATH. Until Homebrew is installed only the comment below is
-  written; install.sh applies the dotfiles again afterwards.
-*/ -}}
-
 {{- $brewPrefix := includeTemplate "brew-prefix" . | trim -}}
 
-# Homebrew, from `brew shellenv fish` when chezmoi applied (rerun `chezmoi apply`
-# to refresh). --move puts it back in front after the path_helper that macOS
-# login shells, such as herdr's panes, run before conf.d.
+# Homebrew's environment, evaluated when fish starts.
 {{- if $brewPrefix }}
+{{- $brew := joinPath $brewPrefix "bin" "brew" | shellQuote }}
 
-{{ output "/usr/bin/env" "PATH=/usr/bin:/bin" (joinPath $brewPrefix "bin" "brew") "shellenv" "fish" | trim }}
+if test -x {{ $brew }}
+    {{ $brew }} shellenv fish | source
+end
 {{- end }}
