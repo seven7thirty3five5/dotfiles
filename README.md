@@ -231,9 +231,9 @@ Emacs-style editing. On top of those:
 - fish keeps a history of the folders you visit: Alt-Left/Alt-Right on an empty
   line move back and forward, `cdh` picks one, `dirh` lists them, and `cd -` goes
   back. `cd` with part of a folder's name jumps there (zoxide).
-- Abbreviations (`l`, `ll`, `la`, `lt`, `lr`, `ww`, `fdall`, `rgall`, `dfh`, `du2`,
-  `bench`, `y2j`, `j2y`, `bcat`) expand when you press Space or Enter, so
-  history keeps the full command. `abbr` lists them.
+- Abbreviations (`lt`, `lr`, `ww`, `fdall`, `rgall`, `dfh`, `du2`, `bench`, `y2j`,
+  `j2y`, `bcat`) expand when you press Space or Enter, so history keeps the full
+  command. `abbr` lists them. `ll` (`ls -lh`) and `la` (`ls -lAh`) are fish's own.
 
 ## Sync dotfiles
 
