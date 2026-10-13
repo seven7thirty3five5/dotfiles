@@ -1,43 +1,26 @@
 {{- /*
-  Your own programs first, then mise's shims, then the editor, for every fish.
-  mise's line is written in when chezmoi applies the dotfiles, like Homebrew's
-  in 10-homebrew.fish: findExecutable looks for mise in ~/.local/bin, and
-  output runs `mise activate fish --shims` and writes what it prints. Until
-  mise is installed, that line is left out.
+  The shims line comes from `mise activate fish --shims` when chezmoi applies;
+  it's left out until mise is installed in ~/.local/bin.
 */ -}}
 
 {{- $mise := findExecutable "mise" (list (joinPath .chezmoi.homeDir ".local/bin")) -}}
 
-# ~/.config/fish/conf.d/20-path.fish: runs after 10-homebrew.fish, so the
-# folders below end up in front of Homebrew's. The result, from the front:
-# mise's shims, ~/.local/bin, Homebrew, then the system's folders. (In shells
-# you type into, config.fish then starts mise properly, which puts the runtimes
-# for the current folder in front of all of these.)
-#
-# fish_add_path only adds folders that exist, so missing ones are skipped
-# without an error. --global --path changes PATH itself for this shell, rather
-# than fish's saved list of extra folders; --move moves a folder that's already
-# listed to the front, and --append adds it at the end instead.
+# Runs after 10-homebrew.fish, so these end up in front of Homebrew. --global
+# --path changes this shell's PATH rather than the saved fish_user_paths.
 
-# Your own programs in ~/.local/bin (chezmoi and mise live there) come before
-# Homebrew's.
+# ~/.local/bin (chezmoi and mise) before Homebrew.
 fish_add_path --global --move --path $HOME/.local/bin
 
-# Docker Desktop's command-line tools, if it's installed, at the end of PATH.
+# Docker Desktop's command-line tools, at the end.
 fish_add_path --global --append --path $HOME/.docker/bin
 {{- if $mise }}
 
-# mise's shims: small launchers that pick the right runtime version (Node,
-# Python and so on) for the current folder, so scripts and herdr's popups find
-# them too. chezmoi wrote this line from `mise activate fish --shims`.
+# mise's shims, so scripts and herdr's popups find the runtimes too.
 {{ output $mise "activate" "fish" "--shims" | trim }}
 {{- end }}
 
-# The editor that programs open for you, such as git for commit messages: micro
-# when it's installed, otherwise vi. This comes after PATH is complete, so
-# Homebrew's micro can be found. `command -q micro` succeeds if micro is a
-# program on PATH. Some programs read EDITOR and others VISUAL, so both are set.
-# (`micro FILE` waits until you close it, which is what git needs.)
+# Micro when installed, else vi; set once PATH is final. Some programs read
+# VISUAL instead of EDITOR.
 if command -q micro
     set -gx EDITOR micro
 else
