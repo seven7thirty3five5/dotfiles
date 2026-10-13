@@ -186,8 +186,8 @@ Every fish, even one that only runs a command, reads the same files in this orde
 
 3. [`config.fish`](home/dot_config/fish/config.fish). Inside
    `if status is-interactive`, so only for shells you type into: the Catppuccin Mocha
-   theme built into fish, abbreviations, fzf's settings, and the mise, fzf, atuin,
-   zoxide and starship hooks. Popups and scripts skip all of it.
+   theme built into fish, abbreviations, and the mise, atuin, zoxide and starship
+   hooks. Popups and scripts skip all of it.
 4. `~/.config/fish/config-local.fish`, if it exists (untracked, see below).
 
 Functions in [`functions/`](home/dot_config/fish/functions) (`update`, `doctor`,
@@ -222,9 +222,8 @@ Emacs-style editing. On top of those:
 - Up/Down (and Ctrl-P/Ctrl-N) are fish's own: they search history for commands that
   contain what you typed, move through the Tab menu, and move between the lines of
   a multi-line command.
-- Ctrl-R opens atuin's history search. Ctrl-T picks files and Alt-C changes folder
-  with fzf, with previews; in Ctrl-T, Ctrl-O opens the selection in Micro. Shift-Tab
-  picks from Tab's completions in fzf.
+- Ctrl-R opens atuin's history search. fzf's key bindings are off (yazi, via `ff`,
+  covers browsing), so Ctrl-T, Alt-C and Shift-Tab keep fish's own meanings.
 - Alt-E opens the command line in your editor.
 - Alt-H (or F1) shows the manual page for the command you're typing, and `help`
   opens fish's own documentation.
