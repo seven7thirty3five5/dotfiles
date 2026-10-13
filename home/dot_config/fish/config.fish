@@ -10,7 +10,7 @@
 #                              them fast and silent.
 #   command -q mise            "is mise installed?" A tool's hook is skipped
 #                              when the tool is missing.
-#   abbr --add l 'eza ...'     typing l and then a space or Enter expands it to
+#   abbr --add lt 'eza ...'    typing lt and then a space or Enter expands it to
 #                              the full command, which you see before it runs
 #                              and which history saves in full.
 #   tool init fish | source    runs the setup code a tool prints for fish.
@@ -33,14 +33,8 @@ if status is-interactive
     # Open Micro, the default terminal text editor.
     abbr --add ww --description='Open Micro' micro
 
-    # eza listings; plain ls keeps its usual flags (ls -ltr etc.). Folders
-    # first, icons, and a Git status column in the long views.
-    abbr --add l --description='List all files in detail' \
-        eza -lah --group-directories-first --icons=auto --git
-    abbr --add ll --description='List visible files in detail' \
-        eza -l --group-directories-first --icons=auto --git
-    abbr --add la --description='List files in detail, hidden ones too' \
-        eza -la --group-directories-first --icons=auto --git
+    # eza views that fish has no equivalent for. For listings, fish's own ll
+    # (ls -lh) and la (ls -lAh) apply.
     abbr --add lt --description='Show a folder tree two levels deep' \
         eza --tree --level=2 --group-directories-first --icons=auto
     abbr --add lr --description='Show the Git status of each repository' \
