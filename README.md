@@ -50,6 +50,23 @@ Run `gh auth login` before using `gh dash`. On macOS, open Docker Desktop and
 finish its setup before using `lazydocker` or `act`; Linux needs Docker installed
 separately.
 
+Codex uses **Approve for me**, `max` reasoning, Fast service, and Catppuccin Mocha.
+Its footer shows the model and reasoning, Fast mode, directory, five-hour and
+weekly allowances, context usage, and context capacity. Other preferences use
+Codex's defaults. Sign in to Codex separately; on a new machine, review and trust
+the Herdr session hook through `/hooks` so Herdr can identify the Codex session
+in each pane.
+
+Edit the [Codex template](home/private_dot_codex/private_config.toml.tmpl) for
+shared preferences. It preserves each machine's existing MCP connections,
+app/plugin settings, project and hook trust, and client bookkeeping during apply.
+Credentials, conversations, and downloaded runtime files aren't tracked. To apply
+just Codex:
+
+```sh
+chezmoi apply --exclude=scripts ~/.codex/config.toml ~/.codex/hooks.json ~/.codex/herdr-agent-state.sh
+```
+
 ## Maintain
 
 Run these inside fish:

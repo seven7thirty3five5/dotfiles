@@ -40,3 +40,10 @@
 # Claude downloads plugin files and rebuilds installation metadata from settings.
 .claude/plugins
 .claude/plugins/**
+
+# Codex: track only preferences and the Herdr hook. Credentials, conversations,
+# downloaded plugins, databases, and other runtime files stay on each machine.
+.codex/*
+!.codex/config.toml
+!.codex/hooks.json
+!.codex/herdr-agent-state.sh

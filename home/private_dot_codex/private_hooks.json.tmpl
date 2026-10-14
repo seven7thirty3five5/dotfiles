@@ -1,0 +1,18 @@
+{{- /* Quote the destination path for a shell, including homes with apostrophes. */ -}}
+{{- $scriptPath := joinPath .chezmoi.destDir ".codex" "herdr-agent-state.sh" -}}
+{{- $command := printf "bash '%s' session" (replace "'" "'\\''" $scriptPath) -}}
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "command": {{ $command | toJson }},
+            "timeout": 10,
+            "type": "command"
+          }
+        ]
+      }
+    ]
+  }
+}
