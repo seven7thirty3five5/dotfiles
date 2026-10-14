@@ -1,4 +1,11 @@
 {
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "autoContinueAtUsageLimit": true,
+  "autoMemoryEnabled": false,
+  "effortLevel": "high",
   "enabledPlugins": {
     "mattpocock-skills@claude-plugins-official": true
   },
@@ -10,6 +17,7 @@
       }
     }
   },
+  "fastMode": false,
   "hooks": {
     "SessionStart": [
       {
@@ -23,6 +31,17 @@
         "matcher": "^(startup|resume|clear|compact|fork)$"
       }
     ]
+  },
+  "modelSettings": {
+    "claude-opus-5-5": {
+      "effortLevel": "high"
+    },
+    "claude-sonnet-5-5": {
+      "effortLevel": "high"
+    }
+  },
+  "permissions": {
+    "defaultMode": "auto"
   },
   "statusLine": {
     "command": "jq -r '\n  def percentage:\n    if type == \"number\" then \"\\(floor)%\" else \"--\" end;\n  def capacity:\n    if . >= 1000000 then \"\\(. / 1000000)M\"\n    elif . >= 1000 then \"\\(. / 1000)k\"\n    else tostring end;\n\n  .context_window as $context |\n  \"Context \\($context.used_percentage | percentage)\" +\n  (if ($context.context_window_size | type) == \"number\"\n   then \" / \\($context.context_window_size | capacity)\"\n   else \"\" end) +\n  \" | 5h \\(.rate_limits.five_hour.used_percentage | percentage)\" +\n  \" | 7d \\(.rate_limits.seven_day.used_percentage | percentage)\"\n'",
