@@ -57,7 +57,7 @@ Codex's defaults. Sign in to Codex separately; on a new machine, review and trus
 the Herdr session hook through `/hooks` so Herdr can identify the Codex session
 in each pane.
 
-Edit the [Codex template](home/private_dot_codex/private_config.toml.tmpl) for
+Edit the [Codex template](home/dot_codex/config.toml.tmpl) for
 shared preferences. It preserves each machine's existing MCP connections,
 app/plugin settings, project and hook trust, and client bookkeeping during apply.
 Credentials, conversations, and downloaded runtime files aren't tracked. To apply
