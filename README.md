@@ -51,7 +51,7 @@ finish its setup before using `lazydocker` or `act`; Linux needs Docker installe
 separately.
 
 Codex uses **Approve for me**, `max` reasoning, Fast service, and Catppuccin Mocha.
-Its footer shows the model and reasoning, Fast mode, directory, five-hour and
+Its footer shows the model and reasoning, directory, five-hour and
 weekly allowances, context usage, and context capacity. Other preferences use
 Codex's defaults. Sign in to Codex separately; on a new machine, review and trust
 the Herdr session hook through `/hooks` so Herdr can identify the Codex session
