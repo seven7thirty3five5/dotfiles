@@ -1,0 +1,45 @@
+#!/bin/sh
+#
+# Install herdr's integrations for Claude Code and Codex: hooks that tell herdr
+# which agent runs in each pane and what it is doing. herdr owns these files,
+# so the dotfiles don't track them; the update function installs them again to
+# keep them at the installed herdr's version.
+#
+# chezmoi runs this after writing the dotfiles and installing the Brewfile's
+# packages, herdr included ("after_", number 30 before this one), and again
+# whenever this file changes ("run_onchange_"). A failed run is retried on the
+# next apply.
+
+# Stop at the first command that fails (-e), and treat an unset variable as an
+# error instead of quietly using an empty value (-u).
+set -eu
+
+# Find Homebrew; this sets $brew (see find-brew.sh in home/.chezmoitemplates).
+{{ template "find-brew.sh" . }}
+# -z: the text is empty, so Homebrew isn't installed. (>&2 prints an error.)
+if [ -z "$brew" ]; then
+  echo "error: Homebrew not found, so herdr, which installs its integrations, is missing." >&2
+  exit 1
+fi
+
+# herdr and jq are in the same folder as brew: dirname turns .../bin/brew into .../bin.
+bin=$(dirname "$brew")
+
+# Earlier versions of these dotfiles wrote herdr's Claude hook themselves, in a
+# form herdr doesn't recognise. Remove that entry so the hook doesn't run twice
+# once herdr adds its own. (-f: the file exists.)
+settings="$HOME/.claude/settings.json"
+if [ -f "$settings" ]; then
+  # The single quotes keep $HOME and jq's $legacy as written, unexpanded.
+  # shellcheck disable=SC2016
+  legacy='bash "$HOME/.claude/hooks/herdr-agent-state.sh" session'
+  # shellcheck disable=SC2016
+  cleaned=$("$bin/jq" --arg legacy "$legacy" '
+    if .hooks.SessionStart then
+      .hooks.SessionStart |= map(select(any(.hooks[]?; .command == $legacy) | not))
+    else . end' "$settings")
+  printf '%s\n' "$cleaned" >"$settings"
+fi
+
+"$bin/herdr" integration install claude
+"$bin/herdr" integration install codex

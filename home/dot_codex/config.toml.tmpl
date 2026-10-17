@@ -1,7 +1,8 @@
 {{- /*
   Shared personal preferences. Omit other preferences so Codex supplies its
   defaults. Preserve machine-local connections, trust, and client bookkeeping
-  from the destination without putting their values in the repository.
+  from the destination without putting their values in the repository. Also
+  keep [features], where herdr's Codex integration turns on hooks.
 */ -}}
 {{- $settings := dict
     "approval_policy" "on-request"
@@ -23,7 +24,7 @@
 {{- $configPath := joinPath .chezmoi.destDir ".codex" "config.toml" -}}
 {{- if stat $configPath -}}
 {{- $current := include $configPath | fromToml -}}
-{{- range $key := list "mcp_servers" "apps" "plugins" "projects" "notice" "desktop" -}}
+{{- range $key := list "mcp_servers" "apps" "plugins" "projects" "notice" "desktop" "features" -}}
 {{- if hasKey $current $key -}}
 {{- $_ := set $settings $key (index $current $key) -}}
 {{- end -}}

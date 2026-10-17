@@ -1,3 +1,10 @@
+{{- /*
+  Shared Claude Code settings. Hooks are left out: herdr installs its session
+  hook here (`herdr integration install claude`), so keep whatever hooks this
+  machine's settings already have. The settings are written between backticks
+  and read as JSON, then written out again with this machine's hooks added.
+*/ -}}
+{{- $settings := `
 {
   "attribution": {
     "commit": "",
@@ -18,20 +25,6 @@
     }
   },
   "fastMode": false,
-  "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "command": "bash \"$HOME/.claude/hooks/herdr-agent-state.sh\" session",
-            "timeout": 10,
-            "type": "command"
-          }
-        ],
-        "matcher": "^(startup|resume|clear|compact|fork)$"
-      }
-    ]
-  },
   "modelSettings": {
     "claude-opus-5-5": {
       "effortLevel": "high"
@@ -49,3 +42,12 @@
   },
   "theme": "dark"
 }
+` | fromJson -}}
+{{- $settingsPath := joinPath .chezmoi.destDir ".claude" "settings.json" -}}
+{{- if stat $settingsPath -}}
+{{- $current := include $settingsPath | fromJson -}}
+{{- if hasKey $current "hooks" -}}
+{{- $_ := set $settings "hooks" (index $current "hooks") -}}
+{{- end -}}
+{{- end -}}
+{{ $settings | toPrettyJson -}}

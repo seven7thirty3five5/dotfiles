@@ -57,6 +57,11 @@ Codex's defaults. Sign in to Codex separately; on a new machine, review and trus
 the Herdr session hook through `/hooks` so Herdr can identify the Codex session
 in each pane.
 
+herdr installs and owns its hooks for Claude Code and Codex
+(`herdr integration install`), so they aren't tracked; `update` reinstalls
+them at herdr's current version. The Claude and Codex templates keep the hook
+settings herdr adds.
+
 Edit the [Codex template](home/dot_codex/config.toml.tmpl) for
 shared preferences. It preserves each machine's existing MCP connections,
 app/plugin settings, project and hook trust, and client bookkeeping during apply.
@@ -64,7 +69,7 @@ Credentials, conversations, and downloaded runtime files aren't tracked. To appl
 just Codex:
 
 ```sh
-chezmoi apply --exclude=scripts ~/.codex/config.toml ~/.codex/hooks.json ~/.codex/herdr-agent-state.sh
+chezmoi apply --exclude=scripts ~/.codex/config.toml
 ```
 
 ## Maintain
@@ -72,7 +77,8 @@ chezmoi apply --exclude=scripts ~/.codex/config.toml ~/.codex/hooks.json ~/.code
 Run these inside fish:
 
 ```fish
-update          # Upgrade Homebrew packages, gh extensions, chezmoi, dotfiles, mise and its tools.
+update          # Upgrade chezmoi, dotfiles, Homebrew packages, mise and its tools,
+                # global agent skills, gh extensions and herdr integrations.
 doctor          # Run brew doctor, chezmoi doctor and mise doctor.
 chezmoi update  # Pull and apply just the dotfiles, installing newly configured dependencies.
 ```
