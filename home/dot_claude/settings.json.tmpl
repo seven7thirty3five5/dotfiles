@@ -3,6 +3,8 @@
   hook here (`herdr integration install claude`), so keep whatever hooks this
   machine's settings already have. The settings are written between backticks
   and read as JSON, then written out again with this machine's hooks added.
+  herdr also rewrites the file in its own formatting; when the contents already
+  match, keep the file as it is, so chezmoi has nothing to change or ask about.
 */ -}}
 {{- $settings := `
 {
@@ -44,10 +46,19 @@
 }
 ` | fromJson -}}
 {{- $settingsPath := joinPath .chezmoi.destDir ".claude" "settings.json" -}}
+{{- $existing := "" -}}
 {{- if stat $settingsPath -}}
-{{- $current := include $settingsPath | fromJson -}}
+{{- $existing = include $settingsPath -}}
+{{- $current := $existing | fromJson -}}
 {{- if hasKey $current "hooks" -}}
 {{- $_ := set $settings "hooks" (index $current "hooks") -}}
 {{- end -}}
+{{- if ne (toJson $settings) (toJson $current) -}}
+{{- $existing = "" -}}
 {{- end -}}
+{{- end -}}
+{{- if $existing -}}
+{{ $existing -}}
+{{- else -}}
 {{ $settings | toPrettyJson -}}
+{{- end -}}

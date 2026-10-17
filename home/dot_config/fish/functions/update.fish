@@ -71,12 +71,6 @@ function update --description 'Update chezmoi, Homebrew, mise and what they inst
     _dotfiles_subsection 'Update Codex integration' green
     herdr integration install codex; or return
 
-    # herdr rewrites these with its own formatting; the templates keep its
-    # hook settings, so writing them again only restores chezmoi's formatting
-    # and keeps a later `chezmoi apply` from asking about them.
-    _dotfiles_subsection 'Reformat agent settings' green
-    chezmoi apply --force --no-tty $HOME/.claude/settings.json $HOME/.codex/config.toml; or return
-
     # More tools with their own plugins or packages, off until you use them:
     # uncomment a section to update its tool too.
 

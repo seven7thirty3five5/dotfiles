@@ -60,7 +60,7 @@ in each pane.
 herdr installs and owns its hooks for Claude Code and Codex
 (`herdr integration install`), so they aren't tracked; `update` reinstalls
 them at herdr's current version. The Claude and Codex templates keep the hook
-settings herdr adds.
+settings herdr adds, and its formatting when nothing else has changed.
 
 Edit the [Codex template](home/dot_codex/config.toml.tmpl) for
 shared preferences. It preserves each machine's existing MCP connections,

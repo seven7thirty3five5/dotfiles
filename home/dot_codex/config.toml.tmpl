@@ -2,7 +2,9 @@
   Shared personal preferences. Omit other preferences so Codex supplies its
   defaults. Preserve machine-local connections, trust, and client bookkeeping
   from the destination without putting their values in the repository. Also
-  keep [features], where herdr's Codex integration turns on hooks.
+  keep [features], where herdr's Codex integration turns on hooks. herdr also
+  rewrites the file in its own formatting; when the contents already match,
+  keep the file as it is, so chezmoi has nothing to change or ask about.
 */ -}}
 {{- $settings := dict
     "approval_policy" "on-request"
@@ -22,8 +24,11 @@
         "context-window-size")
 -}}
 {{- $configPath := joinPath .chezmoi.destDir ".codex" "config.toml" -}}
+{{- $existing := "" -}}
+{{- $current := dict -}}
 {{- if stat $configPath -}}
-{{- $current := include $configPath | fromToml -}}
+{{- $existing = include $configPath -}}
+{{- $current = $existing | fromToml -}}
 {{- range $key := list "mcp_servers" "apps" "plugins" "projects" "notice" "desktop" "features" -}}
 {{- if hasKey $current $key -}}
 {{- $_ := set $settings $key (index $current $key) -}}
@@ -39,6 +44,10 @@
 {{- end -}}
 {{- end -}}
 {{- $_ := set $settings "tui" $tui -}}
+{{- if and $existing (eq (toJson $settings) (toJson $current)) -}}
+{{ $existing -}}
+{{- else -}}
 # Personal Codex defaults managed by chezmoi.
 # Connections, project trust, and client bookkeeping stay local to this machine.
 {{ $settings | toToml }}
+{{ end -}}
