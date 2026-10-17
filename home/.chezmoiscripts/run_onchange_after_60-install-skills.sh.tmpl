@@ -36,4 +36,19 @@ skills_add() {
     --global --agent claude-code codex --yes
 }
 
-skills_add herdrdev/herdr --skill herdr # controls herdr panes and agents
+# The global skills. Add a skill here and the next `chezmoi apply` installs it;
+# `update` keeps every installed skill current. Each repository lists its skills
+# with `pnpm dlx skills add <owner>/<repo> --list`.
+
+# herdr's skill, for controlling herdr panes and agents.
+skills_add herdrdev/herdr --skill herdr
+
+# Matt Pocock's engineering and productivity skills, the ones his Claude plugin
+# ships (not his in-progress or misc ones). Install these instead of the plugin,
+# which would give Claude each skill twice.
+skills_add mattpocock/skills --skill \
+  ask-matt code-review codebase-design diagnosing-bugs domain-modeling \
+  grill-with-docs implement implement-spec improve-codebase-architecture pr \
+  prototype research retro setup-matt-pocock-skills tdd to-spec to-tickets \
+  triage wayfinder wizard \
+  grill-me grilling handoff teach to-questionnaire wait-what writing-for-agents
