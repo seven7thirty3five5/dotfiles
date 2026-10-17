@@ -106,7 +106,7 @@ Keep project-specific runtime settings in each project.
 
 Global agent skills are listed in the
 [install-skills script](home/.chezmoiscripts/run_onchange_after_60-install-skills.sh.tmpl):
-herdr's skill and Matt Pocock's engineering and productivity skills. The
+herdr's skill and every skill in Matt Pocock's repository. The
 [skills tool](https://skills.sh) installs each one in `~/.agents/skills`, for
 Codex and other agents, and links it into `~/.claude/skills` for Claude Code.
 To add one, add a `skills_add` line there and run `chezmoi apply`. The skills

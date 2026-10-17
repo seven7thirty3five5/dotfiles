@@ -43,12 +43,7 @@ skills_add() {
 # herdr's skill, for controlling herdr panes and agents.
 skills_add herdrdev/herdr --skill herdr
 
-# Matt Pocock's engineering and productivity skills, the ones his Claude plugin
-# ships (not his in-progress or misc ones). Install these instead of the plugin,
-# which would give Claude each skill twice.
-skills_add mattpocock/skills --skill \
-  ask-matt code-review codebase-design diagnosing-bugs domain-modeling \
-  grill-with-docs implement implement-spec improve-codebase-architecture pr \
-  prototype research retro setup-matt-pocock-skills tdd to-spec to-tickets \
-  triage wayfinder wizard \
-  grill-me grilling handoff teach to-questionnaire wait-what writing-for-agents
+# Every skill in Matt Pocock's repository, as `skills add mattpocock/skills`
+# offers them. Use these instead of his plugin, which would give Claude each
+# skill twice.
+skills_add mattpocock/skills
