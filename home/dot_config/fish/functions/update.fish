@@ -1,4 +1,4 @@
-# The README explains each step; the first one that fails stops the update.
+# Each step's comments explain it; the first step that fails stops the update.
 function update --description 'Update chezmoi, Homebrew, mise and what they install'
     argparse --name=update --max-args=0 h/help -- $argv
     or return

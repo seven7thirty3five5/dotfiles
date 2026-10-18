@@ -1,149 +1,140 @@
-# Portable XDG dotfiles
+# dotfiles
 
-Personal dotfiles for macOS (Apple silicon) and Linux (x86_64 and ARM64).
+Personal dotfiles for macOS and Linux, managed with [chezmoi](https://www.chezmoi.io/).
 
 ## Requirements
 
-- Your own user account (setup refuses to run as root or with sudo), with `curl`.
-- `~/.local/bin` on your login shell's PATH. These dotfiles never touch your
-  shell's startup files, such as `~/.zshrc` and `~/.bashrc`. Instead, setup
-  links Homebrew's `herdr` into `~/.local/bin`, next to chezmoi and mise, and
-  your shell finds it there. Debian and Ubuntu add the folder in `~/.profile`
-  once it exists, so log in again after setup; Fedora and RHEL add it in
-  `~/.bashrc`. Elsewhere, including macOS, add this line to your shell's
-  startup file (`~/.zprofile` for macOS's zsh):
+- macOS on Apple silicon, or Linux on x86_64 or ARM64.
+- Your own user account, not root, with `curl`.
+- `~/.local/bin` on your login shell's PATH. Debian and Ubuntu add it in
+  `~/.profile` once the folder exists, so log in again after setup; Fedora and
+  RHEL add it in `~/.bashrc`. Elsewhere, including macOS, add this line to your
+  shell's startup file (`~/.zprofile` for zsh on macOS):
 
   ```sh
   export PATH="$HOME/.local/bin:$PATH"
   ```
 
-## Setup
+- sudo. Without it, setup installs Homebrew in your home folder on Linux, once
+  an administrator has installed the system packages it needs; on a Mac, an
+  administrator must install Homebrew in `/opt/homebrew` first.
 
-Run:
+## Setup
 
 ```sh
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/seven7thirty3five5/dotfiles/main/install.sh)"
 ```
 
-Setup asks for your Git name and email, whether this machine should automatically
-commit and push dotfile changes, and whether it may use sudo. Enable publishing
-only on the machine you publish from.
-
-The installer sets up chezmoi, Homebrew and the Brewfile packages, gh-dash, mise and
-its configured runtimes. It applies the dotfiles and is safe to rerun after fixing
-any errors or completing the manual steps it lists.
-
-Without sudo, setup can install Homebrew in your home folder on Linux; system
-dependencies still need an administrator. On macOS without sudo, Homebrew must
-already be installed in `/opt/homebrew`.
-
-Setup replaces any existing files it manages, such as `~/.editorconfig` and the
-configs in `~/.config`. To download the repository and preview changes first:
+Setup asks for your Git name and email, whether this machine publishes dotfile
+changes (say yes on one machine only), and whether it may use sudo; the answers
+live under `[data]` in `~/.config/chezmoi/chezmoi.toml`. It replaces existing
+files it manages, is safe to rerun, and ends with anything left to do by hand.
+To preview its changes first:
 
 ```sh
 sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin" init --use-builtin-git=true seven7thirty3five5
 "$HOME/.local/bin/chezmoi" diff --exclude=scripts
 ```
 
-Keep any machine-specific shell settings in `~/.config/fish/config-local.fish`
-using fish syntax, then run the setup command above to apply.
+Then open a new terminal and start `herdr`. In its fish:
 
-## Use
-
-Open a new terminal and run `herdr`. Its panes run fish with the configured tools,
-runtimes and shortcuts.
-
-| Command or shortcut | Purpose |
-| --- | --- |
-| `micro` | Open the default editor. |
-| `ff` | Open Yazi, then change to its directory when you exit. |
-| Ctrl-R | Search shell history with atuin. |
-| Ctrl-Space, then Alt-G | Open lazygit in a herdr popup. |
-| Ctrl-Space, then Alt-H | Open gh-dash in a herdr popup. |
-
-Run `gh auth login` before using `gh dash`. On macOS, open Docker Desktop and
-finish its setup before using `lazydocker` or `act`; Linux needs Docker installed
-separately.
-
-Claude Code and Codex settings stay local: chezmoi ignores `~/.claude` and
-`~/.codex`. Configure and sign in to each agent separately. On a new machine,
-run `update` to install herdr's hooks for both, then review and trust the Herdr
-session hook through Codex's `/hooks` so Herdr can identify the Codex session
-in each pane.
-
-herdr installs and owns its hooks for Claude Code and Codex
-(`herdr integration install`), so they aren't tracked; `update` installs them
-at herdr's current version.
-
-## Maintain
-
-Run these inside fish:
-
-```fish
-update          # Upgrade chezmoi, dotfiles, Homebrew packages, mise and its tools,
-                # global agent skills, gh extensions and herdr integrations.
-doctor          # Check Homebrew, chezmoi, mise and authorization.
-chezmoi update  # Pull and apply just the dotfiles, installing newly configured dependencies.
-```
-
-`update` accepts confirmations automatically, replaces local edits to managed
-files, and stops at the first failure. Save shared changes in the repository and
-machine-specific changes in `config-local.fish` before running it.
-
-`doctor` continues after failed checks and returns a failure if any required
-check fails. Its Authorization section checks Claude Code, Codex and GitHub.
-It also reports Docker Hub sign-in status when Docker Desktop's auth command
-is available; this optional sign-in doesn't affect the result.
-
-Edit a managed configuration and apply it:
-
-```sh
-chezmoi edit ~/.config/fish/config.fish
-chezmoi diff
-chezmoi apply
-```
-
-Use `chezmoi add PATH` to track another file. With publishing enabled, chezmoi
-edits and additions automatically commit and push. For direct repository edits,
-use `git add`, `git commit` and `git push`.
-
-For package or global runtime changes, run `chezmoi cd` and edit the
-[Brewfile](home/dot_config/homebrew/Brewfile.tmpl) or
-[mise config](home/dot_config/mise/config.toml), then run `chezmoi apply`.
-Keep project-specific runtime settings in each project.
-
-Global agent skills are listed in the
-[install-skills script](home/.chezmoiscripts/run_onchange_after_60-install-skills.sh.tmpl):
-herdr's skill, every skill in Matt Pocock's repository, and this repository's
-own [dotfiles skill](skills/dotfiles/SKILL.md). Type `/dotfiles` (in Codex,
-`$dotfiles`) and what you want changed, and the agent makes the change, checks
-it and pushes it; only you can start it. The
-[skills tool](https://skills.sh) installs each one in `~/.agents/skills`, for
-Codex and other agents, and links it into `~/.claude/skills` for Claude Code.
-To add one, add a `skills_add` line there and run `chezmoi apply`. The skills
-tool owns the installed files, so they aren't tracked here.
-
-Change setup answers under `[data]` in `~/.config/chezmoi/chezmoi.toml`.
-Run `chezmoi init` if chezmoi warns that its config template has changed.
-To refresh downloaded themes immediately, run `chezmoi apply --refresh-externals`.
+- Sign in to GitHub (`gh auth login`), Claude Code and Codex.
+- Run `update`, which installs herdr's hooks for Claude Code and Codex, then
+  trust the Herdr session hook in Codex's `/hooks`.
+- On macOS, open Docker Desktop once to finish its setup.
 
 ## Design
 
-- **chezmoi** owns configuration files and setup scripts. `home/` is the source
-  state; files outside it are not deployed.
-- **Homebrew** owns shell tools and macOS apps.
-- **mise** owns language runtimes and package managers: Node LTS, plus Python, uv
-  and pnpm at `latest`. Projects can override versions; mise reads `.nvmrc` and
-  `.node-version`, while uv owns `.python-version`.
-- **fish inside herdr** holds the working environment. Your login shell stays as
-  you set it up: installation never changes it, `$SHELL` or its startup files,
-  and it only needs `~/.local/bin` on PATH to start herdr. To opt out of this
-  setup, use the login shell without starting herdr. Fish supplies mise's shims
-  to scripts and popups as well as interactive panes.
-- **XDG directories** hold configuration, data, state and caches wherever supported.
-  Catppuccin Mocha provides the shared theme.
-- **Machine-specific settings** go in the untracked
-  `~/.config/fish/config-local.fish`, loaded last in every fish shell.
+### Who owns what
+
+- **chezmoi** owns configuration files and the setup scripts that install
+  everything else. Its source state is `home/`, named in `.chezmoiroot`; the
+  rest of the repository (`install.sh`, `scripts/`, `skills/` and the
+  workflows) is never deployed.
+- **Homebrew** owns command-line tools and macOS apps, Claude Code and Codex
+  included. The Brewfile is a template with a macOS-only section: setup
+  installs what's missing, and `update` upgrades.
+- **mise** owns language runtimes and package managers: Node LTS, plus Python,
+  uv and pnpm at `latest`, as fallbacks that projects override. mise reads
+  `.nvmrc` and `.node-version`; uv owns `.python-version`.
+- **`~/.local/bin`** holds the two tools that update themselves outside
+  Homebrew: chezmoi, which installs Homebrew, and mise, so runtimes work where
+  Homebrew can't be installed (Homebrew's mise would also add its own fish
+  activation). Any other new tool goes in the Brewfile, or in mise's config for
+  a runtime.
+- **Programs that install their own extras** own those files, and the
+  repository lists only what to install. gh installs gh-dash, and herdr
+  installs its hooks for Claude Code and Codex when `update` runs. The skills
+  tool installs the agent skills in the install-skills script from GitHub, so
+  `update` brings in pushed changes; one is this repository's
+  [`/dotfiles`](skills/dotfiles/SKILL.md), for having an agent change these
+  dotfiles.
+
+### Shells
+
+- **Your login shell stays untouched.** The dotfiles never write its startup
+  files (`.chezmoiignore` lists them), so skipping herdr leaves you in your own
+  shell. It needs only `~/.local/bin` on PATH, where chezmoi links Homebrew's
+  herdr once Homebrew has installed it. On macOS, `~/.hushlogin` hides the
+  login message.
+- **fish inside herdr** holds the environment. herdr starts fish by its full
+  path in every pane and runs its popups through it. Every fish, popups
+  included, gets the environment from `conf.d`: XDG folders, Homebrew,
+  `~/.local/bin` first on PATH, mise's shims and the editor. `config.fish` adds
+  the interactive parts (theme, mise's activation, atuin, zoxide, starship),
+  and every fish loads the untracked `config-local.fish` last, for settings
+  that belong to one machine.
+
+### How setup runs
+
+- **Dotfiles first.** install.sh installs chezmoi, and `chezmoi init --apply`
+  writes the dotfiles before the setup scripts run, in number order: Linux
+  build tools (with sudo), Homebrew, the Brewfile, gh-dash, mise's runtimes,
+  agent skills. A failing script never keeps the dotfiles from being installed.
+- **Two applies.** Templates that look for an installed program, such as
+  herdr's config for fish and chezmoi's own config for delta, render without
+  it on a new machine, so install.sh applies again after the scripts. Each
+  such template works without the program.
+- **Scripts rerun when what they install changes.** The packages script embeds
+  the Brewfile, the mise script a hash of mise's config, and the skills script
+  lists the skills, so editing any of them reinstalls on every machine's next
+  apply. Scripts run under `sh`, without fish's environment.
+- **Homebrew's possible locations** live in one template, `brew-prefixes`:
+  `/opt/homebrew` on macOS, `/home/linuxbrew/.linuxbrew` on Linux, or, without
+  sudo, `~/.linuxbrew` or `~/.brew`, which are short enough for Homebrew's
+  prebuilt packages.
+
+### Machines
+
+- **One machine publishes.** There, chezmoi commits and pushes each change it
+  makes to the repository; other machines pull with `chezmoi update`. The
+  repository is public, so chezmoi refuses to add files that look like secrets.
+- **Machine state stays local**: fish's universal variables,
+  `config-local.fish`, and the agents' settings in `~/.claude` and `~/.codex`.
+  gh rewrites its config, so `~/.config/gh/config.yml` links into the
+  repository rather than being a copy.
+- **`update`** upgrades every layer in order (chezmoi and the dotfiles,
+  Homebrew, mise, agent skills, gh extensions, herdr's hooks), accepting every
+  confirmation and replacing local edits to managed files, and stops at the
+  first failure. **`doctor`** checks Homebrew, chezmoi and mise, and the
+  sign-ins for Claude Code, Codex and GitHub.
+
+### Look
+
+- **XDG folders** hold configuration, data, state and caches wherever a tool
+  supports them, on macOS too, where many tools default to `~/Library` unless
+  the XDG variables are set.
+- **Catppuccin Mocha**, with the blue accent where a port offers one, themes
+  every tool that has a port. `.chezmoiexternal.toml` fetches each port from
+  upstream and refreshes it weekly.
+
+### Testing
+
+Every push runs three GitHub Actions workflows. Bootstrap runs install.sh twice
+on seven fresh machines (macOS, and Ubuntu on x86_64 and ARM64, with and
+without sudo), then `scripts/check-install.sh`. Shell checks lint the scripts
+and workflows, and start fish in every mode to check its environment. Secret
+scan runs gitleaks over the whole history.
 
 ## To do
 
