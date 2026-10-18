@@ -25,5 +25,12 @@ fi
 # herdr is in the same folder as brew: dirname turns .../bin/brew into .../bin.
 bin=$(dirname "$brew")
 
+# herdr only installs into an agent's config folder that exists, and Claude Code
+# and Codex create theirs when they first run, which on a new machine they
+# haven't yet. Create the folders herdr looks in: $CLAUDE_CONFIG_DIR and
+# $CODEX_HOME when set, otherwise ~/.claude and ~/.codex. (-p: no error if the
+# folder exists; ${NAME:-default} is default when NAME is unset or empty.)
+mkdir -p "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"
+
 "$bin/herdr" integration install claude
 "$bin/herdr" integration install codex
