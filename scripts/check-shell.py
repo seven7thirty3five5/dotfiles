@@ -149,7 +149,7 @@ else
 end
 if status is-interactive
     test "$fish_color_autosuggestion" = 7f849c; or fail 'The color theme was not applied'
-    for name in update doctor ff
+    for name in update doctor ff lg
         functions -q $name; or fail "Function missing: $name"
     end
 end
