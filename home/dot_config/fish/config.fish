@@ -10,6 +10,11 @@ if status is-interactive
     # Catppuccin's Overlay1: the theme's own suggestion color is too dim.
     set -g fish_color_autosuggestion 7f849c
 
+    # Abbreviations: type one and press space or enter, and fish replaces it
+    # with the full command, so history shows what really ran.
+    # lzd is the alias lazydocker's README suggests.
+    abbr --add lzd lazydocker
+
     # fzf's key bindings are off: atuin covers Ctrl-R and yazi covers browsing.
     # You may want fzf's file picker on Ctrl-T later. `fzf --fish | source` turns
     # on Ctrl-T, Alt-C, Ctrl-R and Shift-Tab at once, and a custom

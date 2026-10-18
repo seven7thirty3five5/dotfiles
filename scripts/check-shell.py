@@ -11,8 +11,8 @@ first everything in ~/.config/fish/conf.d (in name order), then
     `fish -c lazygit`), gets the environment: XDG folders, Homebrew, PATH with
     ~/.local/bin before Homebrew and the system, and the editor. Installed
     mise prepends its shims and selected runtime paths;
-  - an "interactive" fish (one you type into) also gets the colors and shell
-    integrations;
+  - an "interactive" fish (one you type into) also gets the colors,
+    abbreviations and shell integrations;
   - a "login" fish (herdr's panes on macOS) first runs fish's copy of macOS's
     path_helper, which puts the system's folders at the front of PATH; the
     dotfiles must move ~/.local/bin and Homebrew back in front.
@@ -91,8 +91,10 @@ OPTIONAL_TOOLS = "yazi eza fzf atuin zoxide starship lazydocker bat fd"
 #                                     installer lists the real Homebrew. There, the
 #                                     three checks above can't hold; instead the
 #                                     pretend Homebrew must come before /usr/bin.
-#   interactive settings              The theme applies in interactive shells,
-#                                     and the helper functions can autoload.
+#   interactive settings              The theme and abbreviations apply in
+#                                     interactive shells, and the helper
+#                                     functions can autoload. Abbreviations
+#                                     don't exist in the other shells.
 #
 # Finally it prints "dotfiles-shell-ok". That must be the only output: anything
 # else the startup files print would be a bug (see run() below).
@@ -149,9 +151,12 @@ else
 end
 if status is-interactive
     test "$fish_color_autosuggestion" = 7f849c; or fail 'The color theme was not applied'
+    abbr -q lzd; or fail 'Abbreviations were not set up'
     for name in update doctor ff lg
         functions -q $name; or fail "Function missing: $name"
     end
+else
+    not abbr -q lzd; or fail 'Abbreviations leaked into a non-interactive shell'
 end
 echo dotfiles-shell-ok
 """

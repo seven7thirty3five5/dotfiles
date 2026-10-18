@@ -84,8 +84,8 @@ Then open a new terminal and start `herdr`. In its fish:
   included, gets the environment from `conf.d`: XDG folders, Homebrew,
   `~/.local/bin` before Homebrew and the system, mise's shims and the editor.
   mise's runtime paths may come first so project versions take priority.
-  `config.fish` adds the interactive parts (theme, mise's activation, atuin,
-  zoxide, starship),
+  `config.fish` adds the interactive parts (theme, abbreviations, mise's
+  activation, atuin, zoxide, starship),
   and every fish loads the untracked `config-local.fish` last, for settings
   that belong to one machine.
 
