@@ -67,12 +67,13 @@ separately.
 
 Claude Code and Codex settings stay local: chezmoi ignores `~/.claude` and
 `~/.codex`. Configure and sign in to each agent separately. On a new machine,
-review and trust the Herdr session hook through Codex's `/hooks` so Herdr can
-identify the Codex session in each pane.
+run `update` to install herdr's hooks for both, then review and trust the Herdr
+session hook through Codex's `/hooks` so Herdr can identify the Codex session
+in each pane.
 
 herdr installs and owns its hooks for Claude Code and Codex
-(`herdr integration install`), so they aren't tracked; `update` reinstalls
-them at herdr's current version.
+(`herdr integration install`), so they aren't tracked; `update` installs them
+at herdr's current version.
 
 ## Maintain
 

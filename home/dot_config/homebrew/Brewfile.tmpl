@@ -69,7 +69,7 @@ brew "resvg"                    # SVG previews
 brew "imagemagick"              # font and image previews
 
 # AI coding agents. These casks are command-line tools and also install on
-# Linux. herdr's integrations hook into both (install-herdr-integrations).
+# Linux. herdr's integrations hook into both; `update` installs them.
 cask "claude-code"              # claude: Anthropic's coding agent
 cask "codex"                    # codex: OpenAI's coding agent
 {{- if eq .chezmoi.os "darwin" }}

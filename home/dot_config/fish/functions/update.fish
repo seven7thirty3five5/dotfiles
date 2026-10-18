@@ -63,9 +63,17 @@ function update --description 'Update chezmoi, Homebrew, mise and what they inst
     _dotfiles_subsection 'Upgrade extensions' blue
     gh extension upgrade --all; or return
 
-    # Installing an integration again replaces it with this herdr's version.
-    # herdr owns these files; see the install-herdr-integrations chezmoi script.
+    # herdr's hooks for Claude Code and Codex. herdr owns these files, so the
+    # dotfiles don't track them; this installs them, and installing again
+    # replaces them with this herdr's version. herdr only installs into an
+    # agent's config folder that exists, and each agent creates its own when it
+    # first runs, so create them first: $CLAUDE_CONFIG_DIR and $CODEX_HOME when
+    # set (herdr reads them too), otherwise ~/.claude and ~/.codex.
     _dotfiles_section 'herdr integrations' green
+    set -l agent_dirs $HOME/.claude $HOME/.codex
+    test -n "$CLAUDE_CONFIG_DIR"; and set agent_dirs[1] $CLAUDE_CONFIG_DIR
+    test -n "$CODEX_HOME"; and set agent_dirs[2] $CODEX_HOME
+    mkdir -p $agent_dirs; or return
     _dotfiles_subsection 'Update Claude integration' green
     herdr integration install claude; or return
     _dotfiles_subsection 'Update Codex integration' green
