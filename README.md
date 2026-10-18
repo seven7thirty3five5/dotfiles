@@ -2,9 +2,24 @@
 
 Personal dotfiles for macOS (Apple silicon) and Linux (x86_64 and ARM64).
 
+## Requirements
+
+- Your own user account (setup refuses to run as root or with sudo), with `curl`.
+- `~/.local/bin` on your login shell's PATH. These dotfiles never touch your
+  shell's startup files, such as `~/.zshrc` and `~/.bashrc`. Instead, setup
+  links Homebrew's `herdr` into `~/.local/bin`, next to chezmoi and mise, and
+  your shell finds it there. Debian and Ubuntu add the folder in `~/.profile`
+  once it exists, so log in again after setup; Fedora and RHEL add it in
+  `~/.bashrc`. Elsewhere, including macOS, add this line to your shell's
+  startup file (`~/.zprofile` for macOS's zsh):
+
+  ```sh
+  export PATH="$HOME/.local/bin:$PATH"
+  ```
+
 ## Setup
 
-Run as your own user, with `curl` available:
+Run:
 
 ```sh
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/seven7thirty3five5/dotfiles/main/install.sh)"
@@ -22,8 +37,8 @@ Without sudo, setup can install Homebrew in your home folder on Linux; system
 dependencies still need an administrator. On macOS without sudo, Homebrew must
 already be installed in `/opt/homebrew`.
 
-Setup replaces existing managed files, including `~/.zprofile` on macOS and
-`~/.bashrc` on Linux. To download the repository and preview changes first:
+Setup replaces any existing files it manages, such as `~/.editorconfig` and the
+configs in `~/.config`. To download the repository and preview changes first:
 
 ```sh
 sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin" init --use-builtin-git=true seven7thirty3five5
@@ -116,10 +131,11 @@ To refresh downloaded themes immediately, run `chezmoi apply --refresh-externals
 - **mise** owns language runtimes and package managers: Node LTS, plus Python, uv
   and pnpm at `latest`. Projects can override versions; mise reads `.nvmrc` and
   `.node-version`, while uv owns `.python-version`.
-- **fish inside herdr** holds the working environment. Login shells stay zsh on
-  macOS and bash on Linux, with minimal Homebrew setup. Installation does not
-  change the login shell or `$SHELL`. Fish supplies mise's shims to scripts and
-  popups as well as interactive panes.
+- **fish inside herdr** holds the working environment. Your login shell stays as
+  you set it up: installation never changes it, `$SHELL` or its startup files,
+  and it only needs `~/.local/bin` on PATH to start herdr. To opt out of this
+  setup, use the login shell without starting herdr. Fish supplies mise's shims
+  to scripts and popups as well as interactive panes.
 - **XDG directories** hold configuration, data, state and caches wherever supported.
   Catppuccin Mocha provides the shared theme.
 - **Machine-specific settings** go in the untracked

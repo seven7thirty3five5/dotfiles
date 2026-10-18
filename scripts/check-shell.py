@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check that the shell startup files work, without touching your real home folder.
+"""Check that fish's startup files work, without touching your real home folder.
 
 What this tests
 ---------------
@@ -16,8 +16,8 @@ first everything in ~/.config/fish/conf.d (in name order), then
     path_helper, which puts the system's folders at the front of PATH; the
     dotfiles must move ~/.local/bin and Homebrew back in front.
 
-The login shells only start herdr, and their one startup file only adds
-Homebrew: ~/.zprofile for zsh on macOS, ~/.bashrc for bash on Linux.
+The login shell only starts herdr, and the dotfiles leave its startup files
+alone: it finds herdr in ~/.local/bin, where chezmoi links Homebrew's herdr.
 
 This script checks all of that by:
 
@@ -27,8 +27,8 @@ This script checks all of that by:
   2. starting fish in all four combinations of login or not and interactive or
      not, once with a pretend Homebrew and once without, and running a small
      fish script (PROBE, below) that checks the environment;
-  3. starting this system's login shell the same ways, to check that only the
-     ones you type into (or log in with) get Homebrew.
+  3. checking that chezmoi links ~/.local/bin/herdr to the pretend Homebrew's
+     herdr, and leaves that path alone without Homebrew.
 
 Everything happens inside a temporary folder that is deleted afterwards, with a
 made-up home folder, so your real dotfiles and settings are never read or changed.
@@ -55,9 +55,9 @@ SOURCE = Path(__file__).resolve().parents[1]
 # The dotfiles live in the subdirectory named by .chezmoiroot (home/).
 STATE_NAME = (SOURCE / ".chezmoiroot").read_text().strip()
 
-# fish's folder inside a home folder, and this system's login-shell file.
+# fish's folder inside a home folder, and the link to herdr.
 FISH_DIR = Path(".config/fish")
-LOGIN_FILE = Path(".zprofile" if sys.platform == "darwin" else ".bashrc")
+HERDR_LINK = Path(".local/bin/herdr")
 
 # Templates whose text comes from a program (Homebrew, mise, chezmoi itself)
 # rather than from this repository. Their syntax is checked, but not their
@@ -136,11 +136,6 @@ end
 echo dotfiles-shell-ok
 """
 
-# bash prints these two lines when it starts interactively without a terminal,
-# as it does here. They come from bash itself, not from the startup files, so
-# run() ignores them (each line starts with "bash: ").
-BASH_NO_TERMINAL = ("cannot set terminal process group", "no job control in this shell")
-
 
 def run(command, env, cwd):
     """Run a command and return what it printed.
@@ -159,11 +154,7 @@ def run(command, env, cwd):
         command, env=env, cwd=cwd, text=True, capture_output=True, timeout=30,
         stdin=subprocess.DEVNULL,
     )
-    stderr = "".join(
-        line for line in result.stderr.splitlines(keepends=True)
-        if not (line.startswith("bash: ")
-                and any(message in line for message in BASH_NO_TERMINAL))
-    )
+    stderr = result.stderr
     if result.returncode or stderr:
         # Build a readable copy of the command for the error message. When the
         # command is a shell running a script (after -c), show a short label
@@ -254,14 +245,8 @@ def render(binaries, source, home, temporary, config, search_path):
            for path in managed):
         raise RuntimeError("Repository files must stay outside the source state")
 
-    # The files to check: everything in fish's folder, and this system's login
-    # file (and ~/.bash_profile, which chezmoi writes here on Linux because the
-    # fake home has no login file of its own).
-    targets = [Path(path) for path in managed
-               if path.startswith(f"{FISH_DIR}/")
-               or path in (str(LOGIN_FILE), ".bash_profile")]
-    if LOGIN_FILE not in targets:
-        raise RuntimeError(f"chezmoi does not manage ~/{LOGIN_FILE} on this system")
+    # The files to check: everything in fish's folder.
+    targets = [Path(path) for path in managed if path.startswith(f"{FISH_DIR}/")]
 
     for relative in targets:
         target = home / relative
@@ -280,13 +265,6 @@ def render(binaries, source, home, temporary, config, search_path):
             origin = Path(run(command + ["source-path", str(target)], env, home).strip())
             if not any(marker in origin.read_text() for marker in GENERATED):
                 run([binaries["fish_indent"], "--check", str(target)], env, home)
-        elif relative == Path(".zprofile"):
-            # zsh -n only reads the file and reports syntax errors. -d and -f
-            # stop zsh from reading any other startup files first.
-            run([binaries["zsh"], "-d", "-f", "-n", str(target)], env, home)
-        else:
-            # The same for bash (bash's syntax check is -n too).
-            run([binaries["bash"], "--norc", "--noprofile", "-n", str(target)], env, home)
 
     return targets
 
@@ -294,12 +272,11 @@ def render(binaries, source, home, temporary, config, search_path):
 def make_mock_homebrew(prefix):
     """A pretend Homebrew: a tiny shell script at "<prefix>/bin/brew".
 
-    The startup files run `brew shellenv SHELL`: brew prints the commands that
-    add Homebrew's folders to PATH, and the shell runs them. This stand-in prints
-    the same kind of commands for fish, zsh and bash, plus one that sets
-    DOTFILES_TEST_BREW_LOADED so the checks can tell whether it was loaded, and
-    fails if it is run any other way. shlex.quote() puts quotes around the
-    paths, which contain spaces.
+    fish's startup files run `brew shellenv fish`: brew prints the commands that
+    add Homebrew's folders to PATH, and fish runs them. This stand-in prints the
+    same kind of commands, plus one that sets DOTFILES_TEST_BREW_LOADED so the
+    checks can tell whether it was loaded, and fails if it is run any other way.
+    shlex.quote() puts quotes around the paths, which contain spaces.
     """
 
     (prefix / "bin").mkdir(parents=True)
@@ -308,18 +285,17 @@ def make_mock_homebrew(prefix):
         "set --global --export DOTFILES_TEST_BREW_LOADED 1",
         f"fish_add_path --global --move --path {bin_dir}",
     ]
-    posix = [
-        "export DOTFILES_TEST_BREW_LOADED=1",
-        f"export PATH={bin_dir}:\"$PATH\"",
-    ]
     brew = prefix / "bin/brew"
     brew.write_text(
-        '#!/bin/sh\n[ "$1" = shellenv ] || exit 1\ncase $2 in\n'
-        "  fish) printf '%s\\n' " + " ".join(map(shlex.quote, fish)) + " ;;\n"
-        "  zsh | bash) printf '%s\\n' " + " ".join(map(shlex.quote, posix)) + " ;;\n"
-        "  *) exit 1 ;;\nesac\n"
+        '#!/bin/sh\n[ "$1 $2" = "shellenv fish" ] || exit 1\n'
+        "printf '%s\\n' " + " ".join(map(shlex.quote, fish)) + "\n"
     )
     brew.chmod(0o755)  # make it runnable, like a real program
+
+    # herdr is installed too, so chezmoi links ~/.local/bin/herdr to it.
+    herdr = prefix / "bin/herdr"
+    herdr.write_text("#!/bin/sh\nexit 1\n")
+    herdr.chmod(0o755)
 
     # Both editors are installed in the pretend Homebrew. They must never be
     # launched during startup; only their presence on PATH matters.
@@ -371,64 +347,41 @@ def check_fish(binaries, home, shell_bin, mock_bin, temporary, with_brew, scenar
             print(f"PASS: fish, {scenario}, {mode} {kind} startup", flush=True)
 
 
-def check_login_shell(binaries, home, shell_bin, temporary, with_brew, scenario):
-    """Start this system's login shell the ways that matter.
+def check_herdr_link(binaries, source, home, temporary, config, search_path, prefix,
+                     with_brew, scenario):
+    """Check the link to herdr that chezmoi writes in ~/.local/bin.
 
-    macOS: zsh reads ~/.zprofile in login shells (every new Ghostty window),
-    but not for `zsh -c`. -d skips the system-wide files in /etc (all but
-    zshenv), so only this repository's file is tested.
-    Linux: bash reads ~/.bashrc in interactive shells (an SSH login reaches it
-    through ~/.bash_profile here), but commands like `bash -c` and `ssh host
-    command` must get nothing from it.
+    With Homebrew's herdr installed, chezmoi links ~/.local/bin/herdr to it, so a
+    login shell with ~/.local/bin on PATH finds herdr. Without it, chezmoi must
+    leave that path alone (.chezmoiignore), so it never replaces or removes a
+    herdr you installed there yourself.
     """
 
-    if sys.platform == "darwin":
-        cases = [
-            ("zsh -l", [binaries["zsh"], "-d", "-l"], True),
-            ("zsh -l -i", [binaries["zsh"], "-d", "-l", "-i"], True),
-            ("zsh -c", [binaries["zsh"], "-d"], False),
-        ]
-    else:
-        cases = [
-            ("bash -i", [binaries["bash"], "-i"], True),
-            ("bash -l -i", [binaries["bash"], "-l", "-i"], True),
-            ("bash -l", [binaries["bash"], "-l"], False),
-            ("bash -c", [binaries["bash"]], False),
-        ]
+    env = environment(home, search_path, temporary)
+    command = chezmoi_command(binaries["chezmoi"], source, home, temporary, config)
+    links = run(
+        command + ["managed", "--include=symlinks", "--path-style=relative"], env, home
+    ).splitlines()
+    if (str(HERDR_LINK) in links) != with_brew:
+        state = "leaves out" if with_brew else "manages"
+        raise RuntimeError(f"chezmoi {state} ~/{HERDR_LINK} {scenario}")
 
-    # Unlike zsh, bash can't skip the system's own startup files (/etc/profile,
-    # and on Debian and Ubuntu /etc/bash.bashrc), and those expect the system's
-    # folders on PATH, so they come after the empty folder here.
-    path = shell_bin if sys.platform == "darwin" else f"{shell_bin}:{os.defpath}"
+    if with_brew:
+        # `chezmoi cat LINK` prints where chezmoi would point the link.
+        target = run(command + ["cat", str(home / HERDR_LINK)], env, home).strip()
+        if target != str(prefix / "bin/herdr"):
+            raise RuntimeError(f"~/{HERDR_LINK} points to {target}, not Homebrew's herdr")
 
-    # Workaround: Ubuntu's /etc/bash.bashrc prints a hint about sudo in every
-    # interactive bash of a user in the sudo group (as on GitHub's machines),
-    # unless the home folder has a .sudo_as_admin_successful file.
-    if sys.platform == "linux":
-        (home / ".sudo_as_admin_successful").touch()
-
-    # The shell prints whether the pretend Homebrew was loaded, and nothing else.
-    probe = 'echo "brew=${DOTFILES_TEST_BREW_LOADED:-0}"'
-    for label, command, loads in cases:
-        env = environment(home, path, temporary)
-        env["SSH_CONNECTION"] = "127.0.0.1 12345 127.0.0.1 22"
-        output = run(command + ["-c", probe], env, home)
-        expected = f"brew={int(with_brew and loads)}\n"
-        if output != expected:
-            raise RuntimeError(f"{label}: expected {expected!r}, got {output!r}")
-
-        print(f"PASS: {label}, {scenario}", flush=True)
+    print(f"PASS: herdr link, {scenario}", flush=True)
 
 
 def main():
     if sys.platform not in ("darwin", "linux"):
         raise RuntimeError("These checks require macOS or Linux")
 
-    # Find chezmoi, fish, fish_indent and this system's login shell; stop if
-    # one is missing. shutil.which(name) does what `command -v` does in a shell.
-    login_shell = "zsh" if sys.platform == "darwin" else "bash"
-    binaries = {name: shutil.which(name)
-                for name in ("chezmoi", "fish", "fish_indent", login_shell)}
+    # Find chezmoi, fish and fish_indent; stop if one is missing.
+    # shutil.which(name) does what `command -v` does in a shell.
+    binaries = {name: shutil.which(name) for name in ("chezmoi", "fish", "fish_indent")}
     for name, binary in binaries.items():
         if not binary:
             raise RuntimeError(f"Required command not found: {name}")
@@ -458,9 +411,10 @@ def main():
         print(f"PASS: native {sys.platform} template rendering, syntax and formatting",
               flush=True)
 
-        # Step 2: start the shells in every mode. Work on a copy of the
-        # repository ("fixture"), because the Homebrew detection is replaced
-        # below. The copy leaves out .git, which isn't needed.
+        # Steps 2 and 3: start fish in every mode, then check the herdr link.
+        # Work on a copy of the repository ("fixture"), because the Homebrew
+        # detection is replaced below. The copy leaves out .git, which isn't
+        # needed.
         fixture = temporary / "source"
         shutil.copytree(SOURCE, fixture, ignore=shutil.ignore_patterns(".git"))
         state = fixture / STATE_NAME
@@ -491,7 +445,8 @@ def main():
             render(binaries, fixture, home, temporary, config, search_path)
             check_fish(binaries, home, shell_bin, prefix / "bin", temporary, with_brew,
                        scenario)
-            check_login_shell(binaries, home, shell_bin, temporary, with_brew, scenario)
+            check_herdr_link(binaries, fixture, home, temporary, config, search_path,
+                             prefix, with_brew, scenario)
 
 
 # Run main() when this file is run as a program (not when another Python file

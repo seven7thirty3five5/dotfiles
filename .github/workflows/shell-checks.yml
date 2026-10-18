@@ -4,9 +4,9 @@
 #                               rendered templates, fish's syntax check and
 #                               fish_indent on fish files, and actionlint on
 #                               workflows
-#   scripts/check-shell.py      renders the fish config and the login shell's
-#                               startup file, and starts fish and the login
-#                               shell in every mode to check what they set up
+#   scripts/check-shell.py      renders the fish config, starts fish in every
+#                               mode to check what it sets up, and checks the
+#                               link to herdr in ~/.local/bin
 #
 # Both scripts work in temporary folders, so they are quick (under a minute) and
 # also safe to run on your own computer. The slower, real installation is tested
@@ -108,7 +108,7 @@ jobs:
           echo "$RUNNER_TEMP/fish-bin" >> "$GITHUB_PATH"
 
       # GitHub's macOS machines have Homebrew; its fish is the one these
-      # dotfiles install there. (zsh, the login shell, is built into macOS.)
+      # dotfiles install there.
       - name: Install fish on macOS
         if: runner.os == 'macOS'
         env:

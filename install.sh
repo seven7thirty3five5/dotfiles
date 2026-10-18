@@ -22,9 +22,9 @@
 #      chezmoi's own settings pick up newly installed tools (herdr's config
 #      finds fish, for example). This also writes mise's completion on
 #      machines where Homebrew cannot be installed.
-#   6. Lists what you still have to do by hand, such as asking an administrator
-#      to change your login shell. Where you answer no to "Use sudo on this
-#      machine", setup never runs sudo, so it never asks for a sudo password.
+#   6. Lists what you still have to do by hand, such as putting ~/.local/bin on
+#      your PATH. Where you answer no to "Use sudo on this machine", setup never
+#      runs sudo, so it never asks for a sudo password.
 #
 # It is safe to run again: an existing ~/.local/share/chezmoi is reused. Any
 # arguments you give this script are passed on to `chezmoi init`. If a step
@@ -61,9 +61,8 @@ fi
 
 # --- 2. Get chezmoi ---------------------------------------------------------
 
-# Use chezmoi if it's installed. ~/.local/bin isn't on PATH yet on a new
-# machine (the dotfiles put it there), so look in it as well (-x: a program we
-# can run).
+# Use chezmoi if it's installed. ~/.local/bin may not be on PATH yet on a new
+# machine, so look in it as well (-x: a program we can run).
 bin_dir=$HOME/.local/bin
 if command -v chezmoi >/dev/null 2>&1; then
   chezmoi=$(command -v chezmoi)
@@ -173,49 +172,19 @@ if [ -z "$prefix" ]; then
   fi
 fi
 
-# Is your login shell the system's own? Only its startup file puts Homebrew,
-# and so herdr, on PATH: ~/.zprofile for zsh on macOS, ~/.bashrc for bash on
-# Linux. herdr's panes then run fish. dscl (macOS) or getent (Linux) looks the
-# login shell up. (*/bash matches any path that ends in /bash.)
-user=$(id -un)
-if [ "$os" = darwin ]; then
-  login_shell=$(dscl . -read "/Users/$user" UserShell | awk '{print $2}')
-  if [ "$login_shell" != /bin/zsh ]; then
-    # Changing your own login shell on macOS only asks for your password.
+# Is ~/.local/bin on your PATH? Your login shell finds herdr there, through
+# the link to Homebrew's herdr, and these dotfiles never touch its startup
+# files, so the README lists this as a requirement. This script runs with your
+# shell's PATH, so check that. (The colons around both sides make only the
+# whole folder name match, not part of a longer one.)
+case ":$PATH:" in
+  *":$bin_dir:"*) ;;
+  *)
     todo="$todo
-  - Make /bin/zsh, macOS's default, your login shell again: run
-    chsh -s /bin/zsh"
-  fi
-else
-  login_shell=$(getent passwd "$user" | cut -d: -f7)
-  case $login_shell in
-    */bash) ;;
-    *)
-      if [ "$use_sudo" = true ]; then
-        # Setup never changes the login shell, but with sudo you can.
-        todo="$todo
-  - Make /bin/bash your login shell: run  sudo chsh -s /bin/bash $user
-    (if IT manages your account, ask them to change it instead)."
-      else
-        todo="$todo
-  - Ask IT (an administrator) to make /bin/bash your login shell. Until
-    then, type  exec bash -l  before starting herdr."
-      fi
-      ;;
-  esac
-
-  # An SSH login reaches ~/.bashrc only through a login file such as
-  # ~/.profile or ~/.bash_profile, which normally reads it. Check that an
-  # interactive login bash (-l -i) really finds herdr; its startup messages
-  # are thrown away, and </dev/null keeps it from waiting for input.
-  if [ -n "$prefix" ] && [ "${login_shell##*/}" = bash ] \
-    && ! bash -l -i -c 'command -v herdr' </dev/null >/dev/null 2>&1; then
-    todo="$todo
-  - Make SSH logins read ~/.bashrc: add this line to ~/.bash_profile
-    (or to ~/.profile if you have no ~/.bash_profile):
-    [ -f ~/.bashrc ] && . ~/.bashrc"
-  fi
-fi
+  - Put ~/.local/bin on your PATH, as the README's requirements describe.
+    On Debian and Ubuntu, logging in again does it now that the folder exists."
+    ;;
+esac
 
 # Programs that need sudo to install, so setup installs them only on Linux with
 # sudo: Homebrew needs a C compiler (cc), file and git.

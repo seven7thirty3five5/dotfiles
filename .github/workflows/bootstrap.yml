@@ -76,18 +76,6 @@ jobs:
           mkdir -p "$HOME/.local/share"
           cp -R "$GITHUB_WORKSPACE" "$HOME/.local/share/chezmoi"
 
-      # A new Mac's login shell is /bin/zsh, whose ~/.zprofile puts Homebrew
-      # (and herdr) on PATH; the dotfiles leave it alone. Make GitHub's macOS
-      # machine match, in case its user starts with another shell. dscl reads
-      # the login shell; sudo needs no password there.
-      - name: Use macOS's default login shell
-        if: runner.os == 'macOS'
-        run: |
-          login_shell=$(dscl . -read "/Users/$USER" UserShell | awk '{print $2}')
-          if [ "$login_shell" != /bin/zsh ]; then
-            sudo chsh -s /bin/zsh "$USER"
-          fi
-
       # Workaround: on a real machine, chezmoi asks for your Git name and email,
       # whether this machine publishes changes, and whether it may use sudo. CI
       # can't answer questions, so this writes the answers into chezmoi's settings

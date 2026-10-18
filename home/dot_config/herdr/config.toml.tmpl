@@ -29,9 +29,10 @@ name = "catppuccin"
 {{- if $fish }}
 
 # Every new pane runs fish, which holds your shell setup (~/.config/fish).
-# herdr would otherwise use $SHELL, which stays the login shell you start herdr
-# from (zsh on macOS, bash on Linux). The full path is needed because herdr can
-# be started over SSH (`herdr --remote`, saved machines) with a minimal PATH.
+# herdr would otherwise use $SHELL, the login shell you start herdr from, which
+# these dotfiles leave alone. The full path is needed because herdr can start
+# without Homebrew on PATH: from that login shell, or over SSH (`herdr
+# --remote`, saved machines).
 # shell_mode keeps its default: login shells on macOS, non-login elsewhere.
 [terminal]
 default_shell = {{ $fish | quote }}
@@ -58,7 +59,7 @@ prefix = "ctrl+space"
 
 # The popups below run through fish (`fish -c COMMAND`) when it's installed.
 # herdr starts popup commands with its own environment, which only has what the
-# login shell added (Homebrew); fish adds the rest, as in a pane. Without it,
+# login shell set up; fish adds Homebrew and the rest, as in a pane. Without it,
 # lazygit on macOS wouldn't see XDG_CONFIG_HOME and would read its settings from
 # ~/Library/Application Support/lazygit instead of ~/.config/lazygit. herdr
 # runs the command with /bin/sh -c; exec replaces that sh with fish.

@@ -5,23 +5,34 @@
 # ignored when the condition is true: for example when this machine isn't a Mac
 # (chezmoi calls macOS "darwin", and ne means "not equal").
 
-# macOS-only: Ghostty's config; .hushlogin, which hides the "Last login" banner
-# login(1) prints in every Ghostty tab (Linux keeps its SSH login message); and
-# ~/.zprofile, which puts Homebrew on PATH in macOS's login shell, zsh.
+# macOS-only: Ghostty's config, and .hushlogin, which hides the "Last login"
+# banner login(1) prints in every Ghostty tab (Linux keeps its SSH login message).
 {{ if ne .chezmoi.os "darwin" }}
 .config/ghostty
 .hushlogin
-.zprofile
 {{ end }}
 
-# Linux-only: bash startup files. create_dot_bash_profile preserves an existing
-# ~/.bash_profile; ignore it when ~/.bash_login or ~/.profile exists so a new
-# ~/.bash_profile doesn't take precedence over those login files.
-{{ if ne .chezmoi.os "linux" }}
+# Your login shell's startup files are yours: these dotfiles never write them.
+# The login shell only needs ~/.local/bin on PATH to start herdr (see the
+# README's requirements).
+.bash_login
+.bash_logout
+.bash_profile
 .bashrc
-.bash_profile
-{{ else if or (stat (joinPath .chezmoi.homeDir ".bash_login")) (stat (joinPath .chezmoi.homeDir ".profile")) }}
-.bash_profile
+.profile
+.zlogin
+.zlogout
+.zprofile
+.zshenv
+.zshrc
+
+# The link to herdr in ~/.local/bin points to Homebrew's herdr, so chezmoi only
+# writes it once Homebrew has installed herdr. Until then it leaves the path
+# alone, even if you put a herdr there yourself. $brewPrefix is Homebrew's
+# folder, or empty without Homebrew; `and` stops at the first empty value.
+{{ $brewPrefix := includeTemplate "brew-prefix" . | trim -}}
+{{ if not (and $brewPrefix (isExecutable (joinPath $brewPrefix "bin" "herdr"))) }}
+.local/bin/herdr
 {{ end }}
 
 # NEVER track machine-specific fish settings. config.fish loads this file, if

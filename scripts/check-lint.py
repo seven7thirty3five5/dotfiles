@@ -7,23 +7,18 @@ and Intel, which the scripts refuse) and Linux (x86_64 and ARM64), with both
 answers to the "Use sudo on this machine" setup question, into temporary files
 before the checks read them:
 
-  - sh and bash files (by extension, shebang, or a `# shellcheck shell=` line,
-    as in bash's startup files): ShellCheck, then shfmt, which checks their
-    rendered formatting using the original relative filenames in a temporary
-    home with home/dot_editorconfig installed;
+  - sh and bash files (by extension or shebang): ShellCheck, then shfmt, which
+    checks their rendered formatting using the original relative filenames in a
+    temporary home with home/dot_editorconfig installed;
   - fish files: `fish --no-execute` for syntax and `fish_indent --check` for
     formatting. Templates whose text comes from a program (Homebrew's or mise's
     setup, completions) only get the syntax check: that output isn't ours to
     format.
-
-The macOS ~/.zprofile is zsh, which ShellCheck does not support;
-check-shell.py checks it with `zsh -n` on macOS.
 """
 
 import json
 import os
 from pathlib import Path
-import re
 import shlex
 import shutil
 import subprocess
@@ -34,9 +29,6 @@ import tempfile
 SOURCE = Path(__file__).resolve().parents[1]
 STATE = SOURCE / (SOURCE / ".chezmoiroot").read_text().strip()
 SHELL_SUFFIXES = (".sh", ".bash", ".bats", ".dash", ".ksh")
-
-# A ShellCheck directive naming the shell, for files with no extension or shebang.
-SHELL_DIRECTIVE = re.compile(r"^# shellcheck shell=(sh|bash)$", re.MULTILINE)
 
 # Text in a template that means a program wrote (part of) the result.
 GENERATED = ("output ", 'completion "fish"')
@@ -74,14 +66,11 @@ def shell_files():
         if name.endswith(SHELL_SUFFIXES):
             yield path
         elif "." not in name:
-            # Extensionless scripts are identified by their shell shebang, or
-            # by a ShellCheck directive (bash's startup files have neither an
-            # extension nor a shebang).
-            text = path.read_text(errors="replace")
-            first = text.split("\n", 1)[0]
-            if (first.startswith("#!") and first.split()[-1].split("/")[-1] in (
+            # Extensionless scripts are identified by their shell shebang.
+            first = path.read_text(errors="replace").split("\n", 1)[0]
+            if first.startswith("#!") and first.split()[-1].split("/")[-1] in (
                 "sh", "bash", "dash", "ksh", "mksh",
-            )) or SHELL_DIRECTIVE.search(text):
+            ):
                 yield path
 
 

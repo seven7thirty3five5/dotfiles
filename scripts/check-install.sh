@@ -123,34 +123,21 @@ if [ ! -d "$data_dir/gh/extensions/gh-dash" ]; then
   fail "gh-dash is not installed"
 fi
 
-# --- 9. The login shell is the system's own, and it finds herdr ------------
+# --- 9. herdr is linked into ~/.local/bin -----------------------------------
 
-# The login shells stay the system's: /bin/zsh on macOS and bash on Linux. Their
-# one startup file puts Homebrew, and so herdr, on PATH: ~/.zprofile for a zsh
-# login shell, ~/.bashrc for an interactive bash, which an SSH login reaches
-# through the system's login file. dscl and getent look up the login shell, as
-# in install.sh. (*/bash matches any path ending in /bash; </dev/null keeps the
-# shells from waiting for input, and 2>/dev/null drops bash's warnings about
-# having no terminal.)
-if [ "$(chezmoi execute-template '{{ .chezmoi.os }}')" = darwin ]; then
-  login_shell=$(dscl . -read "/Users/$(id -un)" UserShell | awk '{print $2}')
-  if [ "$login_shell" != /bin/zsh ]; then
-    fail "the login shell is $login_shell, not macOS's /bin/zsh"
-  fi
-
-  login_herdr=$(/bin/zsh -l -c 'command -v herdr' </dev/null)
-else
-  login_shell=$(getent passwd "$(id -un)" | cut -d: -f7)
-  case $login_shell in
-    */bash) ;;
-    *) fail "the login shell is $login_shell, not the system's bash" ;;
-  esac
-
-  login_herdr=$(bash -l -i -c 'command -v herdr' </dev/null 2>/dev/null | tail -n 1)
+# The dotfiles never touch the login shell's startup files. It finds herdr
+# through ~/.local/bin, which the README asks you to put on PATH, where a link
+# points to Homebrew's herdr (-L: the file is a symbolic link; readlink prints
+# where it points).
+herdr_link=$HOME/.local/bin/herdr
+if [ ! -L "$herdr_link" ] || [ "$(readlink "$herdr_link")" != "$brew_prefix/bin/herdr" ]; then
+  fail "$herdr_link is not a link to $brew_prefix/bin/herdr"
 fi
 
-if [ "$login_herdr" != "$brew_prefix/bin/herdr" ]; then
-  fail "the login shell finds herdr at '$login_herdr', not $brew_prefix/bin/herdr"
+# A login shell that never sets up Homebrew can start herdr: env runs herdr with
+# only ~/.local/bin and the system's folders on PATH.
+if ! env PATH="$HOME/.local/bin:/usr/bin:/bin" herdr --version >/dev/null; then
+  fail "herdr doesn't run through $herdr_link"
 fi
 
 # --- 10. herdr starts fish --------------------------------------------------

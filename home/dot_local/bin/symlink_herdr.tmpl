@@ -1,0 +1,9 @@
+{{- /*
+  ~/.local/bin/herdr, a link to Homebrew's herdr. A login shell with
+  ~/.local/bin on PATH (the README's requirement) finds herdr here without
+  setting up Homebrew. Homebrew still installs and upgrades herdr: herdr
+  follows the link, sees a Homebrew install, and points `herdr update` to
+  `brew upgrade herdr`. .chezmoiignore leaves this path alone until Homebrew
+  has installed herdr.
+*/ -}}
+{{- joinPath (includeTemplate "brew-prefix" . | trim) "bin" "herdr" -}}

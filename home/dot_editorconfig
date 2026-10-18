@@ -24,13 +24,3 @@ indent_style = space
 indent_size = 2
 binary_next_line = true
 switch_case_indent = true
-
-# The same for bash's startup files, which have no extension. dot_bashrc.tmpl
-# and create_dot_bash_profile are their names in the chezmoi repository.
-# shell_variant tells shfmt they're bash, which it can't tell from the name.
-[{.bashrc,.bash_profile,dot_bashrc.tmpl,create_dot_bash_profile}]
-indent_style = space
-indent_size = 2
-binary_next_line = true
-switch_case_indent = true
-shell_variant = bash
