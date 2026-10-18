@@ -171,4 +171,15 @@ if [ "$(grep -c "^command = \"exec $fish -c " "$herdr_config")" -ne 2 ]; then
   fail "herdr's popup commands don't run through $fish"
 fi
 
+# --- 11. Claude Code reads the agents' global instructions -----------------
+
+# Claude Code reads ~/.claude/CLAUDE.md, a link to the AGENTS.md Codex reads,
+# so both follow the same instructions (-L: the file is a symbolic link;
+# readlink prints where it points; -f: the file it points to exists).
+claude_md=$HOME/.claude/CLAUDE.md
+agents_md=$HOME/.codex/AGENTS.md
+if [ ! -L "$claude_md" ] || [ "$(readlink "$claude_md")" != "$agents_md" ] || [ ! -f "$agents_md" ]; then
+  fail "$claude_md is not a link to $agents_md"
+fi
+
 echo "Install checks passed (Homebrew in $brew_prefix)."

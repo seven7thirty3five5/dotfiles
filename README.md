@@ -119,6 +119,9 @@ Then open a new terminal and start `herdr`. In its fish:
   `config-local.fish`, and the agents' settings in `~/.claude` and `~/.codex`.
   gh rewrites its config, so `~/.config/gh/config.yml` links into the
   repository rather than being a copy.
+- **One set of global agent instructions** is the exception in the agents'
+  folders: `~/.codex/AGENTS.md`, which Codex reads in every session. Claude
+  Code reads only `CLAUDE.md`, so `~/.claude/CLAUDE.md` links to it.
 - **`update`** upgrades every layer in order (chezmoi and the dotfiles,
   Homebrew, mise, agent skills, gh extensions, herdr's hooks), accepting every
   confirmation and replacing local edits to managed files, and stops at the

@@ -44,6 +44,13 @@
 .config/fish/fish_variables
 .config/fish/conf.d/fish_frozen_*.fish
 
-# Agent configuration and state belong to each machine, not the dotfiles.
-.claude
-.codex
+# Agent configuration and state belong to each machine, not the dotfiles: /*
+# is everything directly inside the folder, and ignoring a folder ignores what
+# it holds. (/** would ignore the folder itself too, and with it the files
+# below.) The ! lines are exceptions, which win over every other line: the
+# global instructions both agents read in every session, Codex's AGENTS.md and
+# Claude Code's CLAUDE.md, a link to it.
+.claude/*
+.codex/*
+!.claude/CLAUDE.md
+!.codex/AGENTS.md

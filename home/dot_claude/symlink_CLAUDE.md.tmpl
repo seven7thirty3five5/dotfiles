@@ -1,0 +1,9 @@
+{{- /*
+  ~/.claude/CLAUDE.md holds the instructions Claude Code reads in every session,
+  wherever it starts. It is a symlink (a pointer) to ~/.codex/AGENTS.md, the
+  file Codex reads for the same purpose, so both agents follow one set of
+  global instructions: edit home/dot_codex/empty_AGENTS.md in this repository.
+  Claude Code reads only CLAUDE.md, never AGENTS.md, which is why it needs the
+  link. The line below is the symlink's target.
+*/ -}}
+{{ .chezmoi.homeDir }}/.codex/AGENTS.md
