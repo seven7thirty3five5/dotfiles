@@ -53,7 +53,9 @@ Then open a new terminal and start `herdr`. In its fish:
   workflows) is never deployed.
 - **Homebrew** owns command-line tools and macOS apps, Claude Code and Codex
   included. The Brewfile is a template with a macOS-only section: setup
-  installs what's missing, and `update` upgrades.
+  installs what's missing, and `update` upgrades. Without sudo, Homebrew never
+  elevates, macOS app bundles go in `~/Applications`, and casks listed in
+  `sudo-casks` (Docker Desktop and Logi Options+) are left for an administrator.
 - **mise** owns language runtimes and package managers: Node LTS, plus Python,
   uv and pnpm at `latest`, as fallbacks that projects override. mise reads
   `.nvmrc` and `.node-version`; uv owns `.python-version`.
@@ -80,8 +82,10 @@ Then open a new terminal and start `herdr`. In its fish:
 - **fish inside herdr** holds the environment. herdr starts fish by its full
   path in every pane and runs its popups through it. Every fish, popups
   included, gets the environment from `conf.d`: XDG folders, Homebrew,
-  `~/.local/bin` first on PATH, mise's shims and the editor. `config.fish` adds
-  the interactive parts (theme, mise's activation, atuin, zoxide, starship),
+  `~/.local/bin` before Homebrew and the system, mise's shims and the editor.
+  mise's runtime paths may come first so project versions take priority.
+  `config.fish` adds the interactive parts (theme, mise's activation, atuin,
+  zoxide, starship),
   and every fish loads the untracked `config-local.fish` last, for settings
   that belong to one machine.
 
@@ -94,7 +98,9 @@ Then open a new terminal and start `herdr`. In its fish:
 - **Two applies.** Templates that look for an installed program, such as
   herdr's config for fish and chezmoi's own config for delta, render without
   it on a new machine, so install.sh applies again after the scripts. Each
-  such template works without the program.
+  such template works without the program. If the first apply fails, setup
+  retries its scripts before that final render, so the files and completion
+  message see tools installed during recovery too.
 - **Scripts rerun when what they install changes.** The packages script embeds
   the Brewfile, the mise script a hash of mise's config, and the skills script
   lists the skills, so editing any of them reinstalls on every machine's next
@@ -116,7 +122,9 @@ Then open a new terminal and start `herdr`. In its fish:
 - **`update`** upgrades every layer in order (chezmoi and the dotfiles,
   Homebrew, mise, agent skills, gh extensions, herdr's hooks), accepting every
   confirmation and replacing local edits to managed files, and stops at the
-  first failure. **`doctor`** checks Homebrew, chezmoi and mise, and the
+  first failure. It upgrades mise's global runtime requests and runs the skills
+  update with global Node and pnpm, even from a project with its own versions.
+  **`doctor`** checks Homebrew, chezmoi and mise, and the
   sign-ins for Claude Code, Codex and GitHub.
 
 ### Look
@@ -133,7 +141,9 @@ Then open a new terminal and start `herdr`. In its fish:
 Every push runs three GitHub Actions workflows. Bootstrap runs install.sh twice
 on seven fresh machines (macOS, and Ubuntu on x86_64 and ARM64, with and
 without sudo), then `scripts/check-install.sh`. Shell checks lint the scripts
-and workflows, and start fish in every mode to check its environment. Secret
+and workflows, check setup permissions, recovery and update scope with recording
+commands, and start fish in every mode with and without Homebrew and mise.
+Bootstrap also checks that installed integrations start silently. Secret
 scan runs gitleaks over the whole history.
 
 ## To do

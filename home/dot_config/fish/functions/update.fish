@@ -12,8 +12,9 @@ function update --description 'Update chezmoi, Homebrew, mise and what they inst
         return 0
     end
 
-    # Check every tool first, so a missing one doesn't stop the update halfway.
-    for tool in chezmoi brew mise pnpm gh herdr
+    # Check the standalone tools first. mise selects global Node and pnpm later,
+    # so a project's missing or pinned package manager cannot block the update.
+    for tool in chezmoi brew mise gh herdr
         if not command -q $tool
             echo "update: $tool is not installed" >&2
             return 1
@@ -50,13 +51,17 @@ function update --description 'Update chezmoi, Homebrew, mise and what they inst
     _dotfiles_subsection 'Upgrade mise' magenta
     mise self-update --yes; or return
     _dotfiles_subsection 'Upgrade runtimes' magenta
-    mise upgrade --yes; or return
+    # --global selects the machine's requests even inside a project that pins
+    # different versions, without reading or changing its config or lockfile.
+    mise upgrade --global --yes; or return
 
     # The skills installed with -g (see the install-skills chezmoi script).
-    # --dir runs pnpm from home, so a project's pnpm settings don't apply.
+    # mise exec --cd selects the global Node and pnpm from home, rather than
+    # whichever versions the calling project put on PATH. pnpm's --dir also
+    # keeps that project's package settings out of the skills update.
     _dotfiles_section 'Agent skills' red
     _dotfiles_subsection 'Update global skills' red
-    pnpm --dir $HOME dlx skills update --global --yes; or return
+    mise exec --cd $HOME -- pnpm --dir $HOME dlx skills update --global --yes; or return
 
     # gh's extensions, such as gh-dash, are installed by gh, not Homebrew.
     _dotfiles_section 'gh extensions' blue

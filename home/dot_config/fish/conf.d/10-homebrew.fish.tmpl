@@ -1,5 +1,10 @@
 {{- $brewPrefix := includeTemplate "brew-prefix" . | trim -}}
 
+{{ if not .useSudo -}}
+# Carry the setup permission choice into brew commands, including update.
+set -gx HOMEBREW_NO_SUDO 1
+
+{{ end -}}
 # Homebrew's environment, evaluated when fish starts.
 {{- if $brewPrefix }}
 {{- $brew := joinPath $brewPrefix "bin" "brew" | shellQuote }}

@@ -37,11 +37,26 @@ fi
 
 # Use the same PATH a herdr pane gets. We start fish as an interactive login
 # shell (-l -i), the way herdr does on macOS, and have it print its PATH with
-# colons between the folders (string join). Its startup messages, if any, are
-# thrown away (2>/dev/null) and only the last line, the PATH itself, is kept
-# (tail -n 1). The single quotes keep this shell from expanding $PATH itself.
+# colons between the folders (string join). DOTFILES_PATH marks the expected
+# output: extra startup output, including stderr (2>&1), must fail the check.
+# Also check ~/.local/bin stays before Homebrew with all integrations installed;
+# mise's runtime paths may come first. The single quotes keep this shell from
+# expanding fish's variables itself.
 # shellcheck disable=SC2016
-PATH=$("$fish" -l -i -c 'string join : -- $PATH' 2>/dev/null </dev/null | tail -n 1)
+startup=$("$fish" -l -i -c '
+    set -l local_bin (contains --index -- $HOME/.local/bin $PATH)
+    set -l brew_bin (contains --index -- $HOMEBREW_PREFIX/bin $PATH)
+    test -n "$local_bin" -a -n "$brew_bin"; or exit 1
+    test $local_bin -lt $brew_bin; or exit 1
+    printf "DOTFILES_PATH=%s\n" (string join : -- $PATH)
+' 2>&1 </dev/null) || fail "fish startup failed: $startup"
+
+case $startup in
+  *'
+'*) fail "fish startup printed extra output: $startup" ;;
+  DOTFILES_PATH=*) PATH=${startup#DOTFILES_PATH=} ;;
+  *) fail "fish startup printed unexpected output: $startup" ;;
+esac
 export PATH
 
 # Where the dotfiles keep config and data files. ${NAME:-default} means "the

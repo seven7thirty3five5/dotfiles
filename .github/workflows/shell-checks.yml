@@ -7,8 +7,10 @@
 #   scripts/check-shell.py      renders the fish config, starts fish in every
 #                               mode to check what it sets up, and checks the
 #                               link to herdr in ~/.local/bin
+#   scripts/check-behavior.py   checks package permissions, setup recovery and
+#                               update scope with recording commands
 #
-# Both scripts work in temporary folders, so they are quick (under a minute) and
+# These scripts work in temporary folders, so they are quick (under a minute) and
 # also safe to run on your own computer. The slower, real installation is tested
 # by bootstrap.yml.
 
@@ -57,6 +59,9 @@ jobs:
 
       - name: Lint shell scripts and workflows
         run: python3 scripts/check-lint.py
+
+      - name: Check setup and update behavior
+        run: python3 scripts/check-behavior.py
 
   shell:
     # The job's name in the Actions tab, e.g. "Shell startup (macos-latest)".
@@ -125,6 +130,17 @@ jobs:
           curl -fsSL https://get.chezmoi.io -o "$RUNNER_TEMP/install-chezmoi.sh"
           sh "$RUNNER_TEMP/install-chezmoi.sh" -b "$RUNNER_TEMP/chezmoi-bin"
           echo "$RUNNER_TEMP/chezmoi-bin" >> "$GITHUB_PATH"
+
+      # Exercise real mise activation as well as missing-tool startup. Installing
+      # the binary here does not install runtimes or apply any dotfiles.
+      - name: Install mise in the runner's temporary directory
+        env:
+          MISE_GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          curl -fsSL https://mise.run -o "$RUNNER_TEMP/install-mise.sh"
+          MISE_INSTALL_PATH="$RUNNER_TEMP/mise-bin/mise" MISE_INSTALL_HELP=0 \
+            sh "$RUNNER_TEMP/install-mise.sh"
+          echo "$RUNNER_TEMP/mise-bin" >> "$GITHUB_PATH"
 
       - name: Check shell templates and startup
         run: python3 scripts/check-shell.py

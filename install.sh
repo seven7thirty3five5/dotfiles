@@ -126,8 +126,19 @@ fi
 
 # --- 5. Pick up the newly installed tools -----------------------------------
 
+# Retry failed setup scripts before rendering again: a successful retry may
+# install Homebrew or mise, which the templates must see in the final files.
+# --include=scripts runs only those scripts, leaving the dotfiles in place.
+# A script that already succeeded is skipped by chezmoi's run_once/run_onchange
+# tracking. A recovered first attempt must not leave setup marked as failed.
+if [ "$failed" -ne 0 ]; then
+  failed=0
+  "$chezmoi" apply --include=scripts --keep-going || failed=1
+fi
+
 # Ask chezmoi where Homebrew is: the brew-prefix template prints its folder,
-# or nothing if Homebrew isn't installed. (-n: the text isn't empty.)
+# or nothing if Homebrew isn't installed, now including a successful retry.
+# (-n: the text isn't empty.)
 prefix=$("$chezmoi" execute-template '{{ includeTemplate "brew-prefix" . }}')
 if [ -n "$prefix" ]; then
   # Add Homebrew to this script's PATH: `brew shellenv sh` prints the
@@ -139,12 +150,12 @@ fi
 
 # Step 4 rendered the dotfiles before its scripts installed the tools, so
 # render them again. `chezmoi init` picks up delta in chezmoi's own
-# settings; `chezmoi apply` writes mise's completion and retries failed scripts.
+# settings; `chezmoi apply` writes mise's completion. --exclude=scripts leaves
+# installation alone: its final outcome was decided above, before rendering.
 # Do this even without Homebrew: mise installs independently and its completion
-# would otherwise stay empty. This second round decides whether setup failed.
-failed=0
+# would otherwise stay empty. Keep any failure from the script retry above.
 "$chezmoi" init "$@" || failed=1
-"$chezmoi" apply --keep-going || failed=1
+"$chezmoi" apply --exclude=scripts --keep-going || failed=1
 
 # --- 6. List what's left to do by hand --------------------------------------
 
@@ -170,6 +181,21 @@ if [ -z "$prefix" ]; then
     todo="$todo
   - Install Homebrew: fix the error shown above, then run install.sh again."
   fi
+fi
+
+# Known privileged casks are absent from a no-sudo Brewfile. List only the ones
+# still missing, using the same names as the Brewfile (sudo-casks template).
+# `brew list --cask NAME` checks its local installation record without installing
+# anything. Homebrew must not try sudo while checking, either.
+if [ "$use_sudo" != true ]; then
+  export HOMEBREW_NO_SUDO=1
+  sudo_casks=$("$chezmoi" execute-template '{{ includeTemplate "sudo-casks" . }}')
+  for cask in $sudo_casks; do
+    if [ -z "$prefix" ] || ! "$prefix/bin/brew" list --cask "$cask" >/dev/null 2>&1; then
+      todo="$todo
+  - Ask IT (an administrator) to install the Homebrew cask $cask."
+    fi
+  done
 fi
 
 # Is ~/.local/bin on your PATH? Your login shell finds herdr there, through

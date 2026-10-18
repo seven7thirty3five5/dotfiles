@@ -1,0 +1,7 @@
+{{- /* Casks that write outside the user's folders or run a privileged installer.
+       The Brewfile includes them only with useSudo; install.sh lists missing
+       ones for an administrator. Keep their names here so both agree. */ -}}
+{{- if eq .chezmoi.os "darwin" -}}
+docker-desktop
+logi-options+
+{{- end -}}

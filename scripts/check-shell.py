@@ -9,7 +9,8 @@ first everything in ~/.config/fish/conf.d (in name order), then
 
   - every fish, even one that just runs a command (as herdr's popups do with
     `fish -c lazygit`), gets the environment: XDG folders, Homebrew, PATH with
-    ~/.local/bin first, and the editor;
+    ~/.local/bin before Homebrew and the system, and the editor. Installed
+    mise prepends its shims and selected runtime paths;
   - an "interactive" fish (one you type into) also gets the colors and shell
     integrations;
   - a "login" fish (herdr's panes on macOS) first runs fish's copy of macOS's
@@ -25,8 +26,9 @@ This script checks all of that by:
      checking that fish can read them without syntax errors (fish --no-execute)
      and that they are formatted the way fish_indent formats them;
   2. starting fish in all four combinations of login or not and interactive or
-     not, once with a pretend Homebrew and once without, and running a small
-     fish script (PROBE, below) that checks the environment;
+     not, with and without Homebrew and mise, and running a small fish script
+     (PROBE, below) that checks the environment. Homebrew is a stand-in; mise's
+     real binary generates its activation, without installing any runtimes;
   3. checking that chezmoi links ~/.local/bin/herdr to the pretend Homebrew's
      herdr, and leaves that path alone without Homebrew.
 
@@ -68,7 +70,7 @@ GENERATED = ("output ", 'completion "fish"')
 # Optional tools that must not be found while the startup files are tested;
 # finding one would mean the test is using programs that happen to be installed
 # on this computer.
-OPTIONAL_TOOLS = "yazi eza fzf atuin zoxide starship lazydocker mise bat fd"
+OPTIONAL_TOOLS = "yazi eza fzf atuin zoxide starship lazydocker bat fd"
 
 # PROBE is a small fish script that runs right after fish has read the startup
 # files. Each line checks one thing; if it's wrong, fail prints a message as an
@@ -76,8 +78,8 @@ OPTIONAL_TOOLS = "yazi eza fzf atuin zoxide starship lazydocker mise bat fd"
 #
 #   XDG_*_HOME == the usual folders   The XDG folders (where programs keep config,
 #                                     data, state and cache files) are set.
-#   $PATH[1] == ~/.local/bin          Your own programs in ~/.local/bin come first
-#                                     on PATH, before Homebrew's and the system's.
+#   ~/.local/bin before Homebrew     Your own programs precede Homebrew and the
+#     and the system                  system; mise's runtime paths may come first.
 #   DOTFILES_TEST_BREW_LOADED         The pretend Homebrew sets this when it's
 #     == DOTFILES_EXPECT_BREW         loaded: in every fish when it exists.
 #   EDITOR and VISUAL match expected  micro when Homebrew provides it, otherwise vi.
@@ -106,10 +108,28 @@ test "$XDG_CONFIG_HOME" = "$HOME/.config"; or fail 'Unexpected config directory'
 test "$XDG_DATA_HOME" = "$HOME/.local/share"; or fail 'Unexpected data directory'
 test "$XDG_STATE_HOME" = "$HOME/.local/state"; or fail 'Unexpected state directory'
 test "$XDG_CACHE_HOME" = "$HOME/.cache"; or fail 'Unexpected cache directory'
-test "$PATH[1]" = "$HOME/.local/bin"; or fail "~/.local/bin lost PATH priority: $PATH"
+set -l local_bin (contains --index -- $HOME/.local/bin $PATH)
+test -n "$local_bin"; or fail '~/.local/bin missing from PATH'
+test "$HOMEBREW_NO_SUDO" = 1; or fail 'Homebrew did not inherit the no-sudo choice'
+set -l has_mise 0
+command -q mise; and set has_mise 1
+test $has_mise = $DOTFILES_EXPECT_MISE; or fail 'mise unexpectedly available or missing'
+if test $DOTFILES_EXPECT_MISE = 1
+    contains -- $HOME/.local/share/mise/shims $PATH; or fail 'mise shims missing from PATH'
+else
+    test "$PATH[1]" = "$HOME/.local/bin"; or fail "~/.local/bin lost PATH priority: $PATH"
+end
+if contains -- /usr/bin $PATH
+    set -l system (contains --index -- /usr/bin $PATH)
+    test $local_bin -lt $system; or fail "~/.local/bin is behind the system: $PATH"
+end
 set -l loaded 0
 set -q DOTFILES_TEST_BREW_LOADED; and set loaded 1
 test $loaded = $DOTFILES_EXPECT_BREW; or fail 'Homebrew initialized in the wrong shell mode'
+if test $DOTFILES_EXPECT_BREW = 1
+    set -l brew (contains --index -- $DOTFILES_MOCK_BIN $PATH)
+    test $local_bin -lt $brew; or fail "~/.local/bin is behind Homebrew: $PATH"
+end
 if test $DOTFILES_SYSTEM_PATHS = 0
     test "$EDITOR" = "$DOTFILES_EXPECT_EDITOR" -a "$VISUAL" = "$EDITOR"; or fail "Unexpected editor: $EDITOR"
     for editor in micro fresh
@@ -226,11 +246,11 @@ def render(binaries, source, home, temporary, config, search_path):
     unless told otherwise with --config-path, would overwrite the real one.
     """
 
-    home.mkdir(parents=True)
+    home.mkdir(parents=True, exist_ok=True)
 
-    # ~/.local/bin, which conf.d/20-path.fish puts first. fish_add_path only
+    # ~/.local/bin, which conf.d/20-path.fish puts before Homebrew. fish_add_path only
     # adds folders that exist; install.sh creates this one on a real machine.
-    (home / ".local/bin").mkdir(parents=True)
+    (home / ".local/bin").mkdir(parents=True, exist_ok=True)
     env = environment(home, search_path, temporary)
     command = chezmoi_command(binaries["chezmoi"], source, home, temporary, config)
 
@@ -305,7 +325,8 @@ def make_mock_homebrew(prefix):
         editor.chmod(0o755)
 
 
-def check_fish(binaries, home, shell_bin, mock_bin, temporary, with_brew, scenario):
+def check_fish(binaries, home, shell_bin, mock_bin, temporary, with_brew, with_mise,
+               scenario):
     """Start fish in all four modes and run PROBE in each."""
 
     for interactive in (False, True):
@@ -321,6 +342,7 @@ def check_fish(binaries, home, shell_bin, mock_bin, temporary, with_brew, scenar
             # fish's conf.d sets up Homebrew in every fish, so the pretend one
             # must be loaded whenever it exists.
             env["DOTFILES_EXPECT_BREW"] = str(int(with_brew))
+            env["DOTFILES_EXPECT_MISE"] = str(int(with_mise))
             env["DOTFILES_EXPECT_EDITOR"] = "micro" if with_brew else "vi"
             env["DOTFILES_OPTIONAL_TOOLS"] = OPTIONAL_TOOLS
             env["DOTFILES_MOCK_BIN"] = str(mock_bin)
@@ -379,9 +401,11 @@ def main():
     if sys.platform not in ("darwin", "linux"):
         raise RuntimeError("These checks require macOS or Linux")
 
-    # Find chezmoi, fish and fish_indent; stop if one is missing.
+    # Find the real tools; mise is used only to generate activation code.
     # shutil.which(name) does what `command -v` does in a shell.
-    binaries = {name: shutil.which(name) for name in ("chezmoi", "fish", "fish_indent")}
+    binaries = {
+        name: shutil.which(name) for name in ("chezmoi", "fish", "fish_indent", "mise")
+    }
     for name, binary in binaries.items():
         if not binary:
             raise RuntimeError(f"Required command not found: {name}")
@@ -429,12 +453,6 @@ def main():
         make_mock_homebrew(prefix)
 
         for with_brew in (False, True):
-            scenario = "with Homebrew" if with_brew else "without Homebrew"
-
-            # The space in the folder name is deliberate: it catches any place in
-            # the startup files that forgets to put quotes around a path.
-            home = temporary / scenario / "home with spaces"
-
             # The brew-prefix template normally finds the real Homebrew. Only in
             # this temporary copy, replace it with the pretend Homebrew's folder,
             # or with nothing to simulate a machine without Homebrew, so the test
@@ -442,11 +460,24 @@ def main():
             (state / ".chezmoitemplates/brew-prefix").write_text(
                 str(prefix) if with_brew else ""
             )
-            render(binaries, fixture, home, temporary, config, search_path)
-            check_fish(binaries, home, shell_bin, prefix / "bin", temporary, with_brew,
-                       scenario)
-            check_herdr_link(binaries, fixture, home, temporary, config, search_path,
-                             prefix, with_brew, scenario)
+            for with_mise in (False, True):
+                scenario = (f"{'with' if with_brew else 'without'} Homebrew, "
+                            f"{'with' if with_mise else 'without'} mise")
+                # Spaces catch unquoted paths, including in generated activation.
+                home = temporary / scenario / "home with spaces"
+                if with_mise:
+                    (home / ".local/bin").mkdir(parents=True)
+                    (home / ".local/bin/mise").symlink_to(binaries["mise"])
+                    (home / ".local/share/mise/shims").mkdir(parents=True)
+
+                render(binaries, fixture, home, temporary, config, search_path)
+                # Real mise activation needs ordinary system commands. Optional
+                # Homebrew tools remain absent from this controlled PATH.
+                path = os.pathsep.join((str(shell_bin), os.defpath)) if with_mise else shell_bin
+                check_fish(binaries, home, path, prefix / "bin", temporary,
+                           with_brew, with_mise, scenario)
+                check_herdr_link(binaries, fixture, home, temporary, config, search_path,
+                                 prefix, with_brew, scenario)
 
 
 # Run main() when this file is run as a program (not when another Python file

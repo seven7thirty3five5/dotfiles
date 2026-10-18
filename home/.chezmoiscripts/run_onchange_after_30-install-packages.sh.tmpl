@@ -15,6 +15,13 @@
 # error instead of quietly using an empty value (-u).
 set -eu
 
+{{ if not .useSudo -}}
+# This setting applies to Homebrew's downstream installers too: declining sudo
+# must never turn into a password prompt from a cask. Known privileged casks
+# are left out of this machine's Brewfile and listed by install.sh instead.
+export HOMEBREW_NO_SUDO=1
+
+{{ end -}}
 # Find Homebrew; this sets $brew (see find-brew.sh in home/.chezmoitemplates).
 {{ template "find-brew.sh" . }}
 # -z: the text is empty, so Homebrew isn't installed. (>&2 prints an error.)

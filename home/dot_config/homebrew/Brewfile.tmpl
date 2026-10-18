@@ -73,6 +73,12 @@ brew "imagemagick"              # font and image previews
 cask "claude-code"              # claude: Anthropic's coding agent
 cask "codex"                    # codex: OpenAI's coding agent
 {{- if eq .chezmoi.os "darwin" }}
+{{- if not .useSudo }}
+
+# Without sudo, app bundles go in your own Applications folder. Homebrew's
+# HOMEBREW_NO_SUDO setting also prevents elevation for any other cask artifact.
+cask_args appdir: File.join(Dir.home, "Applications")
+{{- end }}
 
 # Mole is macOS-only.
 brew "mole"                     # mo: cleans caches and leftovers to free space on a Mac
@@ -84,15 +90,16 @@ cask "ghostty"
 # AI tool usage (macOS). CodexBar shows usage and limits in the menu bar.
 cask "codexbar"
 
-# Development apps (macOS). Docker Desktop supplies Docker for act and lazydocker.
-cask "docker-desktop"           # Docker engine and desktop app
-
 # System, window and display utilities (macOS).
 cask "stats"                    # system statistics in the menu bar
 cask "rectangle"                # window positioning and sizing shortcuts
 cask "betterdisplay"            # display resolution, scaling and brightness controls
 
-# Logitech devices (macOS). This cask runs the vendor installer with sudo;
-# it does not adopt the existing app bundle. No pre-uninstall is needed.
-cask "logi-options+"
+# Docker Desktop writes links in /usr/local, and Logi Options+ runs a privileged
+# installer. The shared list also tells install.sh what needs an administrator.
+{{- if .useSudo }}
+{{ range $cask := splitList "\n" (includeTemplate "sudo-casks" . | trim) -}}
+cask {{ $cask | quote }}
+{{ end -}}
+{{- end }}
 {{- end }}
