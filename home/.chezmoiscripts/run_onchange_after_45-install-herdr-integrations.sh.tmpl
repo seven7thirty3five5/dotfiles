@@ -22,24 +22,8 @@ if [ -z "$brew" ]; then
   exit 1
 fi
 
-# herdr and jq are in the same folder as brew: dirname turns .../bin/brew into .../bin.
+# herdr is in the same folder as brew: dirname turns .../bin/brew into .../bin.
 bin=$(dirname "$brew")
-
-# Earlier versions of these dotfiles wrote herdr's Claude hook themselves, in a
-# form herdr doesn't recognise. Remove that entry so the hook doesn't run twice
-# once herdr adds its own. (-f: the file exists.)
-settings="$HOME/.claude/settings.json"
-if [ -f "$settings" ]; then
-  # The single quotes keep $HOME and jq's $legacy as written, unexpanded.
-  # shellcheck disable=SC2016
-  legacy='bash "$HOME/.claude/hooks/herdr-agent-state.sh" session'
-  # shellcheck disable=SC2016
-  cleaned=$("$bin/jq" --arg legacy "$legacy" '
-    if .hooks.SessionStart then
-      .hooks.SessionStart |= map(select(any(.hooks[]?; .command == $legacy) | not))
-    else . end' "$settings")
-  printf '%s\n' "$cleaned" >"$settings"
-fi
 
 "$bin/herdr" integration install claude
 "$bin/herdr" integration install codex

@@ -50,27 +50,14 @@ Run `gh auth login` before using `gh dash`. On macOS, open Docker Desktop and
 finish its setup before using `lazydocker` or `act`; Linux needs Docker installed
 separately.
 
-Codex uses **Approve for me**, `max` reasoning, Fast service, and Catppuccin Mocha.
-Its footer shows the model and reasoning, directory, five-hour and
-weekly allowances, context usage, and context capacity. Other preferences use
-Codex's defaults. Sign in to Codex separately; on a new machine, review and trust
-the Herdr session hook through `/hooks` so Herdr can identify the Codex session
-in each pane.
+Claude Code and Codex settings stay local: chezmoi ignores `~/.claude` and
+`~/.codex`. Configure and sign in to each agent separately. On a new machine,
+review and trust the Herdr session hook through Codex's `/hooks` so Herdr can
+identify the Codex session in each pane.
 
 herdr installs and owns its hooks for Claude Code and Codex
 (`herdr integration install`), so they aren't tracked; `update` reinstalls
-them at herdr's current version. The Claude and Codex templates keep the hook
-settings herdr adds, and its formatting when nothing else has changed.
-
-Edit the [Codex template](home/dot_codex/config.toml.tmpl) for
-shared preferences. It preserves each machine's existing MCP connections,
-app/plugin settings, project and hook trust, and client bookkeeping during apply.
-Credentials, conversations, and downloaded runtime files aren't tracked. To apply
-just Codex:
-
-```sh
-chezmoi apply --exclude=scripts ~/.codex/config.toml
-```
+them at herdr's current version.
 
 ## Maintain
 
@@ -79,13 +66,18 @@ Run these inside fish:
 ```fish
 update          # Upgrade chezmoi, dotfiles, Homebrew packages, mise and its tools,
                 # global agent skills, gh extensions and herdr integrations.
-doctor          # Run brew doctor, chezmoi doctor and mise doctor.
+doctor          # Check Homebrew, chezmoi, mise and authorization.
 chezmoi update  # Pull and apply just the dotfiles, installing newly configured dependencies.
 ```
 
 `update` accepts confirmations automatically, replaces local edits to managed
 files, and stops at the first failure. Save shared changes in the repository and
 machine-specific changes in `config-local.fish` before running it.
+
+`doctor` continues after failed checks and returns a failure if any required
+check fails. Its Authorization section checks Claude Code, Codex and GitHub.
+It also reports Docker Hub sign-in status when Docker Desktop's auth command
+is available; this optional sign-in doesn't affect the result.
 
 Edit a managed configuration and apply it:
 

@@ -33,16 +33,6 @@
 .config/fish/fish_variables
 .config/fish/conf.d/fish_frozen_*.fish
 
-# Claude's synced skill bundles are generated; custom skills can be tracked.
-.claude/skills/synced
-.claude/skills/synced/**
-
-# Claude downloads plugin files and rebuilds installation metadata from settings.
-.claude/plugins
-.claude/plugins/**
-
-# Codex: track only preferences. herdr installs its hook (hooks.json and
-# herdr-agent-state.sh). Credentials, conversations, downloaded plugins,
-# databases, and other runtime files stay on each machine.
-.codex/*
-!.codex/config.toml
+# Agent configuration and state belong to each machine, not the dotfiles.
+.claude
+.codex
