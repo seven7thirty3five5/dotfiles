@@ -47,3 +47,9 @@ skills_add herdrdev/herdr --skill herdr
 # offers them. Use these instead of his plugin, which would give Claude each
 # skill twice.
 skills_add mattpocock/skills
+
+# This repository's own skill, in skills/dotfiles, for having an agent change
+# these dotfiles: type /dotfiles (in Codex, $dotfiles) and what you want
+# changed. Only you can start it; agents never load it on their own. The skills
+# tool downloads it from GitHub, so push a change to it before applying.
+skills_add seven7thirty3five5/dotfiles --skill dotfiles

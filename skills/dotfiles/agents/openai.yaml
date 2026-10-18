@@ -1,0 +1,5 @@
+interface:
+  display_name: "Dotfiles"
+  short_description: "Change and ship the dotfiles"
+policy:
+  allow_implicit_invocation: false

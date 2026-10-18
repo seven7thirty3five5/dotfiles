@@ -236,12 +236,12 @@ def render(binaries, source, home, temporary, config, search_path):
 
     # `chezmoi managed` lists every file chezmoi would put in the home folder. None
     # of the repository's own files (this script, the README, install.sh, the
-    # GitHub workflows) may be among them: they live outside home/, the folder
-    # that .chezmoiroot tells chezmoi to use.
+    # GitHub workflows, the dotfiles skill) may be among them: they live outside
+    # home/, the folder that .chezmoiroot tells chezmoi to use.
     managed = run(
         command + ["managed", "--include=files", "--path-style=relative"], env, home
     ).splitlines()
-    if any(path.split("/")[0] in (".github", "scripts", "README.md", "install.sh")
+    if any(path.split("/")[0] in (".github", "scripts", "skills", "README.md", "install.sh")
            for path in managed):
         raise RuntimeError("Repository files must stay outside the source state")
 
