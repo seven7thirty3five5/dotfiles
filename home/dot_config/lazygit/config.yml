@@ -1,5 +1,5 @@
 # ~/.config/lazygit/config.yml
-# lazygit's settings. lazygit (or lg, which also changes to the repository you
+# lazygit's settings. lazygit (or gg, which also changes to the repository you
 # switch to) is a terminal interface for git. Settings not listed here keep
 # lazygit's defaults; `lazygit --config` prints all of them.
 

@@ -1,5 +1,6 @@
 # gh-dash's settings. gh-dash is a dashboard in the terminal for your GitHub pull
-# requests (PRs), issues and notifications: run `gh dash` (after gh auth login).
+# requests (PRs), issues and notifications: run `gh dash`, or hh (after gh auth
+# login).
 #
 # Most of this file is gh-dash's default configuration, written out in full. The
 # changes are the last two PR sections, the g key, repoPaths, the Catppuccin

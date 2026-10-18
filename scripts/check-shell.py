@@ -151,12 +151,12 @@ else
 end
 if status is-interactive
     test "$fish_color_autosuggestion" = 7f849c; or fail 'The color theme was not applied'
-    abbr -q lzd; or fail 'Abbreviations were not set up'
-    for name in update doctor ff lg
+    abbr -q dd; or fail 'Abbreviations were not set up'
+    for name in update doctor ff gg
         functions -q $name; or fail "Function missing: $name"
     end
 else
-    not abbr -q lzd; or fail 'Abbreviations leaked into a non-interactive shell'
+    not abbr -q dd; or fail 'Abbreviations leaked into a non-interactive shell'
 end
 echo dotfiles-shell-ok
 """

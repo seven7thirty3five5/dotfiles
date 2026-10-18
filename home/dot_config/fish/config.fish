@@ -12,8 +12,12 @@ if status is-interactive
 
     # Abbreviations: type one and press space or enter, and fish replaces it
     # with the full command, so history shows what really ran.
-    # lzd is the alias lazydocker's README suggests.
-    abbr --add lzd lazydocker
+
+    # Terminal interfaces get a doubled letter, like ff for Yazi and gg (a
+    # function) for lazygit. dd hides the system's dd (disk copy) when typed;
+    # scripts still get it, and `command dd` runs it by hand.
+    abbr --add dd lazydocker
+    abbr --add hh gh dash
 
     # fzf's key bindings are off: atuin covers Ctrl-R and yazi covers browsing.
     # You may want fzf's file picker on Ctrl-T later. `fzf --fish | source` turns

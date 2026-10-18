@@ -1,9 +1,10 @@
-# lazygit's change-directory-on-exit wrapper from its README, named lg: when you
-# switch repositories in lazygit and quit with q, cd to the one it was in.
+# lazygit's change-directory-on-exit wrapper from its README, named gg (each
+# terminal interface gets a doubled letter, like ff for Yazi): when you switch
+# repositories in lazygit and quit with q, cd to the one it was in.
 # Shift-Q quits back to the folder you started in.
-function lg --description 'Open lazygit, then cd to the repository it was in'
+function gg --description 'Open lazygit, then cd to the repository it was in'
     if not command -q lazygit
-        echo 'lg: lazygit is not installed' >&2
+        echo 'gg: lazygit is not installed' >&2
         return 1
     end
 
