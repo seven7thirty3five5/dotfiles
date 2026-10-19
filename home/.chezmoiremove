@@ -1,13 +1,6 @@
-# Files and folders that chezmoi deletes from your home folder when it applies
-# the dotfiles, if they exist. Each line is a path in your home folder, written
-# without the ~/. (This file is read as a template, like .chezmoiignore.)
-#
-# chezmoi stops managing a file that is deleted from this repository, but it
-# leaves the copy that is already in your home folder. Listing the file here
-# deletes that copy too, on every machine's next `chezmoi update`. Once every
-# machine has updated, the line can go.
+# Paths chezmoi deletes from your home folder on every apply. chezmoi leaves a
+# file behind when the repository stops managing it; list it here to delete it
+# on every machine, then drop the line once they've all updated.
 
-# lazygit's wrapper is gg now, a doubled letter like ff; lg was its old name.
-# To put your own file at this path later, delete its line here first, or
-# chezmoi deletes the file again on every apply.
+# lazygit's wrapper was renamed from lg to gg.
 .config/fish/functions/lg.fish

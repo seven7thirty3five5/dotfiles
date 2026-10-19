@@ -1,20 +1,14 @@
-# Paths chezmoi leaves alone on this machine: it won't create or change them.
-# Each line is a path in your home folder, written without the ~/.
-#
-# This file is a template. The lines between `if` and `end` below are only
-# ignored when the condition is true: for example when this machine isn't a Mac
-# (chezmoi calls macOS "darwin", and ne means "not equal").
+# Paths in your home folder that chezmoi leaves alone. This file is a template,
+# so the lines between `if` and `end` apply only when the condition holds.
 
-# macOS-only: Ghostty's config, and .hushlogin, which hides the "Last login"
-# banner login(1) prints in every Ghostty tab (Linux keeps its SSH login message).
+# Ghostty, and .hushlogin, which hides the "Last login" banner in each Ghostty
+# tab, are macOS-only.
 {{ if ne .chezmoi.os "darwin" }}
 .config/ghostty
 .hushlogin
 {{ end }}
 
 # Your login shell's startup files are yours: these dotfiles never write them.
-# The login shell only needs ~/.local/bin on PATH to start herdr (see the
-# README's requirements).
 .bash_login
 .bash_logout
 .bash_profile
@@ -26,21 +20,17 @@
 .zshenv
 .zshrc
 
-# NEVER track machine-specific fish settings. config.fish loads this file, if
-# it exists, for settings that only make sense on one machine.
+# Machine-specific fish settings, which config.fish loads if they exist.
 .config/fish/config-local.fish
 
-# fish's own saved state, which belongs to each machine: universal variables
-# (set -U), and the files fish writes once when it upgrades an old setup.
+# fish's own state: universal variables, and files it writes when upgrading.
 .config/fish/fish_variables
 .config/fish/conf.d/fish_frozen_*.fish
 
-# Agent configuration and state belong to each machine, not the dotfiles: /*
-# is everything directly inside the folder, and ignoring a folder ignores what
-# it holds. (/** would ignore the folder itself too, and with it the files
-# below.) The ! lines are exceptions, which win over every other line: the
-# global instructions both agents read in every session, Codex's AGENTS.md and
-# Claude Code's CLAUDE.md, a link to it.
+# The agents' settings and state stay on each machine, except the global
+# instructions both read: Codex's AGENTS.md, and Claude Code's CLAUDE.md, a
+# link to it. /* ignores what's inside each folder but not the folder itself,
+# which is what lets the ! exceptions apply.
 .claude/*
 .codex/*
 !.claude/CLAUDE.md

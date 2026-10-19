@@ -1,24 +1,11 @@
 {{- /*
-  The Brewfile is a template: chezmoi fills in the parts between double braces
-  for each machine (this note is one, and is left out) and writes the result to
-  ~/.config/homebrew/Brewfile. Shared packages go on both systems; the macOS
-  condition keeps Mac-only packages off Linux. chezmoi calls macOS "darwin",
-  and eq means "equals". The dashes remove line breaks around the template code.
-  The install script in .chezmoiscripts (30-install-packages) fills it in the
-  same way and passes the result to brew bundle.
+  Written to ~/.config/homebrew/Brewfile, and into the install-packages script,
+  which runs `brew bundle` with it. The part at the end is macOS-only.
 */ -}}
 
-# Packages for the tools configured by these dotfiles and companion CLI utilities.
-# install.sh and `chezmoi apply` install them (home/.chezmoiscripts) and re-run
-# `brew bundle` whenever this file changes.
-#
-# A Brewfile lists Homebrew packages for `brew bundle` to install. Each brew line
-# is a command-line package (a "formula"), and a cask line is an app. (Brewfiles
-# are written in Ruby, the programming language Homebrew is written in.)
-#
-# One tool the dotfiles need doesn't come from here: install.sh puts chezmoi in
-# ~/.local/bin (upgrade it with `chezmoi upgrade`). The login shells are the
-# system's own (zsh on macOS, bash on Linux); fish, below, runs in herdr's panes.
+# Homebrew's packages for these dotfiles: each brew line is a command-line tool
+# (a formula), each cask line an app. chezmoi and mise live in ~/.local/bin
+# instead, and the login shell is the system's own; fish runs in herdr's panes.
 
 # Interactive shell plugins and tools.
 brew "fish"       # the shell in herdr's panes (~/.config/fish)
