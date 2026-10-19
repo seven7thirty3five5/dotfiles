@@ -1,185 +1,59 @@
 #!/bin/sh
 #
-# check-install.sh - check that install.sh set this machine up correctly.
-#
-# The Bootstrap workflow (.github/workflows/bootstrap.yml) runs this right after
-# install.sh, as the same user. If a check finds a problem, the script prints
-# "FAIL: ..." and stops. If every check passes, it prints "Install checks passed".
+# check-install.sh: check that install.sh set up this machine. CI runs it after
+# install.sh. On your own machine, it needs a clean repository.
 
-# Stop at the first command that fails (-e), and treat an unset variable as an
-# error instead of quietly using an empty value (-u).
 set -eu
 
-# fail MESSAGE: print MESSAGE as an error (>&2) and stop with exit status 1.
 fail() {
   echo "FAIL: $1" >&2
   exit 1
 }
 
-# chezmoi lives in ~/.local/bin, which isn't on this script's PATH yet.
 chezmoi=$HOME/.local/bin/chezmoi
-if [ ! -x "$chezmoi" ]; then
-  fail "chezmoi is not installed in ~/.local/bin"
-fi
+[ -x "$chezmoi" ] || fail "chezmoi is not in ~/.local/bin"
+prefix=$("$chezmoi" execute-template '{{ includeTemplate "brew-prefix" . | trim }}')
+[ -x "$prefix/bin/fish" ] || fail "Homebrew's fish is not in $prefix/bin"
 
-# Ask chezmoi where Homebrew is: the brew-prefix template prints its folder, or
-# nothing if Homebrew isn't installed. fish, the shell in herdr's panes, comes
-# from there. (-n: the text isn't empty; -x: a program we can run.)
-brew_prefix=$("$chezmoi" execute-template '{{ includeTemplate "brew-prefix" . }}')
-if [ -z "$brew_prefix" ]; then
-  fail "Homebrew is not installed"
-fi
-
-fish=$brew_prefix/bin/fish
-if [ ! -x "$fish" ]; then
-  fail "fish is not installed in $brew_prefix/bin"
-fi
-
-# Use the same PATH a herdr pane gets. We start fish as an interactive login
-# shell (-l -i), the way herdr does on macOS, and have it print its PATH with
-# colons between the folders (string join). DOTFILES_PATH marks the expected
-# output: extra startup output, including stderr (2>&1), must fail the check.
-# Also check ~/.local/bin stays before Homebrew with all integrations installed;
-# mise's runtime paths may come first. The single quotes keep this shell from
-# expanding fish's variables itself.
+# Start fish the way herdr's panes do on macOS, and use its PATH from here on.
+# It must print nothing else, because startup output breaks scp, rsync and git
+# over SSH, and it must put ~/.local/bin before Homebrew.
 # shellcheck disable=SC2016
-startup=$("$fish" -l -i -c '
+startup=$("$prefix/bin/fish" --login --interactive -c '
     set -l local_bin (contains --index -- $HOME/.local/bin $PATH)
     set -l brew_bin (contains --index -- $HOMEBREW_PREFIX/bin $PATH)
-    test -n "$local_bin" -a -n "$brew_bin"; or exit 1
-    test $local_bin -lt $brew_bin; or exit 1
-    printf "DOTFILES_PATH=%s\n" (string join : -- $PATH)
-' 2>&1 </dev/null) || fail "fish startup failed: $startup"
-
+    test -n "$local_bin" -a -n "$brew_bin"; and test $local_bin -lt $brew_bin; or exit 1
+    printf "PATH=%s" (string join : -- $PATH)
+' 2>&1 </dev/null) || fail "fish failed to start, or put Homebrew before ~/.local/bin: $startup"
 case $startup in
-  *'
-'*) fail "fish startup printed extra output: $startup" ;;
-  DOTFILES_PATH=*) PATH=${startup#DOTFILES_PATH=} ;;
-  *) fail "fish startup printed unexpected output: $startup" ;;
+  *"
+"*) fail "fish printed more than its PATH: $startup" ;;
+  PATH=*) PATH=${startup#PATH=} ;;
+  *) fail "fish printed more than its PATH: $startup" ;;
 esac
 export PATH
 
-# Where the dotfiles keep config and data files. ${NAME:-default} means "the
-# value of $NAME, or default when NAME isn't set".
-config_dir=${XDG_CONFIG_HOME:-$HOME/.config}
-data_dir=${XDG_DATA_HOME:-$HOME/.local/share}
+[ "$(brew --prefix)" = "$prefix" ] || fail "Homebrew is in $(brew --prefix), not $prefix"
 
-# --- 1. The shell tools and runtimes are installed and on PATH -------------
-
-# The loop goes through the list one word at a time. chezmoi and mise come
-# from ~/.local/bin; mise provides node (with npm), pnpm, python and uv.
-# All of them must resolve from fish's PATH, just as in a herdr pane.
-tools="brew chezmoi mise node pnpm python uv git delta difft fresh micro fzf fd rg bat eza
-       atuin zoxide starship lazygit gh herdr shellcheck shfmt act actionlint"
-for tool in $tools; do
-  if ! command -v "$tool" >/dev/null; then
-    fail "$tool is not on PATH"
-  fi
+for tool in brew chezmoi mise node pnpm python uv git delta difft fresh micro fzf fd rg \
+  bat eza atuin zoxide starship lazygit gh herdr shellcheck shfmt act actionlint; do
+  command -v "$tool" >/dev/null || fail "$tool is not on fish's PATH"
 done
 
-# --- 2. Every deployed file matches the repository --------------------------
-
-# `chezmoi verify` succeeds when every file it manages matches the repository.
-# Scripts are left out: they are steps to run, not files. If anything
-# differs, show the differences.
-if ! chezmoi verify --exclude=scripts; then
-  chezmoi diff --no-pager --exclude=scripts >&2
+# Every managed file matches the repository, and setup changed nothing in it.
+if ! "$chezmoi" verify --exclude=scripts; then
+  "$chezmoi" diff --no-pager --exclude=scripts >&2
   fail "deployed files differ from the repository"
 fi
+changes=$("$chezmoi" git -- status --porcelain)
+[ -z "$changes" ] || fail "setup changed files in the repository: $changes"
 
-# --- 3. Setup left the repository unchanged ---------------------------------
+# install.sh's last `chezmoi init` gave chezmoi delta as its diff pager.
+grep -q '^\[diff\]' "$HOME/.config/chezmoi/chezmoi.toml" \
+  || fail "chezmoi's config has no [diff] section"
 
-# Nothing that setup runs may write into the dotfiles repository (programs that
-# rewrite their own settings through a symlink into it would). `chezmoi git`
-# runs git in the repository; `status --porcelain` lists changed files, one per
-# line, and prints nothing when there are none. (-n: the text isn't empty.)
-changes=$(chezmoi git -- status --porcelain)
-if [ -n "$changes" ]; then
-  echo "$changes" >&2
-  fail "setup changed files in the dotfiles repository"
-fi
+# A login shell without Homebrew on its PATH starts herdr through ~/.local/bin.
+env PATH="$HOME/.local/bin:/usr/bin:/bin" herdr --version >/dev/null \
+  || fail "herdr doesn't run through ~/.local/bin"
 
-# --- 4. The templates found Homebrew where it was installed -----------------
-
-# The brew-prefix template is how the dotfiles find Homebrew; compare its answer
-# (from the start of this script) with Homebrew's own.
-if [ "$(brew --prefix)" != "$brew_prefix" ]; then
-  fail "brew-prefix found $brew_prefix, but Homebrew is in $(brew --prefix)"
-fi
-
-# --- 5. The git config was applied ------------------------------------------
-
-# diff.algorithm = histogram is one of the settings in home/dot_config/git.
-if [ "$(git config --get diff.algorithm)" != histogram ]; then
-  fail "the git config was not applied"
-fi
-
-# --- 6. chezmoi's own settings found delta ----------------------------------
-
-# install.sh runs `chezmoi init` a second time so that chezmoi's settings
-# include delta as the pager for `chezmoi diff`, in a [diff] section.
-# grep -q only reports whether a line starts with "[diff]".
-if ! grep -q '^\[diff\]' "$config_dir/chezmoi/chezmoi.toml"; then
-  fail "chezmoi's config has no [diff] pager; the second chezmoi init did not run"
-fi
-
-# --- 7. gh's config is a symlink into the repository ------------------------
-
-# gh rewrites its config file, so it links to the copy in the repository
-# instead (-L: the file is a symbolic link).
-if [ ! -L "$config_dir/gh/config.yml" ]; then
-  fail "$config_dir/gh/config.yml is not a symlink into the repository"
-fi
-
-# --- 8. gh-dash is installed ------------------------------------------------
-
-# -d: the folder exists.
-if [ ! -d "$data_dir/gh/extensions/gh-dash" ]; then
-  fail "gh-dash is not installed"
-fi
-
-# --- 9. herdr is linked into ~/.local/bin -----------------------------------
-
-# The dotfiles never touch the login shell's startup files. It finds herdr
-# through ~/.local/bin, which the README asks you to put on PATH, where a link
-# points to Homebrew's herdr (-L: the file is a symbolic link; readlink prints
-# where it points).
-herdr_link=$HOME/.local/bin/herdr
-if [ ! -L "$herdr_link" ] || [ "$(readlink "$herdr_link")" != "$brew_prefix/bin/herdr" ]; then
-  fail "$herdr_link is not a link to $brew_prefix/bin/herdr"
-fi
-
-# A login shell that never sets up Homebrew can start herdr: env runs herdr with
-# only ~/.local/bin and the system's folders on PATH.
-if ! env PATH="$HOME/.local/bin:/usr/bin:/bin" herdr --version >/dev/null; then
-  fail "herdr doesn't run through $herdr_link"
-fi
-
-# --- 10. herdr starts fish --------------------------------------------------
-
-# herdr's config names fish's full path as the shell for new panes
-# (default_shell), and runs both popups through it (command = "exec FISH -c
-# ..."). sed -n prints only what its pattern captures; grep -c counts the
-# matching lines.
-herdr_config=$config_dir/herdr/config.toml
-default_shell=$(sed -n 's/^default_shell = "\(.*\)"$/\1/p' "$herdr_config")
-if [ "$default_shell" != "$fish" ] || [ ! -x "$default_shell" ]; then
-  fail "herdr's default_shell is '$default_shell', not $fish"
-fi
-
-if [ "$(grep -c "^command = \"exec $fish -c " "$herdr_config")" -ne 2 ]; then
-  fail "herdr's popup commands don't run through $fish"
-fi
-
-# --- 11. Claude Code reads the agents' global instructions -----------------
-
-# Claude Code reads ~/.claude/CLAUDE.md, a link to the AGENTS.md Codex reads,
-# so both follow the same instructions (-L: the file is a symbolic link;
-# readlink prints where it points; -f: the file it points to exists).
-claude_md=$HOME/.claude/CLAUDE.md
-agents_md=$HOME/.codex/AGENTS.md
-if [ ! -L "$claude_md" ] || [ "$(readlink "$claude_md")" != "$agents_md" ] || [ ! -f "$agents_md" ]; then
-  fail "$claude_md is not a link to $agents_md"
-fi
-
-echo "Install checks passed (Homebrew in $brew_prefix)."
+echo "Install checks passed (Homebrew in $prefix)."

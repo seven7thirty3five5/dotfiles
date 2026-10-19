@@ -1,0 +1,134 @@
+# Checks for every push and pull request: lint, a secret scan, and install.sh
+# on new machines.
+name: Checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch: # adds a "Run workflow" button in the Actions tab
+
+# Nothing here pushes, so the token only reads the repository.
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # The runner comes with Homebrew; use it for the same tools the Brewfile has.
+      - name: Install lint tools
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+        run: |
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv bash)"
+          brew install chezmoi shellcheck actionlint fish
+          echo "$HOMEBREW_PREFIX/bin" >> "$GITHUB_PATH"
+
+      - run: sh scripts/lint.sh
+
+  # The repository is public. Scan every commit, because a secret deleted
+  # later stays in the history.
+  secrets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Commenting on pull requests would need a token that can write.
+          GITLEAKS_ENABLE_COMMENTS: false
+
+  # install.sh twice, since running it again must be safe, then
+  # scripts/check-install.sh. GitHub's macOS machine already has Homebrew.
+  macos:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # chezmoi reuses an existing repository folder, so this tests the pushed
+      # commit. The answers in chezmoi's config skip setup's questions.
+      - name: Use this commit and answer setup's questions
+        run: |
+          mkdir -p ~/.local/share ~/.config/chezmoi
+          cp -R "$GITHUB_WORKSPACE" ~/.local/share/chezmoi
+          printf '[data]\ngitName = "CI"\ngitEmail = "ci@example.invalid"\npublishDotfiles = false\n' \
+            > ~/.config/chezmoi/chezmoi.toml
+
+      - name: Run install.sh twice
+        env:
+          # GitHub rate-limits anonymous API requests from shared CI machines;
+          # gh (installing gh-dash) and mise use this run's token instead.
+          GH_TOKEN: ${{ github.token }}
+          MISE_GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          sh install.sh
+          sh install.sh
+
+      - run: sh scripts/check-install.sh
+
+  # The same on a fresh Ubuntu without Homebrew, as a user with sudo and as one
+  # without, like a work machine, where Homebrew goes in the home folder.
+  ubuntu:
+    name: ubuntu (${{ matrix.access }})
+    runs-on: ubuntu-latest
+    container: ubuntu:24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        access: [sudo, no-sudo]
+    steps:
+      # The container starts as root with almost nothing installed. Homebrew
+      # refuses to run as root, so install.sh runs as a new user, tester.
+      - name: Create the user
+        run: |
+          apt-get update
+          apt-get install --no-install-recommends --yes ca-certificates curl git sudo
+          useradd --create-home --shell /bin/bash tester
+          if [ "${{ matrix.access }}" = sudo ]; then
+            echo 'tester ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/tester
+          else
+            # Without sudo, an administrator installs what Homebrew needs.
+            apt-get install --no-install-recommends --yes build-essential procps file
+          fi
+
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Use this commit and answer setup's questions
+        run: |
+          install -d -o tester -g tester /home/tester/.local /home/tester/.local/share \
+            /home/tester/.config /home/tester/.config/chezmoi
+          cp -R "$GITHUB_WORKSPACE" /home/tester/.local/share/chezmoi
+          printf '[data]\ngitName = "CI"\ngitEmail = "ci@example.invalid"\npublishDotfiles = false\nuseSudo = ${{ matrix.access == 'sudo' }}\n' \
+            > /home/tester/.config/chezmoi/chezmoi.toml
+          chown -R tester:tester /home/tester/.local/share/chezmoi /home/tester/.config/chezmoi
+
+      # sudo --login starts a fresh login as tester. The container has no
+      # locale, and Homebrew needs a UTF-8 one.
+      - name: Run install.sh twice as tester
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MISE_GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          for pass in 1 2; do
+            echo "install.sh, pass $pass"
+            sudo --user=tester --login env LANG=C.UTF-8 GH_TOKEN="$GH_TOKEN" \
+              MISE_GITHUB_TOKEN="$MISE_GITHUB_TOKEN" sh /home/tester/.local/share/chezmoi/install.sh
+          done
+
+      - name: Check the result as tester
+        run: sudo --user=tester --login env LANG=C.UTF-8 sh /home/tester/.local/share/chezmoi/scripts/check-install.sh
