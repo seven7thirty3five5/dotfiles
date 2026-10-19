@@ -26,15 +26,6 @@
 .zshenv
 .zshrc
 
-# The link to herdr in ~/.local/bin points to Homebrew's herdr, so chezmoi only
-# writes it once Homebrew has installed herdr. Until then it leaves the path
-# alone, even if you put a herdr there yourself. $brewPrefix is Homebrew's
-# folder, or empty without Homebrew; `and` stops at the first empty value.
-{{ $brewPrefix := includeTemplate "brew-prefix" . | trim -}}
-{{ if not (and $brewPrefix (isExecutable (joinPath $brewPrefix "bin" "herdr"))) }}
-.local/bin/herdr
-{{ end }}
-
 # NEVER track machine-specific fish settings. config.fish loads this file, if
 # it exists, for settings that only make sense on one machine.
 .config/fish/config-local.fish

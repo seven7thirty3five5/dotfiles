@@ -1,45 +1,24 @@
 #!/bin/sh
 #
-# Install the packages listed in the Brewfile (home/dot_config/homebrew/Brewfile.tmpl).
-#
-# How chezmoi runs this file:
-#   - "after_": after writing the dotfiles, and after the install-homebrew
-#     script (20); scripts run in the order of their numbers. A failure here
-#     never keeps the dotfiles from being installed.
-#   - "run_onchange_": again whenever this file's text changes. chezmoi writes
-#     this machine's Brewfile into it (at the end), so editing the Brewfile
-#     changes this file too, and chezmoi installs the new packages on your next
-#     apply. If it fails, chezmoi tries it again on the next apply.
+# Install what the Brewfile lists and isn't installed yet. chezmoi writes the
+# Brewfile into this script, so editing the Brewfile changes the script and
+# chezmoi runs it again (run_onchange_), as chezmoi's documentation does.
 
-# Stop at the first command that fails (-e), and treat an unset variable as an
-# error instead of quietly using an empty value (-u).
 set -eu
+{{- if not .useSudo }}
 
-{{ if not .useSudo -}}
 # No sudo on this machine: Homebrew, and the installers it runs, must never ask
 # for a sudo password.
 export HOMEBREW_NO_SUDO=1
+{{- end }}
 
-{{ end -}}
-# Find Homebrew; this sets $brew (see find-brew.sh in home/.chezmoitemplates).
-{{ template "find-brew.sh" . }}
-# -z: the text is empty, so Homebrew isn't installed. (>&2 prints an error.)
-if [ -z "$brew" ]; then
-  echo "error: Homebrew not found, so the Brewfile's packages can't be installed." >&2
+brew={{ includeTemplate "brew-prefix" . | trim | shellQuote }}/bin/brew
+if [ ! -x "$brew" ]; then
+  echo "error: Homebrew isn't installed, so the Brewfile's packages can't be." >&2
   exit 1
 fi
 
-# Add Homebrew to this script's PATH (`brew shellenv sh` prints the commands
-# and `eval` runs them), then install whatever the Brewfile lists that isn't
-# installed yet. --no-upgrade leaves already installed packages as they are.
-#
-# --file=- makes brew bundle read the Brewfile from its input: the lines up to
-# BREWFILE, where chezmoi writes in the Brewfile filled in for this machine
-# (includeTemplate). The quotes in <<'BREWFILE' make the shell pass those lines
-# on unchanged. (Writing the Brewfile into this script is what makes a Brewfile
-# change re-run it; chezmoi's documentation installs packages the same way.)
-brew_env=$("$brew" shellenv sh)
-eval "$brew_env"
+eval "$("$brew" shellenv sh)"
 brew bundle --file=- --no-upgrade <<'BREWFILE'
 {{ includeTemplate "dot_config/homebrew/Brewfile.tmpl" . -}}
 BREWFILE

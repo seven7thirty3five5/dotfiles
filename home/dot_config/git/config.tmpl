@@ -1,18 +1,19 @@
 {{- /*
-  git's settings for your user; git reads them from ~/.config/git/config. It's a
-  template: your name and email come from your answers to chezmoi's setup
-  questions, and the delta settings are only written where Homebrew installed
-  delta. `git help config` explains every setting.
+  git's settings for your user; git reads them from ~/.config/git/config. Your
+  name and email come from setup's questions. The delta settings wait until
+  Homebrew has installed delta, because git stops with an error when its pager
+  is missing; install.sh writes this file again after installing Homebrew.
+  `git help config` explains every setting.
 */ -}}
 
-{{- $brewPrefix := includeTemplate "brew-prefix" . | trim -}}
+{{- $delta := joinPath (includeTemplate "brew-prefix" . | trim) "bin/delta" -}}
 
 # Who you are: git records this name and email as the author of your commits.
 [user]
     name = {{ .gitName | quote }}
     email = {{ .gitEmail | quote }}
 
-{{ if and $brewPrefix (isExecutable (joinPath $brewPrefix "bin" "delta")) -}}
+{{ if isExecutable $delta -}}
 # delta only where Homebrew installed it; elsewhere git keeps its default pager (less).
 # (A pager shows long output one screen at a time. delta also colors diffs, with
 # syntax highlighting and line numbers.)

@@ -1,20 +1,5 @@
-{{- /*
-  herdr's settings, as a template: chezmoi writes in the full path to fish when
-  Homebrew has installed it. isExecutable checks that fish exists and can run;
-  without it (for example before Homebrew is installed, or on a machine where
-  it can't be), the fish lines are left out and herdr keeps its defaults, so
-  its panes still work. install.sh applies the dotfiles again after installing
-  Homebrew, which writes the fish lines in.
-*/ -}}
-
-{{- $brewPrefix := includeTemplate "brew-prefix" . | trim -}}
-{{- $fish := "" -}}
-{{- if $brewPrefix -}}
-{{- $candidate := joinPath $brewPrefix "bin" "fish" -}}
-{{- if isExecutable $candidate -}}
-{{- $fish = $candidate -}}
-{{- end -}}
-{{- end -}}
+{{- /* A template only for fish's full path, in Homebrew's folder. */ -}}
+{{- $fish := joinPath (includeTemplate "brew-prefix" . | trim) "bin/fish" -}}
 
 # herdr's settings. herdr runs AI coding agents (and shells) side by side in one
 # terminal, like tmux, and shows which of them are working or waiting for you.
@@ -26,7 +11,6 @@ onboarding = false
 # catppuccin is also herdr's default theme.
 [theme]
 name = "catppuccin"
-{{- if $fish }}
 
 # Every new pane runs fish, which holds your shell setup (~/.config/fish).
 # herdr would otherwise use $SHELL, the login shell you start herdr from, which
@@ -36,7 +20,6 @@ name = "catppuccin"
 # shell_mode keeps its default: login shells on macOS, non-login elsewhere.
 [terminal]
 default_shell = {{ $fish | quote }}
-{{- end }}
 
 [update]
 # Homebrew upgrades herdr; skip the background check of herdr.dev.
@@ -57,10 +40,10 @@ delivery = "terminal"
 [keys]
 prefix = "ctrl+space"
 
-# The popups below run through fish (`fish -c COMMAND`) when it's installed.
-# herdr starts popup commands with its own environment, which only has what the
-# login shell set up; fish adds Homebrew and the rest, as in a pane. Without it,
-# lazygit on macOS wouldn't see XDG_CONFIG_HOME and would read its settings from
+# The popups below run through fish (`fish -c COMMAND`). herdr starts popup
+# commands with its own environment, which only has what the login shell set
+# up; fish adds Homebrew and the rest, as in a pane. Without it, lazygit on
+# macOS wouldn't see XDG_CONFIG_HOME and would read its settings from
 # ~/Library/Application Support/lazygit instead of ~/.config/lazygit. herdr
 # runs the command with /bin/sh -c; exec replaces that sh with fish.
 
@@ -69,11 +52,7 @@ prefix = "ctrl+space"
 [[keys.command]]
 key = "prefix+alt+g"
 type = "popup"
-{{- if $fish }}
 command = {{ printf "exec %s -c lazygit" ($fish | shellQuote) | quote }}
-{{- else }}
-command = "lazygit"
-{{- end }}
 width = "80%"
 height = "80%"
 
@@ -82,10 +61,6 @@ height = "80%"
 [[keys.command]]
 key = "prefix+alt+h"
 type = "popup"
-{{- if $fish }}
 command = {{ printf "exec %s -c %s" ($fish | shellQuote) ("gh dash" | shellQuote) | quote }}
-{{- else }}
-command = "gh dash"
-{{- end }}
 width = "80%"
 height = "80%"

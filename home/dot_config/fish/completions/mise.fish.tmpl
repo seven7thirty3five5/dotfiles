@@ -1,9 +1,0 @@
-{{- /*
-  mise lives in ~/.local/bin, which may not be on chezmoi's PATH during setup,
-  so look for it there. Empty until mise is installed; install.sh applies the
-  dotfiles again afterwards.
-*/ -}}
-{{- $mise := findExecutable "mise" (list (joinPath .chezmoi.homeDir ".local/bin")) -}}
-{{- if $mise -}}
-{{- output $mise "completion" "fish" -}}
-{{- end -}}

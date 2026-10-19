@@ -1,224 +1,78 @@
 #!/bin/sh
 #
-# install.sh - set up a new Mac or Linux machine with these dotfiles.
+# install.sh: set up these dotfiles on a new Mac or Linux machine. The README
+# has the command that downloads and runs it; running it again is safe.
 #
-# Run it with this one command:
-#
-#   sh -c "$(curl -fsSL https://raw.githubusercontent.com/seven7thirty3five5/dotfiles/main/install.sh)"
-#
-# What it does:
-#   1. Checks that it can run: as your own user (not root), with curl.
-#   2. Gets chezmoi, the tool that manages these dotfiles, into ~/.local/bin if
-#      it isn't installed. It stays there; `chezmoi upgrade` updates it.
-#   3. Checks that this system is supported (macOS on Apple silicon, or Linux on
-#      x86_64 or ARM64) and that chezmoi's folder holds no other dotfiles.
-#   4. Runs `chezmoi init --apply`. That downloads this repository, asks the
-#      setup questions and writes the dotfiles. Then it runs the scripts in
-#      home/.chezmoiscripts, which install Homebrew, the Brewfile's packages
-#      (fish and herdr among them), gh-dash and mise's runtimes. If one of
-#      them fails, for example because Homebrew can't be installed, the
-#      dotfiles are still in place.
-#   5. Runs `chezmoi init` and `chezmoi apply` once more: the dotfiles and
-#      chezmoi's own settings pick up newly installed tools (herdr's config
-#      finds fish, for example). This also writes mise's completion on
-#      machines where Homebrew cannot be installed.
-#   6. Lists what you still have to do by hand, such as putting ~/.local/bin on
-#      your PATH. Where you answer no to "Use sudo on this machine", setup never
-#      runs sudo, so it never asks for a sudo password.
-#
-# It is safe to run again: an existing ~/.local/share/chezmoi is reused. Any
-# arguments you give this script are passed on to `chezmoi init`. If a step
-# failed, the script ends with an error (exit status 1) after the list.
+# It installs chezmoi in ~/.local/bin. Then `chezmoi init --apply` clones this
+# repository, asks the setup questions, writes the dotfiles and runs the setup
+# scripts in home/.chezmoiscripts, which install Homebrew and its packages,
+# mise's runtimes and the agent skills. Arguments go to `chezmoi init`.
 
-# Stop at the first command that fails (-e), and treat an unset variable as an
-# error instead of quietly using an empty value (-u).
 set -eu
 
-# The GitHub user whose "dotfiles" repository this sets up. If you fork these
-# dotfiles, change this (and the command above) to your GitHub username.
-repo=seven7thirty3five5
-
-# error MESSAGE: print MESSAGE as an error (>&2) and stop with exit status 1.
-error() {
-  echo "error: $1" >&2
-  exit 1
-}
-
-# --- 1. Check that it can run -----------------------------------------------
-
-# The dotfiles belong in your own home folder, and Homebrew refuses to run as
-# root (the administrator account). `id -u` prints your user ID; root's is 0.
+# Homebrew refuses to run as root, and the dotfiles belong in your own home.
 if [ "$(id -u)" -eq 0 ]; then
-  error "run install.sh as your own user, not as root or with sudo."
+  echo "error: run install.sh as your own user, not as root or with sudo." >&2
+  exit 1
 fi
 
-# curl downloads chezmoi and Homebrew. `command -v` prints where a program is
-# installed, or fails if it isn't; ">/dev/null 2>&1" throws away its output,
-# and ! turns failure into success.
-if ! command -v curl >/dev/null 2>&1; then
-  error "install.sh needs curl; install it first."
-fi
-
-# --- 2. Get chezmoi ---------------------------------------------------------
-
-# Use chezmoi if it's installed. ~/.local/bin may not be on PATH yet on a new
-# machine, so look in it as well (-x: a program we can run).
 bin_dir=$HOME/.local/bin
-if command -v chezmoi >/dev/null 2>&1; then
-  chezmoi=$(command -v chezmoi)
-elif [ -x "$bin_dir/chezmoi" ]; then
-  chezmoi=$bin_dir/chezmoi
-else
-  # Download chezmoi's official installer and let it put chezmoi in
-  # ~/.local/bin (-b), where it stays. The installer is saved in a variable
-  # first, so that if the download fails, this script stops right here
-  # instead of running an empty installer.
-  chezmoi_installer=$(curl -fsLS https://get.chezmoi.io)
+chezmoi=$bin_dir/chezmoi
+if [ ! -x "$chezmoi" ]; then
+  # Saved first, so a failed download stops here rather than running nothing.
+  installer=$(curl -fsLS https://get.chezmoi.io)
   mkdir -p "$bin_dir"
-  sh -c "$chezmoi_installer" -- -b "$bin_dir"
-  chezmoi=$bin_dir/chezmoi
+  sh -c "$installer" -- -b "$bin_dir"
 fi
 
-# --- 3. Check this system ---------------------------------------------------
-
-# Ask chezmoi which system this is: darwin (macOS) or linux, then amd64 (Intel
-# or AMD) or arm64 (Apple silicon, ARM servers). `case` compares the answer
-# with each pattern in turn, and ;; ends the commands for a pattern.
-platform=$("$chezmoi" execute-template '{{ .chezmoi.os }}/{{ .chezmoi.arch }}')
-case $platform in
-  darwin/arm64 | linux/amd64 | linux/arm64) ;;
-  darwin/amd64)
-    error "Intel Macs are not supported; these dotfiles need Homebrew in /opt/homebrew."
-    ;;
-  *)
-    error "$platform is not supported; these dotfiles support macOS on Apple silicon and Linux on x86_64 or ARM64."
-    ;;
-esac
-
-# An existing chezmoi folder must hold this repository, or `chezmoi init` would
-# quietly use whatever is there. .chezmoi.workingTree is that folder
-# (~/.local/share/chezmoi by default), and its .git/config file records where
-# it was downloaded from. (-d: the folder exists. grep -E searches for a
-# pattern, in which [:/] matches the : or / before the username; -q only
-# reports whether it was found, and -s stays quiet if the file is missing.)
-source_dir=$("$chezmoi" execute-template '{{ .chezmoi.workingTree }}')
-if [ -d "$source_dir" ] \
-  && ! grep -Eqs "github\.com[:/]$repo/dotfiles" "$source_dir/.git/config"; then
-  error "$source_dir holds other dotfiles; move it away, then run install.sh again."
-fi
-
-# --- 4. Download and apply the dotfiles -------------------------------------
-
-# --use-builtin-git=true makes chezmoi clone with its own Git. On a new Mac,
-# /usr/bin/git only offers to install Apple's Command Line Tools, which
-# Homebrew installs later anyway. --keep-going makes chezmoi carry on when a
-# setup script fails: it still writes the dotfiles and runs the other scripts,
-# then reports the failure. `|| failed=1` remembers that failure instead of
-# stopping this script. "$@" stands for this script's arguments.
+# --use-builtin-git: on a new Mac, /usr/bin/git only offers to install Apple's
+# Command Line Tools, which Homebrew installs anyway. --keep-going: a failed
+# setup script doesn't stop the others, and the dotfiles are written first.
 failed=0
-"$chezmoi" init --apply --keep-going --use-builtin-git=true "$@" "$repo" || failed=1
+"$chezmoi" init --apply --keep-going --use-builtin-git=true "$@" seven7thirty3five5 || failed=1
 
-# Without the repository there's nothing more to do, for example when there
-# was no network to download it.
-if [ ! -d "$source_dir" ]; then
-  error "chezmoi couldn't download the dotfiles; see the error above."
-fi
+# Without the repository there's nothing more to do, for example offline.
+[ -d "$("$chezmoi" execute-template '{{ .chezmoi.workingTree }}')" ] || exit 1
 
-# --- 5. Pick up the newly installed tools -----------------------------------
+# chezmoi's settings and git's use delta (and chezmoi's, fish) once Homebrew
+# has installed them, which happened after they were written. Write them again.
+prefix=$("$chezmoi" execute-template '{{ includeTemplate "brew-prefix" . | trim }}')
+PATH=$prefix/bin:$PATH "$chezmoi" init "$@" || failed=1
+"$chezmoi" apply --exclude=scripts || failed=1
 
-# Retry failed setup scripts before rendering again: a successful retry may
-# install Homebrew or mise, which the templates must see in the final files.
-# --include=scripts runs only those scripts, leaving the dotfiles in place.
-# A script that already succeeded is skipped by chezmoi's run_once/run_onchange
-# tracking. A recovered first attempt must not leave setup marked as failed.
-if [ "$failed" -ne 0 ]; then
-  failed=0
-  "$chezmoi" apply --include=scripts --keep-going || failed=1
-fi
-
-# Ask chezmoi where Homebrew is: the brew-prefix template prints its folder,
-# or nothing if Homebrew isn't installed, now including a successful retry.
-# (-n: the text isn't empty.)
-prefix=$("$chezmoi" execute-template '{{ includeTemplate "brew-prefix" . }}')
-if [ -n "$prefix" ]; then
-  # Add Homebrew to this script's PATH: `brew shellenv sh` prints the
-  # `export ...` commands that do that, and `eval` runs them. The output is
-  # saved in a variable first, so that if brew fails, the script stops there.
-  brew_env=$("$prefix/bin/brew" shellenv sh)
-  eval "$brew_env"
-fi
-
-# Step 4 rendered the dotfiles before its scripts installed the tools, so
-# render them again. `chezmoi init` picks up delta in chezmoi's own
-# settings; `chezmoi apply` writes mise's completion. --exclude=scripts leaves
-# installation alone: its final outcome was decided above, before rendering.
-# Do this even without Homebrew: mise installs independently and its completion
-# would otherwise stay empty. Keep any failure from the script retry above.
-"$chezmoi" init "$@" || failed=1
-"$chezmoi" apply --exclude=scripts --keep-going || failed=1
-
-# --- 6. List what's left to do by hand --------------------------------------
-
-# Setup doesn't stop for steps that need an administrator. Instead, this checks
-# what's still missing and collects what you need to do in $todo, one step per
-# line, to print at the end.
+# What's left for you, or an administrator, to do.
 todo=
-
-# Ask chezmoi how you answered "Use sudo on this machine" (true or false); the
-# steps below depend on it.
-use_sudo=$("$chezmoi" execute-template '{{ .useSudo }}')
-
-# Homebrew installs the Brewfile's packages, so without it that part of setup
-# has failed.
-if [ -z "$prefix" ]; then
-  failed=1
+if [ ! -x "$prefix/bin/brew" ]; then
   todo="$todo
   - Install Homebrew: fix the error shown above, then run install.sh again."
 fi
 
-# Is ~/.local/bin on your PATH? Your login shell finds herdr there, through
-# the link to Homebrew's herdr, and these dotfiles never touch its startup
-# files, so the README lists this as a requirement. This script runs with your
-# shell's PATH, so check that. (The colons around both sides make only the
-# whole folder name match, not part of a longer one.)
+# Your login shell finds herdr in ~/.local/bin, and the dotfiles never edit its
+# startup files.
 case ":$PATH:" in
   *":$bin_dir:"*) ;;
-  *)
-    todo="$todo
-  - Put ~/.local/bin on your PATH, as the README's requirements describe.
-    On Debian and Ubuntu, logging in again does it now that the folder exists."
-    ;;
+  *) todo="$todo
+  - Put ~/.local/bin on your login shell's PATH, as the README describes. On
+    Debian and Ubuntu, logging in again does it now that the folder exists." ;;
 esac
 
-# Programs that need sudo to install, so setup installs them only on Linux with
-# sudo: Homebrew needs a C compiler (cc), file and git.
+# Homebrew needs these. The system-packages script installs them on Linux with
+# sudo; without sudo, an administrator has to.
 missing=
 for tool in cc file git; do
-  if ! command -v "$tool" >/dev/null 2>&1; then
-    missing="$missing $tool"
-  fi
+  command -v "$tool" >/dev/null 2>&1 || missing="$missing $tool"
 done
-
 if [ -n "$missing" ]; then
-  if [ "$use_sudo" = true ]; then
-    todo="$todo
-  - Install with your system's package manager:$missing"
-  else
-    todo="$todo
-  - Ask IT (an administrator) to install:$missing"
-  fi
+  todo="$todo
+  - Install with the system's package manager, or ask an administrator to:$missing"
 fi
 
-# -n: the text isn't empty, so there is something left to do.
 if [ -n "$todo" ]; then
   echo "Still to do:$todo"
 fi
 
-# If a step failed, say so and end with exit status 1 (-ne: not equal).
 if [ "$failed" -ne 0 ]; then
-  echo "Setup finished with errors (see above). The dotfiles are installed;" \
-    "fix the errors, then run install.sh again." >&2
+  echo "Setup finished with errors (see above); fix them, then run install.sh again." >&2
   exit 1
 fi
-
 echo "Done. Open a new terminal to start using the new setup."

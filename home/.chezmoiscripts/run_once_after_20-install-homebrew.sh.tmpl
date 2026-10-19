@@ -1,95 +1,24 @@
 #!/bin/sh
 #
-# Install Homebrew, the package manager that installs everything else.
-#
-# How chezmoi runs this file:
-#   - "run_once_" in the name: chezmoi runs it once per machine (again only if
-#     this file changes). If it fails, chezmoi tries it again on the next
-#     `chezmoi apply` or `chezmoi update`.
-#   - "after_": it runs after chezmoi has written the dotfiles, so a machine
-#     where Homebrew can't be installed still gets them. (The shell, git and
-#     herdr configs only set up Homebrew once it's installed, which is why
-#     install.sh applies the dotfiles once more at the end.)
-#   - ".tmpl": chezmoi first fills in the template parts (written between double
-#     braces). For example, it keeps only the part for your answer to the setup
-#     question "Use sudo on this machine" (.useSudo).
-#
-# Where Homebrew goes:
-#   With sudo     Its default folder: /opt/homebrew on macOS, and
-#                 /home/linuxbrew/.linuxbrew on Linux, where the
-#                 install-system-packages script (10) has already installed the
-#                 build tools Homebrew needs.
-#   Without sudo  (you answered no) On Linux: ~/.linuxbrew, or ~/.brew when that
-#                 path is too long, and sudo is never run. Homebrew can only use
-#                 its prebuilt packages ("bottles") in a folder whose path is no
-#                 longer than the default one. On macOS this fails: Homebrew is
-#                 only supported in /opt/homebrew, which needs sudo.
+# Install Homebrew in the folder the brew-prefix template names: its default
+# folder with sudo, or a folder in your home without it (Linux only). On Linux
+# with sudo, the system-packages script (10) has installed what it needs.
 
-# Stop at the first command that fails (-e), and treat an unset variable as an
-# error instead of quietly using an empty value (-u).
 set -eu
 
-# Look for an existing Homebrew. This sets $brew to the path of the brew
-# command, or to nothing if Homebrew isn't installed (see find-brew.sh in
-# home/.chezmoitemplates).
-{{ template "find-brew.sh" . }}
-# -n: the text isn't empty, so Homebrew is already installed.
-if [ -n "$brew" ]; then
+prefix={{ includeTemplate "brew-prefix" . | trim | shellQuote }}
+if [ -x "$prefix/bin/brew" ]; then
   exit 0
 fi
 
-{{ if and (eq .chezmoi.os "darwin") (ne .chezmoi.arch "arm64") -}}
-# chezmoi only writes this part on an Intel Mac, which install.sh already
-# refuses. Fail before including commands that cannot run on this machine.
-echo "error: these dotfiles expect Homebrew in /opt/homebrew;" \
-  "Intel Macs are not supported." >&2
-exit 1
-{{- else -}}
-# Download Homebrew's official installer. It's saved in a variable first, so
-# that if the download fails (no network, for example), this script stops right
-# here. Otherwise bash would run an empty installer and report success, and
-# chezmoi would never run this script again.
+# Saved first, so a failed download stops here rather than running nothing.
 installer=$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)
 
 {{ if .useSudo -}}
-# Homebrew's installer asks no questions (NONINTERACTIVE=1 below), so it can
-# only use sudo while sudo still remembers your password. sudo -v asks for your
-# password now if sudo doesn't remember it.
+# The installer asks no questions, so sudo must already have your password.
 sudo -v
-
-# Run the installer with bash (install.sh is just the name it runs under). It
-# installs Homebrew in its default folder: /opt/homebrew on macOS, or
-# /home/linuxbrew/.linuxbrew on Linux. On macOS it also installs Apple's
-# Command Line Tools (git, a C compiler) if they're missing.
 NONINTERACTIVE=1 /bin/bash -c "$installer" install.sh
 {{- else -}}
-# You answered no to "Use sudo on this machine", so install Homebrew into a
-# folder in your home directory, without sudo. Homebrew can only use its
-# prebuilt packages there if the folder's path is no longer than the default
-# one, so use ~/.linuxbrew if it's short enough and otherwise the shorter
-# ~/.brew. (${#name} is the length of $name.)
-default_prefix=/home/linuxbrew/.linuxbrew
-prefix=
-for candidate in "$HOME/.linuxbrew" "$HOME/.brew"; do
-  if [ "${#candidate}" -le "${#default_prefix}" ]; then
-    prefix=$candidate
-    break
-  fi
-done
-
-if [ -z "$prefix" ]; then
-  echo "error: $HOME is too long for a Homebrew prefix that can use bottles" \
-    "(${#default_prefix} bytes at most)." >&2
-  echo "       Ask an administrator to install Homebrew in $default_prefix," \
-    "then run install.sh again." >&2
-  exit 1
-fi
-
-# Run the installer with bash (install.sh is just the name it runs under),
-# without questions (NONINTERACTIVE=1), in that folder (--path).
-# HOMEBREW_NO_SUDO=1 tells it never to use sudo. It needs curl and git, and
-# says so if they're missing; install.sh lists the programs that only an
-# administrator can install (a C compiler, file, git) at the end.
+# The installer refuses a folder whose path is longer than the default's.
 HOMEBREW_NO_SUDO=1 NONINTERACTIVE=1 /bin/bash -c "$installer" install.sh --path "$prefix"
-{{- end }}
 {{- end }}

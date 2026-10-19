@@ -1,15 +1,10 @@
-{{- $brewPrefix := includeTemplate "brew-prefix" . | trim -}}
-
+{{- $brew := joinPath (includeTemplate "brew-prefix" . | trim) "bin/brew" | shellQuote -}}
 {{ if not .useSudo -}}
-# Carry the setup permission choice into brew commands, including update.
+# No sudo on this machine: Homebrew must never ask for a sudo password.
 set -gx HOMEBREW_NO_SUDO 1
 
 {{ end -}}
-# Homebrew's environment, evaluated when fish starts.
-{{- if $brewPrefix }}
-{{- $brew := joinPath $brewPrefix "bin" "brew" | shellQuote }}
-
+# Homebrew's PATH, MANPATH and HOMEBREW_* variables, once it's installed.
 if test -x {{ $brew }}
     {{ $brew }} shellenv fish | source
 end
-{{- end }}

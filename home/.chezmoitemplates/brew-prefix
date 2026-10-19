@@ -1,10 +1,20 @@
-{{- /* Print the folder Homebrew is installed in, or nothing if it isn't yet.
-       Checks each folder listed in brew-prefixes, in order, and prints the first
-       one that contains bin/brew. Used by the fish, git and herdr configs, the
-       herdr link, .chezmoiignore and install.sh. */ -}}
-{{- range $prefix := splitList "\n" (includeTemplate "brew-prefixes" . | trim) -}}
-{{- if isExecutable (joinPath $prefix "bin" "brew") -}}
-{{- $prefix -}}
-{{- break -}}
-{{- end -}}
+{{- /*
+  Homebrew's folder on this machine. The setup scripts install Homebrew there,
+  and the fish, git and herdr configs, the herdr link and install.sh use it.
+
+  With sudo it's Homebrew's default folder. On Linux without sudo it's one in
+  your home folder, unless an administrator installed Homebrew in the default
+  one. Homebrew only uses its prebuilt packages in a folder whose path is no
+  longer than the default's, so a long home folder path gets ~/.brew.
+*/ -}}
+{{- $default := "/home/linuxbrew/.linuxbrew" -}}
+{{- $home := joinPath .chezmoi.homeDir ".linuxbrew" -}}
+{{- if eq .chezmoi.os "darwin" -}}
+/opt/homebrew
+{{- else if or .useSudo (isExecutable (joinPath $default "bin/brew")) -}}
+{{ $default }}
+{{- else if le (len $home) (len $default) -}}
+{{ $home }}
+{{- else -}}
+{{ joinPath .chezmoi.homeDir ".brew" }}
 {{- end -}}
