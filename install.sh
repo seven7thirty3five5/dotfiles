@@ -164,38 +164,16 @@ fi
 # line, to print at the end.
 todo=
 
-# Ask chezmoi how you answered "Use sudo on this machine" (true or false) and
-# which system this is (darwin on macOS); the steps below depend on both.
+# Ask chezmoi how you answered "Use sudo on this machine" (true or false); the
+# steps below depend on it.
 use_sudo=$("$chezmoi" execute-template '{{ .useSudo }}')
-os=$("$chezmoi" execute-template '{{ .chezmoi.os }}')
 
 # Homebrew installs the Brewfile's packages, so without it that part of setup
-# has failed. On a Mac, only an administrator can install it.
+# has failed.
 if [ -z "$prefix" ]; then
   failed=1
-  if [ "$os" = darwin ] && [ "$use_sudo" != true ]; then
-    todo="$todo
-  - Ask IT (an administrator) to install Homebrew in /opt/homebrew, then run
-    install.sh again."
-  else
-    todo="$todo
+  todo="$todo
   - Install Homebrew: fix the error shown above, then run install.sh again."
-  fi
-fi
-
-# Known privileged casks are absent from a no-sudo Brewfile. List only the ones
-# still missing, using the same names as the Brewfile (sudo-casks template).
-# `brew list --cask NAME` checks its local installation record without installing
-# anything. Homebrew must not try sudo while checking, either.
-if [ "$use_sudo" != true ]; then
-  export HOMEBREW_NO_SUDO=1
-  sudo_casks=$("$chezmoi" execute-template '{{ includeTemplate "sudo-casks" . }}')
-  for cask in $sudo_casks; do
-    if [ -z "$prefix" ] || ! "$prefix/bin/brew" list --cask "$cask" >/dev/null 2>&1; then
-      todo="$todo
-  - Ask IT (an administrator) to install the Homebrew cask $cask."
-    fi
-  done
 fi
 
 # Is ~/.local/bin on your PATH? Your login shell finds herdr there, through

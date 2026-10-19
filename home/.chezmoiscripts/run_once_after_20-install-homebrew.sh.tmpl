@@ -44,18 +44,6 @@ fi
 echo "error: these dotfiles expect Homebrew in /opt/homebrew;" \
   "Intel Macs are not supported." >&2
 exit 1
-{{- else if and (eq .chezmoi.os "darwin") (not .useSudo) -}}
-# chezmoi only writes this part on a Mac where you answered no to "Use sudo on
-# this machine". Homebrew can only go in /opt/homebrew, which needs sudo, so
-# fail with an explanation. Your dotfiles are already in place, and chezmoi
-# tries this script again on your next apply. (Print the lines up to MSG as an
-# error.)
-cat >&2 <<'MSG'
-error: on macOS, Homebrew must be installed in /opt/homebrew, which needs sudo.
-       Ask an administrator to install Homebrew there, then run install.sh again.
-       If you can use sudo, set useSudo = true in ~/.config/chezmoi/chezmoi.toml.
-MSG
-exit 1
 {{- else -}}
 # Download Homebrew's official installer. It's saved in a variable first, so
 # that if the download fails (no network, for example), this script stops right

@@ -16,9 +16,8 @@
 set -eu
 
 {{ if not .useSudo -}}
-# This setting applies to Homebrew's downstream installers too: declining sudo
-# must never turn into a password prompt from a cask. Known privileged casks
-# are left out of this machine's Brewfile and listed by install.sh instead.
+# No sudo on this machine: Homebrew, and the installers it runs, must never ask
+# for a sudo password.
 export HOMEBREW_NO_SUDO=1
 
 {{ end -}}
