@@ -117,14 +117,13 @@ defaults:
 
 # Keys of your own. In any view, g opens lazygit in the selected item's local
 # copy of the repository (found through repoPaths below). {{.RepoPath}} is filled
-# in by gh-dash; `command cd` uses the shell's own cd, even where zoxide has
-# replaced cd.
+# in by gh-dash; the quotes keep a path with spaces together.
 keybindings:
     universal:
         - key: g  # the maintainer's binding; Home still jumps to the top
           name: lazygit
           command: >
-            command cd {{.RepoPath}} && lazygit
+            lazygit --path "{{.RepoPath}}"
 
 # Where your local copies (clones) of GitHub repositories are: * matches any
 # repository name, so seven7thirty3five5/dotfiles would be ~/Projects/dotfiles.

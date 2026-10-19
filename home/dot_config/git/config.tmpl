@@ -66,7 +66,9 @@
 
 [fetch]
     prune = true                 # drop local copies of branches deleted on the remote
-    pruneTags = true             # likewise drop local tags deleted on the remote
+    # Tags belong to the repository, not one remote: pruning them deletes local
+    # tags you haven't pushed, and tags fetched from other remotes.
+    pruneTags = false
     all = true                   # fetch every remote (e.g. origin and upstream), not one
 
 [rebase]
