@@ -44,7 +44,7 @@ Then open a new terminal and start `herdr`. In its fish:
 - Sign in to GitHub (`gh auth login`), Claude Code and Codex.
 - Run `update`, which installs herdr's hooks for Claude Code and Codex, then
   trust the Herdr session hook in Codex's `/hooks`.
-- On macOS, open Docker Desktop once to finish its setup.
+- On macOS, open Docker Desktop and OrbStack once to finish their setup.
 
 ## How it works
 
