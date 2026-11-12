@@ -41,7 +41,8 @@ sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin" init --use
 
 Then open a new terminal and start `herdr`. In its fish:
 
-- Sign in to GitHub (`gh auth login`), Claude Code and Codex.
+- Sign in to GitHub (`gh auth login`), Claude Code, Codex and Antigravity
+  (`agy`).
 - Run `update`, which installs herdr's hooks for Claude Code and Codex, then
   trust the Herdr session hook in Codex's `/hooks`.
 - On macOS, open Docker Desktop and OrbStack once to finish their setup.
@@ -60,11 +61,12 @@ Then open a new terminal and start `herdr`. In its fish:
   whenever its text changes, so the packages script embeds the Brewfile and the
   mise script a hash of mise's config.
 - **Homebrew** installs the command-line tools and macOS apps in the Brewfile,
-  Claude Code and Codex included. **mise** installs Node LTS, plus Python, uv
-  and pnpm at `latest`, as fallbacks that projects override; it reads `.nvmrc`
-  and `.node-version`, and uv owns `.python-version`. chezmoi and mise live in
-  `~/.local/bin`, outside Homebrew; add any other tool to the Brewfile, or to
-  mise's config for a runtime.
+  Claude Code, Codex and the Antigravity CLI included. **mise** installs Node
+  LTS, plus Python, uv and pnpm at `latest`, as fallbacks that projects
+  override; it reads `.nvmrc` and `.node-version`, and uv owns
+  `.python-version`. chezmoi and mise live in `~/.local/bin`, outside
+  Homebrew; add any other tool to the Brewfile, or to mise's config for a
+  runtime.
 - **fish runs in herdr** and holds the environment: `conf.d` sets the XDG
   folders (which keep tools out of `~/Library` on macOS), Homebrew,
   `~/.local/bin` before Homebrew, mise's shims and the editor in every fish,
